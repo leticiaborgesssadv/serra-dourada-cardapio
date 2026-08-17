@@ -137,6 +137,7 @@
       <div class="card">
         <h2>Almoço de hoje</h2>
         <p class="desc">O que aparece quando o cliente toca em "Almoço de hoje".</p>
+        <p class="msg erro escondido" id="almoco-desatualizado">⚠ Este prato foi publicado antes de hoje — clientes ainda estão vendo o almoço de outro dia. Atualize a descrição e publique novamente.</p>
         <label for="almoco-descricao">Descrição</label>
         <textarea id="almoco-descricao" placeholder="Ex.: Feijoada completa, arroz, couve e torresmo — R$ 32,90"></textarea>
         <button class="botao" id="btn-publicar-almoco"><span id="spin-almoco" class="spinner escondido"></span>Publicar almoço de hoje</button>
@@ -399,8 +400,11 @@
 
   // ---------- ALMOÇO ----------
   async function carregarAlmoco() {
-    var r = await sb.from("almoco_dia").select("descricao").eq("ativo", true).limit(1).maybeSingle();
+    var r = await sb.from("almoco_dia").select("descricao,data").eq("ativo", true).limit(1).maybeSingle();
     document.getElementById("almoco-descricao").value = r.data ? r.data.descricao : "";
+    var hoje = new Date().toISOString().slice(0, 10);
+    var aviso = document.getElementById("almoco-desatualizado");
+    aviso.classList.toggle("escondido", !r.data || r.data.data === hoje);
   }
   document.getElementById("btn-publicar-almoco").addEventListener("click", async function () {
     var msg = document.getElementById("msg-almoco"), btn = this, spin = document.getElementById("spin-almoco");
