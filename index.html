@@ -411,12 +411,17 @@ window.addEventListener("DOMContentLoaded", function () {
 
   async function mostrarHorario() {
     var h = (config && config.horario_funcionamento) || {};
+    var algumDiaConfigurado = false;
     var linhas = DIAS.map(function (nome, i) {
-      var v = h[String(i)];
-      var texto = v && v.abre && v.fecha ? formatarHora(v.abre) + " – " + formatarHora(v.fecha) : "Fechado";
+      var v = h[String(i)] || {};
+      var turnos = [];
+      if (v.almoco && v.almoco.abre && v.almoco.fecha) turnos.push(formatarHora(v.almoco.abre) + "–" + formatarHora(v.almoco.fecha));
+      if (v.bar && v.bar.abre && v.bar.fecha) turnos.push(formatarHora(v.bar.abre) + "–" + formatarHora(v.bar.fecha));
+      if (turnos.length) algumDiaConfigurado = true;
+      var texto = turnos.length ? turnos.join(" e ") : "Fechado";
       return '<div class="horario-linha"><span>' + nome + '</span><span>' + escapeHtml(texto) + '</span></div>';
     }).join("");
-    abrirModal("Horário de funcionamento", linhas || '<p class="modal-vazio">Horário não configurado ainda.</p>');
+    abrirModal("Horário de funcionamento", algumDiaConfigurado ? linhas : '<p class="modal-vazio">Horário não configurado ainda.</p>');
   }
 
   async function mostrarAlmoco() {
