@@ -606,6 +606,7 @@
   });
 
   // ---------- HORÁRIO ----------
+  // Cada dia pode ter até 2 turnos independentes: almoço e bar/happy hour.
   var horarioAtual = {};
   async function carregarHorario() {
     var r = await sb.from("pagina_config").select("horario_funcionamento").eq("estabelecimento_id", estabelecimentoId).maybeSingle();
@@ -614,14 +615,21 @@
     el.innerHTML = "";
     DIAS_LONGO.forEach(function (nome, i) {
       var v = horarioAtual[String(i)] || {};
+      var almoco = v.almoco || {};
+      var bar = v.bar || {};
       var linha = document.createElement("div");
-      linha.style.marginBottom = "10px";
+      linha.style.marginBottom = "18px";
       linha.innerHTML =
-        '<div class="toggle-linha"><label style="margin:0">' + nome + '</label>' +
-        '<input type="checkbox" data-dia="' + i + '" class="chk-aberto" ' + (v.abre ? "checked" : "") + ' /></div>' +
-        '<div style="display:flex;gap:8px">' +
-        '<input type="time" data-dia="' + i + '" class="hr-abre" value="' + (v.abre || "") + '" />' +
-        '<input type="time" data-dia="' + i + '" class="hr-fecha" value="' + (v.fecha || "") + '" />' +
+        '<label style="margin:0 0 8px;font-weight:600;color:var(--texto)">' + nome + '</label>' +
+        '<div style="display:flex;gap:8px;align-items:center;margin-bottom:6px">' +
+        '<span class="meta" style="width:60px;flex-shrink:0">Almoço</span>' +
+        '<input type="time" data-dia="' + i + '" data-turno="almoco" class="hr-abre" value="' + (almoco.abre || "") + '" />' +
+        '<input type="time" data-dia="' + i + '" data-turno="almoco" class="hr-fecha" value="' + (almoco.fecha || "") + '" />' +
+        '</div>' +
+        '<div style="display:flex;gap:8px;align-items:center">' +
+        '<span class="meta" style="width:60px;flex-shrink:0">Bar</span>' +
+        '<input type="time" data-dia="' + i + '" data-turno="bar" class="hr-abre" value="' + (bar.abre || "") + '" />' +
+        '<input type="time" data-dia="' + i + '" data-turno="bar" class="hr-fecha" value="' + (bar.fecha || "") + '" />' +
         '</div>';
       el.appendChild(linha);
     });
@@ -629,19 +637,23 @@
   document.getElementById("btn-salvar-horario").addEventListener("click", async function () {
     var msg = document.getElementById("msg-horario"), btn = this, spin = document.getElementById("spin-horario");
     var novo = {};
-    document.querySelectorAll(".chk-aberto").forEach(function (chk) {
-      var dia = chk.dataset.dia;
-      if (chk.checked) {
-        var abre = document.querySelector('.hr-abre[data-dia="' + dia + '"]').value;
-        var fecha = document.querySelector('.hr-fecha[data-dia="' + dia + '"]').value;
-        if (abre && fecha) novo[dia] = { abre: abre, fecha: fecha };
-      }
+    ["almoco", "bar"].forEach(function (turno) {
+      document.querySelectorAll('.hr-abre[data-turno="' + turno + '"]').forEach(function (inputAbre) {
+        var dia = inputAbre.dataset.dia;
+        var abre = inputAbre.value;
+        var fecha = document.querySelector('.hr-fecha[data-dia="' + dia + '"][data-turno="' + turno + '"]').value;
+        if (abre && fecha) {
+          novo[dia] = novo[dia] || {};
+          novo[dia][turno] = { abre: abre, fecha: fecha };
+        }
+      });
     });
     btn.disabled = true; spin.classList.remove("escondido");
     var r = await sb.from("pagina_config").update({ horario_funcionamento: novo, atualizado_em: new Date().toISOString() }).eq("estabelecimento_id", estabelecimentoId);
     btn.disabled = false; spin.classList.add("escondido");
     if (r.error) return setMsg(msg, "Erro ao salvar: " + r.error.message, "erro");
     setMsg(msg, "Horário salvo!", "sucesso");
+    horarioAtual = novo;
   });
 
   // ---------- CONTATO ----------
