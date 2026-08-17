@@ -6,6 +6,18 @@
 <title>Serra Dourada Bar e Restaurante</title>
 <meta name="theme-color" content="#241608" />
 <meta name="description" content="Cardápio, promoções, happy hour, eventos e contato do Serra Dourada Bar e Restaurante." />
+
+<meta property="og:type" content="website" />
+<meta property="og:title" content="Serra Dourada Bar e Restaurante" />
+<meta property="og:description" content="Cardápio, almoço, happy hour, promoções e reservas do Serra Dourada Bar e Restaurante." />
+<meta property="og:image" content="https://serradouradabar.com.br/img/hero.jpg" />
+<meta property="og:url" content="https://serradouradabar.com.br/" />
+<meta name="twitter:card" content="summary_large_image" />
+
+<link rel="icon" type="image/png" sizes="32x32" href="img/favicon-32.png" />
+<link rel="apple-touch-icon" href="img/apple-touch-icon.png" />
+<link rel="manifest" href="manifest.json" />
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playball&family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Manrope:wght@500;600;700&display=swap" rel="stylesheet">
@@ -369,6 +381,37 @@
     cursor: pointer;
   }
   .consentimento input { margin-top: 3px; width: 16px; height: 16px; flex-shrink: 0; accent-color: var(--dourado); }
+
+  .escondido { display: none !important; }
+
+  @keyframes surgir { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .topo, .hero, .boas-vindas, .destaques, .avaliacoes, .botoes {
+    animation: surgir 0.5s ease both;
+  }
+  .hero { animation-delay: 0.05s; }
+  .boas-vindas { animation-delay: 0.1s; }
+  .destaques { animation-delay: 0.15s; }
+  .avaliacoes { animation-delay: 0.18s; }
+  .botoes { animation-delay: 0.2s; }
+  .botao { transition: transform 0.08s ease, border-color 0.15s ease, background 0.15s ease, opacity 0.2s ease; }
+
+  .skeleton { background: linear-gradient(100deg, var(--marrom-card) 30%, #3a2712 45%, var(--marrom-card) 60%); background-size: 200% 100%; animation: brilho 1.4s ease-in-out infinite; border-radius: 10px; }
+  @keyframes brilho { 0% { background-position: 180% 0; } 100% { background-position: -20% 0; } }
+  .skeleton-botoes { display: flex; flex-direction: column; gap: 12px; padding: 18px 16px; max-width: 480px; margin: 0 auto; }
+  .skeleton-botao { height: 56px; }
+
+  .avaliacoes { padding: 6px 16px 6px; max-width: 480px; margin: 0 auto; }
+  .avaliacoes h2 { margin: 0 0 4px; font-family: 'Playfair Display', serif; font-weight: 600; font-size: 1.2rem; color: var(--dourado-claro); text-align: center; }
+  .avaliacoes-resumo { text-align: center; color: var(--texto-suave); font-size: 0.85rem; margin-bottom: 14px; }
+  .avaliacoes-resumo strong { color: var(--dourado-claro); }
+  .avaliacoes-lista { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
+  .avaliacoes-lista::-webkit-scrollbar { display: none; }
+  .avaliacao-card { flex: 0 0 240px; background: var(--marrom-card); border: 1px solid var(--borda); border-radius: 12px; padding: 14px; }
+  .avaliacao-estrelas { color: var(--dourado); font-size: 0.8rem; letter-spacing: 1px; margin-bottom: 6px; }
+  .avaliacao-texto { font-size: 0.83rem; color: var(--texto); line-height: 1.45; margin: 0 0 8px; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+  .avaliacao-autor { font-size: 0.76rem; color: var(--texto-suave); font-weight: 600; }
+
+  .mapa-embed { width: 100%; height: 220px; border: 0; border-radius: 12px; margin-bottom: 12px; display: block; }
 </style>
 </head>
 <body>
@@ -398,9 +441,21 @@
     </div>
   </section>
 
-  <nav class="botoes" id="botoes">
+  <section class="avaliacoes escondido" id="avaliacoes">
+    <h2>O que dizem sobre nós</h2>
+    <p class="avaliacoes-resumo" id="avaliacoes-resumo"></p>
+    <div class="avaliacoes-lista" id="avaliacoes-lista"></div>
+  </section>
+
+  <nav class="botoes escondido" id="botoes">
     <div class="carregando-botoes">Carregando…</div>
   </nav>
+  <div class="skeleton-botoes" id="skeleton-botoes">
+    <div class="skeleton skeleton-botao"></div>
+    <div class="skeleton skeleton-botao"></div>
+    <div class="skeleton skeleton-botao"></div>
+    <div class="skeleton skeleton-botao"></div>
+  </div>
 
   <footer>Serra Dourada Bar e Restaurante · Goiânia/GO</footer>
 
@@ -552,6 +607,34 @@ window.addEventListener("DOMContentLoaded", function () {
     abrirModal("Happy Hour e promoções", blocos.join("") || '<p class="modal-vazio">Nenhum Happy Hour ou promoção ativa no momento.</p>');
   }
 
+  function mostrarComoChegar() {
+    var endereco = config && config.endereco_embed;
+    var mapaHtml = endereco
+      ? '<iframe class="mapa-embed" src="https://www.google.com/maps?q=' + encodeURIComponent(endereco) + '&output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>'
+      : "";
+    var linkMaps = (config && config.google_maps_url) || null;
+    var botaoHtml = linkMaps
+      ? '<a class="botao destaque" style="width:100%;justify-content:center" href="' + escapeHtml(linkMaps) + '" target="_blank" rel="noopener">Abrir rota no Google Maps</a>'
+      : "";
+    abrirModal("Como chegar", mapaHtml + (endereco ? '<p class="modal-vazio" style="padding:0 0 10px">' + escapeHtml(endereco) + '</p>' : "") + botaoHtml);
+  }
+
+  function renderAvaliacoes(cache) {
+    var secao = document.getElementById("avaliacoes");
+    if (!cache || !cache.reviews || !cache.reviews.length) return;
+    var estrelasTexto = function (n) { return "★★★★★☆☆☆☆☆".slice(5 - Math.round(n), 10 - Math.round(n)); };
+    document.getElementById("avaliacoes-resumo").innerHTML =
+      "<strong>" + (cache.rating || "-") + "</strong> de 5 · " + (cache.total_avaliacoes || cache.reviews.length) + " avaliações no Google";
+    document.getElementById("avaliacoes-lista").innerHTML = cache.reviews.slice(0, 8).map(function (r) {
+      return '<div class="avaliacao-card">' +
+        '<div class="avaliacao-estrelas">' + estrelasTexto(r.nota || 5) + '</div>' +
+        '<p class="avaliacao-texto">' + escapeHtml(r.texto || "") + '</p>' +
+        '<div class="avaliacao-autor">' + escapeHtml(r.autor || "Cliente Google") + '</div>' +
+        '</div>';
+    }).join("");
+    secao.classList.remove("escondido");
+  }
+
   async function mostrarEventos() {
     var r = await sb.from("evento").select("titulo,descricao,data_hora").eq("ativo", true).gte("data_hora", new Date().toISOString()).order("data_hora", { ascending: true });
     if (!r.data || r.data.length === 0) {
@@ -579,6 +662,7 @@ window.addEventListener("DOMContentLoaded", function () {
     horario: function () { registrar("click", "horario"); mostrarHorario(); },
     eventos: function () { registrar("click", "eventos"); mostrarEventos(); },
     reserva_whatsapp: function () { registrar("click", "reserva_whatsapp"); abrirReserva(); },
+    maps: function () { registrar("click", "maps"); mostrarComoChegar(); },
   };
 
   document.getElementById("form-reserva").addEventListener("submit", async function (ev) {
@@ -630,11 +714,12 @@ window.addEventListener("DOMContentLoaded", function () {
 
   function urlPadrao(tipo) {
     if (tipo === "trabalhe_conosco") return linkWhatsapp("Olá! Tenho interesse em trabalhar no Serra Dourada.");
-    if (tipo === "maps") return config && config.google_maps_url;
     if (tipo === "avaliar_google") return config && config.avaliacao_url;
     if (tipo === "instagram") return config && config.instagram_url;
     return null;
   }
+
+  var SEMPRE_MODAL = { maps: true };
 
   function renderBotoes(botoes) {
     var nav = document.getElementById("botoes");
@@ -646,7 +731,7 @@ window.addEventListener("DOMContentLoaded", function () {
     botoes.forEach(function (b, i) {
       var url = b.url || urlPadrao(b.tipo);
       var el;
-      if (ACOES[b.tipo] && !url) {
+      if (ACOES[b.tipo] && (!url || SEMPRE_MODAL[b.tipo])) {
         el = document.createElement("button");
         el.type = "button";
         el.addEventListener("click", ACOES[b.tipo]);
@@ -696,21 +781,24 @@ window.addEventListener("DOMContentLoaded", function () {
 
   async function carregar() {
     try {
-      var estRes = await sb.from("estabelecimento").select("id,nome_fantasia,nome").limit(1).maybeSingle();
+      var estRes = await sb.from("estabelecimento").select("id,nome_fantasia,nome,endereco").limit(1).maybeSingle();
       if (!estRes.data) return;
       estabelecimentoId = estRes.data.id;
       var nomeCurto = (estRes.data.nome_fantasia || estRes.data.nome || "").replace(/bar e restaurante/i, "").trim();
       if (nomeCurto) document.getElementById("logo-nome").textContent = nomeCurto;
 
-      var [cfgRes, botoesRes, hhRes] = await Promise.all([
+      var [cfgRes, botoesRes, hhRes, avalRes] = await Promise.all([
         sb.from("pagina_config").select("*").eq("estabelecimento_id", estabelecimentoId).maybeSingle(),
         sb.from("botao_pagina").select("*").eq("estabelecimento_id", estabelecimentoId).eq("ativo", true).order("ordem", { ascending: true }),
         sb.from("happy_hour").select("ativo,dias_semana,horario_inicio,horario_fim").maybeSingle(),
+        sb.from("google_reviews_cache").select("rating,total_avaliacoes,reviews").eq("estabelecimento_id", estabelecimentoId).maybeSingle(),
       ]);
       happyHourBadgeAtivo = happyHourAtivoAgora(hhRes.data);
+      renderAvaliacoes(avalRes.data);
 
       config = cfgRes.data;
       if (config) {
+        config.endereco_embed = estRes.data.endereco || null;
         if (config.imagem_logo_url) {
           var logoImg = document.getElementById("logo-img");
           logoImg.src = config.imagem_logo_url;
@@ -729,8 +817,12 @@ window.addEventListener("DOMContentLoaded", function () {
       }
 
       renderBotoes(botoesRes.data || []);
+      document.getElementById("skeleton-botoes").classList.add("escondido");
+      document.getElementById("botoes").classList.remove("escondido");
       registrar("pageview", null);
     } catch (e) {
+      document.getElementById("skeleton-botoes").classList.add("escondido");
+      document.getElementById("botoes").classList.remove("escondido");
       document.getElementById("botoes").innerHTML = '<p class="modal-vazio">Não foi possível carregar a página. Verifique sua conexão.</p>';
     }
   }

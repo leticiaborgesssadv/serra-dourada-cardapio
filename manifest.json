@@ -1,0 +1,12 @@
+{
+  "name": "Serra Dourada Bar e Restaurante",
+  "short_name": "Serra Dourada",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#1c1108",
+  "theme_color": "#241608",
+  "icons": [
+    { "src": "img/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "img/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
