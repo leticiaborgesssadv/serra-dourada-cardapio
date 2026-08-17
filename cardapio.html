@@ -202,7 +202,10 @@
       var linkAbrir = document.getElementById("link-abrir");
       var linkBaixar = document.getElementById("link-baixar");
       linkAbrir.href = fileUrl;
-      linkBaixar.href = fileUrl;
+      // O arquivo fica em outro domínio (Supabase); o atributo "download" do HTML é
+      // ignorado pelos navegadores nesse caso. É preciso pedir o download ao próprio
+      // servidor de Storage via "?download", que responde com Content-Disposition: attachment.
+      linkBaixar.href = fileUrl + "?download=" + encodeURIComponent(arquivo.nome_original || "cardapio");
       linkBaixar.setAttribute("download", arquivo.nome_original || "cardapio");
       document.getElementById("acoes").classList.add("visivel");
     } catch (e) {

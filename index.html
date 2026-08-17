@@ -283,16 +283,33 @@ window.addEventListener("DOMContentLoaded", function () {
   }
 
   async function mostrarHappyHour() {
-    var r = await sb.from("happy_hour").select("descricao,dias_semana,horario_inicio,horario_fim,ativo").maybeSingle();
-    if (!r.data || !r.data.ativo) {
-      abrirModal("Happy Hour", '<p class="modal-vazio">Nenhum Happy Hour ativo no momento.</p>');
-      return;
+    var [hhRes, promoRes] = await Promise.all([
+      sb.from("happy_hour").select("descricao,dias_semana,horario_inicio,horario_fim,ativo").maybeSingle(),
+      sb.from("promocao").select("titulo,descricao,valido_ate").order("ordem", { ascending: true }),
+    ]);
+
+    var blocos = [];
+
+    if (hhRes.data && hhRes.data.ativo) {
+      var dias = (hhRes.data.dias_semana || []).map(function (d) { return DIAS[d]; }).join(", ");
+      var periodo = formatarHora(hhRes.data.horario_inicio) + " às " + formatarHora(hhRes.data.horario_fim);
+      blocos.push(
+        '<div class="modal-item"><h3>Happy Hour · ' + escapeHtml(dias || "Todos os dias") + '</h3><p>' + escapeHtml(periodo) + '</p>' +
+        (hhRes.data.descricao ? '<p>' + escapeHtml(hhRes.data.descricao).replace(/\n/g, "<br>") + '</p>' : '') +
+        '</div>'
+      );
     }
-    var dias = (r.data.dias_semana || []).map(function (d) { return DIAS[d]; }).join(", ");
-    var periodo = formatarHora(r.data.horario_inicio) + " às " + formatarHora(r.data.horario_fim);
-    abrirModal("Happy Hour",
-      '<div class="modal-item"><h3>' + escapeHtml(dias || "Todos os dias") + '</h3><p>' + escapeHtml(periodo) + '</p></div>' +
-      '<div class="modal-item"><p>' + escapeHtml(r.data.descricao || "").replace(/\n/g, "<br>") + '</p></div>');
+
+    (promoRes.data || []).forEach(function (p) {
+      var validade = p.valido_ate ? " · válida até " + new Date(p.valido_ate + "T00:00:00").toLocaleDateString("pt-BR") : "";
+      blocos.push(
+        '<div class="modal-item"><h3>' + escapeHtml(p.titulo) + escapeHtml(validade) + '</h3>' +
+        (p.descricao ? '<p>' + escapeHtml(p.descricao).replace(/\n/g, "<br>") + '</p>' : '') +
+        '</div>'
+      );
+    });
+
+    abrirModal("Happy Hour e promoções", blocos.join("") || '<p class="modal-vazio">Nenhum Happy Hour ou promoção ativa no momento.</p>');
   }
 
   async function mostrarEventos() {
@@ -385,11 +402,14 @@ window.addEventListener("DOMContentLoaded", function () {
 
       config = cfgRes.data;
       if (config) {
-        document.getElementById("boas-vindas").textContent = config.mensagem_boas_vindas || "";
+        var mensagem = config.mensagem_boas_vindas || "";
         if (config.imagem_hero_url) {
           document.getElementById("hero").innerHTML =
             '<img src="' + escapeHtml(config.imagem_hero_url) + '" alt="Serra Dourada" loading="eager" />' +
-            '<div class="hero-legenda">' + escapeHtml(config.mensagem_boas_vindas || "") + '</div>';
+            '<div class="hero-legenda">' + escapeHtml(mensagem) + '</div>';
+          document.getElementById("boas-vindas").remove();
+        } else {
+          document.getElementById("boas-vindas").textContent = mensagem;
         }
       }
 
