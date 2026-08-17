@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Cardápio</title>
+<meta name="theme-color" content="#241608" />
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+  :root {
+    --dourado: #c9a227;
+    --dourado-claro: #e8c766;
+    --marrom: #241608;
+    --marrom-claro: #3a2712;
+    --texto: #f6ead0;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--marrom);
+    color: var(--texto);
+    display: flex;
+    flex-direction: column;
+  }
+  header {
+    padding: 14px 16px calc(12px + env(safe-area-inset-top, 0px));
+    padding-top: max(14px, env(safe-area-inset-top, 0px));
+    background: linear-gradient(180deg, var(--marrom-claro), var(--marrom));
+    text-align: center;
+    border-bottom: 2px solid var(--dourado);
+    flex-shrink: 0;
+  }
+  header h1 {
+    margin: 0;
+    font-size: 1.15rem;
+    letter-spacing: 0.03em;
+    color: var(--dourado-claro);
+    font-weight: 700;
+  }
+  header p {
+    margin: 2px 0 0;
+    font-size: 0.78rem;
+    color: #cdbb99;
+  }
+  header a.voltar {
+    position: absolute;
+    left: 14px;
+    top: calc(14px + env(safe-area-inset-top, 0px));
+    color: var(--dourado-claro);
+    text-decoration: none;
+    font-size: 1.3rem;
+    line-height: 1;
+  }
+  header { position: relative; }
+  main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .visor-pdf {
+    flex: 1;
+    width: 100%;
+    border: none;
+    min-height: 0;
+    background: #3a3a3a;
+  }
+  .visor-imagem {
+    flex: 1;
+    overflow: auto;
+    display: flex;
+    justify-content: center;
+    background: #17100a;
+  }
+  .visor-imagem img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+  }
+  .vazio, .carregando {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 32px;
+    gap: 8px;
+  }
+  .vazio p, .carregando p { margin: 0; font-size: 1.05rem; }
+  .vazio-sub { font-size: 0.85rem !important; color: #cdbb99; }
+  .acoes {
+    display: none;
+    gap: 10px;
+    justify-content: center;
+    padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+    background: var(--marrom-claro);
+    border-top: 1px solid #4a3520;
+    flex-shrink: 0;
+  }
+  .acoes.visivel { display: flex; }
+  .botao {
+    flex: 1;
+    max-width: 260px;
+    text-align: center;
+    padding: 13px 18px;
+    border-radius: 10px;
+    background: var(--dourado);
+    color: #241608;
+    font-weight: 700;
+    text-decoration: none;
+    font-size: 0.95rem;
+  }
+  .botao-secundario {
+    background: transparent;
+    border: 1.5px solid var(--dourado);
+    color: var(--dourado-claro);
+  }
+  .escondido { display: none !important; }
+</style>
+</head>
+<body>
+  <header>
+    <a class="voltar" href="index.html" aria-label="Voltar">←</a>
+    <h1 id="nome-estabelecimento">Cardápio</h1>
+    <p>Cardápio digital</p>
+  </header>
+  <main id="main">
+    <div class="carregando" id="carregando">
+      <p>Carregando cardápio…</p>
+    </div>
+  </main>
+  <div class="acoes" id="acoes">
+    <a class="botao" id="link-abrir" href="#" target="_blank" rel="noopener">Abrir em nova aba</a>
+    <a class="botao botao-secundario" id="link-baixar" href="#">Baixar</a>
+  </div>
+
+<script>
+(function () {
+  "use strict";
+  var SUPABASE_URL = "https://bhxnhiggogosootbtwpb.supabase.co";
+  var ANON_KEY = "sb_publishable_Zsg8lPJjUHK5-okGOuYc9g_VbKilzQG";
+  var sb = window.supabase.createClient(SUPABASE_URL, ANON_KEY);
+
+  function escapeHtml(v) {
+    return String(v)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+
+  function mostrarVazio() {
+    document.getElementById("main").innerHTML =
+      '<div class="vazio"><p>O cardápio ainda não foi publicado.</p>' +
+      '<p class="vazio-sub">Volte em instantes ou fale com a equipe.</p></div>';
+  }
+
+  function mostrarErro() {
+    document.getElementById("main").innerHTML =
+      '<div class="vazio"><p>Não foi possível carregar o cardápio agora.</p>' +
+      '<p class="vazio-sub">Verifique sua conexão e tente novamente.</p></div>';
+  }
+
+  async function carregar() {
+    try {
+      var estRes = await sb.from("estabelecimento").select("nome_fantasia,nome").limit(1).maybeSingle();
+      if (estRes.data) {
+        var nome = estRes.data.nome_fantasia || estRes.data.nome || "Cardápio";
+        document.title = "Cardápio · " + nome;
+        document.getElementById("nome-estabelecimento").textContent = nome;
+      }
+
+      var arqRes = await sb
+        .from("cardapio_arquivo")
+        .select("nome_original,storage_path,mime_type,criado_em")
+        .eq("ativo", true)
+        .order("criado_em", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (!arqRes.data) {
+        mostrarVazio();
+        return;
+      }
+
+      var arquivo = arqRes.data;
+      var fileUrl = SUPABASE_URL + "/storage/v1/object/public/cardapio-arquivos/" + arquivo.storage_path;
+      var isImage = arquivo.mime_type.indexOf("image/") === 0;
+      var main = document.getElementById("main");
+
+      if (isImage) {
+        main.innerHTML = '<div class="visor-imagem"><img src="' + escapeHtml(fileUrl) + '" alt="Cardápio" /></div>';
+      } else {
+        main.innerHTML =
+          '<object class="visor-pdf" data="' + escapeHtml(fileUrl) + '#view=FitH" type="application/pdf">' +
+          '<div class="vazio"><p>Não foi possível exibir o cardápio automaticamente.</p>' +
+          '<a class="botao" href="' + escapeHtml(fileUrl) + '" target="_blank" rel="noopener">Toque aqui para abrir o cardápio</a>' +
+          '</div></object>';
+      }
+
+      var linkAbrir = document.getElementById("link-abrir");
+      var linkBaixar = document.getElementById("link-baixar");
+      linkAbrir.href = fileUrl;
+      linkBaixar.href = fileUrl;
+      linkBaixar.setAttribute("download", arquivo.nome_original || "cardapio");
+      document.getElementById("acoes").classList.add("visivel");
+    } catch (e) {
+      mostrarErro();
+    }
+  }
+
+  carregar();
+})();
+</script>
+</body>
+</html>

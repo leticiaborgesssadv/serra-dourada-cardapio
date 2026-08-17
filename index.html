@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Serra Dourada Bar e Restaurante</title>
+<meta name="theme-color" content="#241608" />
+<meta name="description" content="Cardápio, promoções, happy hour, eventos e contato do Serra Dourada Bar e Restaurante." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playball&family=Manrope:wght@500;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" defer></script>
+<style>
+  :root {
+    --dourado: #c9a227;
+    --dourado-claro: #e8c766;
+    --marrom: #1c1108;
+    --marrom-2: #241608;
+    --marrom-claro: #3a2712;
+    --marrom-card: #2e1c0e;
+    --texto: #f6ead0;
+    --texto-suave: #cdbb99;
+    --borda: #4a3520;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    font-family: 'Manrope', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--marrom);
+    color: var(--texto);
+    min-height: 100vh;
+  }
+  .topo {
+    text-align: center;
+    padding: 22px 16px 8px calc(16px + env(safe-area-inset-left, 0px));
+    padding-top: calc(22px + env(safe-area-inset-top, 0px));
+  }
+  .logo-script {
+    font-family: 'Playball', cursive;
+    font-size: 2.6rem;
+    color: var(--dourado-claro);
+    line-height: 1;
+    margin: 0;
+  }
+  .logo-label {
+    font-size: 0.7rem;
+    letter-spacing: 0.32em;
+    color: var(--texto-suave);
+    margin-top: 4px;
+    font-weight: 700;
+  }
+  .hero {
+    margin: 18px 16px 0;
+    border-radius: 18px;
+    overflow: hidden;
+    position: relative;
+    aspect-ratio: 16 / 10;
+    background: radial-gradient(circle at 30% 20%, #4a3010, #1c1108 70%);
+    display: flex;
+    align-items: flex-end;
+  }
+  .hero img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .hero .placeholder-icone {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 4rem;
+    opacity: 0.35;
+  }
+  .hero-legenda {
+    position: relative;
+    z-index: 1;
+    padding: 14px 18px;
+    background: linear-gradient(0deg, rgba(0,0,0,0.55), transparent);
+    width: 100%;
+    font-size: 0.95rem;
+    color: #fff;
+  }
+  .boas-vindas {
+    text-align: center;
+    padding: 18px 24px 4px;
+    font-size: 0.98rem;
+    color: var(--texto-suave);
+    line-height: 1.5;
+  }
+  .botoes {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 18px 16px calc(28px + env(safe-area-inset-bottom, 0px));
+    max-width: 480px;
+    margin: 0 auto;
+  }
+  .botao {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    text-align: left;
+    padding: 15px 18px;
+    border-radius: 14px;
+    background: var(--marrom-card);
+    border: 1px solid var(--borda);
+    color: var(--texto);
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+    min-height: 56px;
+    transition: transform 0.08s ease, border-color 0.15s ease;
+  }
+  .botao:active { transform: scale(0.98); }
+  .botao.destaque {
+    background: linear-gradient(135deg, var(--dourado), #a97f1b);
+    color: #241608;
+    border-color: transparent;
+  }
+  .botao .icone { font-size: 1.35rem; flex-shrink: 0; width: 28px; text-align: center; }
+  .botao .seta { margin-left: auto; opacity: 0.55; font-size: 1.1rem; }
+  .carregando-botoes {
+    text-align: center;
+    color: var(--texto-suave);
+    padding: 20px;
+    font-size: 0.9rem;
+  }
+  footer {
+    text-align: center;
+    padding: 10px 16px calc(24px + env(safe-area-inset-bottom, 0px));
+    color: #7a6448;
+    font-size: 0.72rem;
+  }
+
+  /* Modal genérico para almoço / happy hour / horário / eventos */
+  .overlay {
+    position: fixed; inset: 0;
+    background: rgba(10, 6, 2, 0.72);
+    display: none;
+    align-items: flex-end;
+    justify-content: center;
+    z-index: 50;
+  }
+  .overlay.aberto { display: flex; }
+  .modal {
+    background: var(--marrom-2);
+    border: 1px solid var(--borda);
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
+    width: 100%;
+    max-width: 480px;
+    max-height: 82vh;
+    overflow-y: auto;
+    padding: 20px 20px calc(24px + env(safe-area-inset-bottom, 0px));
+  }
+  .modal-topo {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+  .modal-topo h2 { margin: 0; font-size: 1.15rem; color: var(--dourado-claro); }
+  .modal-fechar {
+    background: var(--marrom-card);
+    border: 1px solid var(--borda);
+    color: var(--texto);
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    font-size: 1.1rem;
+    cursor: pointer;
+  }
+  .modal-item {
+    background: var(--marrom-card);
+    border: 1px solid var(--borda);
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 10px;
+  }
+  .modal-item h3 { margin: 0 0 4px; font-size: 0.95rem; color: var(--dourado-claro); }
+  .modal-item p { margin: 0; font-size: 0.85rem; color: var(--texto-suave); line-height: 1.4; }
+  .modal-vazio { text-align: center; color: var(--texto-suave); padding: 24px 0; font-size: 0.88rem; }
+  .horario-linha {
+    display: flex; justify-content: space-between;
+    padding: 8px 4px;
+    border-bottom: 1px solid var(--borda);
+    font-size: 0.88rem;
+  }
+  .horario-linha:last-child { border-bottom: none; }
+</style>
+</head>
+<body>
+  <div class="topo">
+    <p class="logo-script" id="logo-nome">Serra Dourada</p>
+    <p class="logo-label">BAR E RESTAURANTE</p>
+  </div>
+
+  <div class="hero" id="hero">
+    <div class="placeholder-icone">🍺</div>
+    <div class="hero-legenda" id="hero-legenda"></div>
+  </div>
+
+  <p class="boas-vindas" id="boas-vindas">Bem-vindo!</p>
+
+  <nav class="botoes" id="botoes">
+    <div class="carregando-botoes">Carregando…</div>
+  </nav>
+
+  <footer>Serra Dourada Bar e Restaurante · Goiânia/GO</footer>
+
+  <div class="overlay" id="overlay">
+    <div class="modal">
+      <div class="modal-topo">
+        <h2 id="modal-titulo">—</h2>
+        <button class="modal-fechar" id="modal-fechar" aria-label="Fechar">✕</button>
+      </div>
+      <div id="modal-corpo"></div>
+    </div>
+  </div>
+
+<script>
+window.addEventListener("DOMContentLoaded", function () {
+  "use strict";
+  var SUPABASE_URL = "https://bhxnhiggogosootbtwpb.supabase.co";
+  var ANON_KEY = "sb_publishable_Zsg8lPJjUHK5-okGOuYc9g_VbKilzQG";
+  var sb = window.supabase.createClient(SUPABASE_URL, ANON_KEY);
+
+  var DIAS = ["Domingo","Segunda","Terça","Quarta","Quinta","Sexta","Sábado"];
+  var estabelecimentoId = null;
+  var config = null;
+
+  function escapeHtml(v) {
+    return String(v == null ? "" : v)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+
+  function abrirModal(titulo, corpoHtml) {
+    document.getElementById("modal-titulo").textContent = titulo;
+    document.getElementById("modal-corpo").innerHTML = corpoHtml;
+    document.getElementById("overlay").classList.add("aberto");
+  }
+  function fecharModal() {
+    document.getElementById("overlay").classList.remove("aberto");
+  }
+  document.getElementById("modal-fechar").addEventListener("click", fecharModal);
+  document.getElementById("overlay").addEventListener("click", function (e) {
+    if (e.target.id === "overlay") fecharModal();
+  });
+
+  function registrar(tipo, botaoTipo) {
+    if (!estabelecimentoId) return;
+    sb.from("pagina_acesso_log").insert({
+      estabelecimento_id: estabelecimentoId,
+      tipo: tipo,
+      botao_tipo: botaoTipo || null,
+    }).then(function () {});
+  }
+
+  function formatarHora(t) {
+    if (!t) return "";
+    return t.slice(0, 5);
+  }
+
+  async function mostrarHorario() {
+    var h = (config && config.horario_funcionamento) || {};
+    var linhas = DIAS.map(function (nome, i) {
+      var v = h[String(i)];
+      var texto = v && v.abre && v.fecha ? formatarHora(v.abre) + " – " + formatarHora(v.fecha) : "Fechado";
+      return '<div class="horario-linha"><span>' + nome + '</span><span>' + escapeHtml(texto) + '</span></div>';
+    }).join("");
+    abrirModal("Horário de funcionamento", linhas || '<p class="modal-vazio">Horário não configurado ainda.</p>');
+  }
+
+  async function mostrarAlmoco() {
+    var r = await sb.from("almoco_dia").select("descricao,imagem_url,data").eq("ativo", true).limit(1).maybeSingle();
+    if (!r.data) {
+      abrirModal("Almoço de hoje", '<p class="modal-vazio">O almoço de hoje ainda não foi publicado.</p>');
+      return;
+    }
+    abrirModal("Almoço de hoje", '<div class="modal-item"><p>' + escapeHtml(r.data.descricao).replace(/\n/g, "<br>") + "</p></div>");
+  }
+
+  async function mostrarHappyHour() {
+    var r = await sb.from("happy_hour").select("descricao,dias_semana,horario_inicio,horario_fim,ativo").maybeSingle();
+    if (!r.data || !r.data.ativo) {
+      abrirModal("Happy Hour", '<p class="modal-vazio">Nenhum Happy Hour ativo no momento.</p>');
+      return;
+    }
+    var dias = (r.data.dias_semana || []).map(function (d) { return DIAS[d]; }).join(", ");
+    var periodo = formatarHora(r.data.horario_inicio) + " às " + formatarHora(r.data.horario_fim);
+    abrirModal("Happy Hour",
+      '<div class="modal-item"><h3>' + escapeHtml(dias || "Todos os dias") + '</h3><p>' + escapeHtml(periodo) + '</p></div>' +
+      '<div class="modal-item"><p>' + escapeHtml(r.data.descricao || "").replace(/\n/g, "<br>") + '</p></div>');
+  }
+
+  async function mostrarEventos() {
+    var r = await sb.from("evento").select("titulo,descricao,data_hora").eq("ativo", true).gte("data_hora", new Date().toISOString()).order("data_hora", { ascending: true });
+    if (!r.data || r.data.length === 0) {
+      abrirModal("Próximos eventos", '<p class="modal-vazio">Nenhum evento programado no momento.</p>');
+      return;
+    }
+    var html = r.data.map(function (ev) {
+      var data = new Date(ev.data_hora).toLocaleString("pt-BR", { weekday: "long", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+      return '<div class="modal-item"><h3>' + escapeHtml(ev.titulo) + '</h3><p>' + escapeHtml(data) + '</p>' +
+        (ev.descricao ? '<p>' + escapeHtml(ev.descricao) + '</p>' : '') + '</div>';
+    }).join("");
+    abrirModal("Próximos eventos", html);
+  }
+
+  function linkWhatsapp(mensagem) {
+    var numero = (config && config.whatsapp || "").replace(/\D/g, "");
+    if (!numero) return null;
+    return "https://wa.me/" + numero + (mensagem ? "?text=" + encodeURIComponent(mensagem) : "");
+  }
+
+  var ACOES = {
+    cardapio: function () { registrar("click", "cardapio"); location.href = "cardapio.html"; },
+    almoco: function () { registrar("click", "almoco"); mostrarAlmoco(); },
+    happy_hour: function () { registrar("click", "happy_hour"); mostrarHappyHour(); },
+    horario: function () { registrar("click", "horario"); mostrarHorario(); },
+    eventos: function () { registrar("click", "eventos"); mostrarEventos(); },
+  };
+
+  var ICONES = {
+    cardapio: "📖", almoco: "🍽️", happy_hour: "🍻", reserva_whatsapp: "💬",
+    maps: "📍", horario: "🕒", eventos: "🎶", avaliar_google: "⭐",
+    instagram: "📷", trabalhe_conosco: "👋",
+  };
+
+  function urlPadrao(tipo) {
+    if (tipo === "reserva_whatsapp") return linkWhatsapp("Olá! Gostaria de fazer uma reserva no Serra Dourada.");
+    if (tipo === "trabalhe_conosco") return linkWhatsapp("Olá! Tenho interesse em trabalhar no Serra Dourada.");
+    if (tipo === "maps") return config && config.google_maps_url;
+    if (tipo === "avaliar_google") return config && config.avaliacao_url;
+    if (tipo === "instagram") return config && config.instagram_url;
+    return null;
+  }
+
+  function renderBotoes(botoes) {
+    var nav = document.getElementById("botoes");
+    if (!botoes.length) {
+      nav.innerHTML = '<p class="modal-vazio">Nenhum botão configurado ainda.</p>';
+      return;
+    }
+    nav.innerHTML = "";
+    botoes.forEach(function (b, i) {
+      var url = b.url || urlPadrao(b.tipo);
+      var el;
+      if (ACOES[b.tipo] && !url) {
+        el = document.createElement("button");
+        el.type = "button";
+        el.addEventListener("click", ACOES[b.tipo]);
+      } else if (url) {
+        el = document.createElement("a");
+        el.href = url;
+        el.target = "_blank";
+        el.rel = "noopener";
+        el.addEventListener("click", function () { registrar("click", b.tipo); });
+      } else {
+        return; // sem ação nem link configurado — não mostra
+      }
+      el.className = "botao" + (i === 0 ? " destaque" : "");
+      el.innerHTML =
+        '<span class="icone">' + (ICONES[b.tipo] || "•") + '</span>' +
+        '<span>' + escapeHtml(b.label) + '</span>' +
+        '<span class="seta">›</span>';
+      nav.appendChild(el);
+    });
+  }
+
+  async function carregar() {
+    try {
+      var estRes = await sb.from("estabelecimento").select("id,nome_fantasia,nome").limit(1).maybeSingle();
+      if (!estRes.data) return;
+      estabelecimentoId = estRes.data.id;
+      var nomeCurto = (estRes.data.nome_fantasia || estRes.data.nome || "").replace(/bar e restaurante/i, "").trim();
+      if (nomeCurto) document.getElementById("logo-nome").textContent = nomeCurto;
+
+      var [cfgRes, botoesRes] = await Promise.all([
+        sb.from("pagina_config").select("*").eq("estabelecimento_id", estabelecimentoId).maybeSingle(),
+        sb.from("botao_pagina").select("*").eq("estabelecimento_id", estabelecimentoId).eq("ativo", true).order("ordem", { ascending: true }),
+      ]);
+
+      config = cfgRes.data;
+      if (config) {
+        document.getElementById("boas-vindas").textContent = config.mensagem_boas_vindas || "";
+        if (config.imagem_hero_url) {
+          document.getElementById("hero").innerHTML =
+            '<img src="' + escapeHtml(config.imagem_hero_url) + '" alt="Serra Dourada" loading="eager" />' +
+            '<div class="hero-legenda">' + escapeHtml(config.mensagem_boas_vindas || "") + '</div>';
+        }
+      }
+
+      renderBotoes(botoesRes.data || []);
+      registrar("pageview", null);
+    } catch (e) {
+      document.getElementById("botoes").innerHTML = '<p class="modal-vazio">Não foi possível carregar a página. Verifique sua conexão.</p>';
+    }
+  }
+
+  carregar();
+});
+</script>
+</body>
+</html>
