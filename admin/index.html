@@ -1,0 +1,760 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Admin · Serra Dourada</title>
+<meta name="theme-color" content="#241608" />
+<meta name="robots" content="noindex, nofollow" />
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<style>
+  :root {
+    --dourado: #c9a227; --dourado-claro: #e8c766; --marrom: #241608;
+    --marrom-claro: #3a2712; --marrom-card: #2e1c0e; --texto: #f6ead0;
+    --texto-suave: #cdbb99; --erro: #e5484d; --sucesso: #4caf6d; --borda: #4a3520;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; background: var(--marrom); color: var(--texto); }
+  header { padding: 14px 16px calc(12px + env(safe-area-inset-top,0px)); padding-top: max(14px, env(safe-area-inset-top,0px)); background: linear-gradient(180deg, var(--marrom-claro), var(--marrom)); border-bottom: 2px solid var(--dourado); display: flex; align-items: center; justify-content: space-between; gap: 12px; position: sticky; top: 0; z-index: 10; }
+  header h1 { margin: 0; font-size: 1rem; color: var(--dourado-claro); }
+  #sair { background: transparent; border: 1px solid var(--borda); color: var(--texto-suave); padding: 7px 12px; border-radius: 8px; cursor: pointer; font-size: 0.8rem; }
+  nav.tabs { display: flex; gap: 6px; overflow-x: auto; padding: 10px 12px; background: var(--marrom-claro); border-bottom: 1px solid var(--borda); position: sticky; top: 53px; z-index: 9; }
+  nav.tabs button { flex-shrink: 0; background: transparent; border: 1px solid var(--borda); color: var(--texto-suave); padding: 8px 13px; border-radius: 20px; font-size: 0.8rem; cursor: pointer; white-space: nowrap; }
+  nav.tabs button.ativa { background: var(--dourado); color: #241608; border-color: transparent; font-weight: 700; }
+  main { max-width: 640px; margin: 0 auto; padding: 18px 16px 60px; }
+  section.aba { display: none; }
+  section.aba.ativa { display: block; }
+  .card { background: var(--marrom-card); border: 1px solid var(--borda); border-radius: 14px; padding: 20px; margin-bottom: 16px; }
+  .card h2 { margin: 0 0 6px; font-size: 1rem; color: var(--dourado-claro); }
+  .card p.desc { margin: 0 0 14px; font-size: 0.82rem; color: var(--texto-suave); }
+  label { display: block; font-size: 0.83rem; margin-bottom: 6px; color: var(--texto-suave); }
+  input[type=email], input[type=password], input[type=text], input[type=date], input[type=time], input[type=datetime-local], textarea, select {
+    width: 100%; padding: 11px 13px; border-radius: 8px; border: 1px solid var(--borda);
+    background: #1a1006; color: var(--texto); font-size: 0.92rem; margin-bottom: 12px; font-family: inherit;
+  }
+  textarea { resize: vertical; min-height: 70px; }
+  .botao { display: inline-block; text-align: center; padding: 12px 18px; border-radius: 10px; background: var(--dourado); color: #241608; font-weight: 700; text-decoration: none; border: none; font-size: 0.9rem; cursor: pointer; }
+  .botao:disabled { opacity: 0.5; cursor: default; }
+  .botao-secundario { background: transparent; border: 1.5px solid var(--dourado); color: var(--dourado-claro); }
+  .botao-perigo { background: transparent; border: 1.5px solid var(--erro); color: var(--erro); }
+  .botao-pequeno { padding: 7px 12px; font-size: 0.78rem; }
+  .linha-botoes { display: flex; gap: 8px; flex-wrap: wrap; }
+  .msg { font-size: 0.83rem; margin-top: 8px; min-height: 1.1em; }
+  .msg.erro { color: var(--erro); } .msg.sucesso { color: var(--sucesso); }
+  .item-lista { background: #1a1006; border: 1px solid var(--borda); border-radius: 10px; padding: 12px 14px; margin-bottom: 10px; }
+  .item-lista-topo { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 6px; }
+  .item-lista h3 { margin: 0; font-size: 0.92rem; }
+  .item-lista .meta { font-size: 0.76rem; color: var(--texto-suave); }
+  .item-lista .acoes-item { display: flex; gap: 6px; flex-shrink: 0; }
+  .toggle-linha { display: flex; align-items: center; justify-content: space-between; padding: 4px 0; }
+  input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--dourado); }
+  .dias-semana { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+  .dia-chip { padding: 7px 10px; border-radius: 8px; border: 1px solid var(--borda); font-size: 0.78rem; cursor: pointer; color: var(--texto-suave); }
+  .dia-chip.marcado { background: var(--dourado); color: #241608; border-color: transparent; font-weight: 700; }
+  .link-publico { display: flex; gap: 8px; align-items: center; background: #1a1006; border: 1px solid var(--borda); border-radius: 10px; padding: 10px 12px; margin-bottom: 12px; }
+  .link-publico input { flex: 1; background: transparent; border: none; color: var(--texto); font-size: 0.78rem; margin: 0; }
+  .link-publico button { background: var(--dourado); border: none; color: #241608; font-weight: 700; padding: 8px 12px; border-radius: 7px; cursor: pointer; font-size: 0.76rem; flex-shrink: 0; }
+  #qr-wrap { display: none; flex-direction: column; align-items: center; gap: 12px; margin-top: 6px; }
+  #qr-wrap canvas { background: #fff; border-radius: 10px; max-width: 100%; height: auto; }
+  input[type=file] { width: 100%; color: var(--texto-suave); font-size: 0.83rem; margin-bottom: 12px; }
+  .preview-img { max-width: 100%; border-radius: 10px; margin-bottom: 12px; display: block; border: 1px solid var(--borda); }
+  #tela-login { max-width: 380px; margin: 60px auto; padding: 0 16px; }
+  .escondido { display: none !important; }
+  .spinner { display: inline-block; width: 13px; height: 13px; border: 2px solid #241608; border-top-color: transparent; border-radius: 50%; animation: girar 0.7s linear infinite; vertical-align: middle; margin-right: 6px; }
+  @keyframes girar { to { transform: rotate(360deg); } }
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+  .stat-box { background: #1a1006; border: 1px solid var(--borda); border-radius: 10px; padding: 14px; text-align: center; }
+  .stat-box .num { font-size: 1.6rem; font-weight: 800; color: var(--dourado-claro); }
+  .stat-box .lbl { font-size: 0.74rem; color: var(--texto-suave); margin-top: 2px; }
+  .barra-linha { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 0.82rem; }
+  .barra-linha .rotulo { width: 130px; flex-shrink: 0; color: var(--texto-suave); }
+  .barra-linha .barra { flex: 1; background: #1a1006; border-radius: 6px; overflow: hidden; height: 18px; }
+  .barra-linha .barra-preenchida { background: var(--dourado); height: 100%; }
+  .barra-linha .valor { width: 30px; text-align: right; flex-shrink: 0; }
+</style>
+</head>
+<body>
+
+<div id="tela-login">
+  <div class="card">
+    <h2>Painel · Serra Dourada</h2>
+    <p class="desc">Faça login com sua conta da equipe.</p>
+    <form id="form-login">
+      <label for="email">E-mail</label>
+      <input type="email" id="email" autocomplete="username" required />
+      <label for="senha">Senha</label>
+      <input type="password" id="senha" autocomplete="current-password" required />
+      <button class="botao" type="submit" id="btn-login" style="width:100%"><span id="spin-login" class="spinner escondido"></span>Entrar</button>
+      <div class="msg erro" id="msg-login"></div>
+    </form>
+  </div>
+</div>
+
+<div id="tela-admin" class="escondido">
+  <header>
+    <h1>Painel · Serra Dourada</h1>
+    <button id="sair">Sair</button>
+  </header>
+
+  <nav class="tabs" id="tabs">
+    <button data-aba="cardapio" class="ativa">Cardápio</button>
+    <button data-aba="almoco">Almoço</button>
+    <button data-aba="happyhour">Happy Hour</button>
+    <button data-aba="promocoes">Promoções</button>
+    <button data-aba="eventos">Eventos</button>
+    <button data-aba="horario">Horário</button>
+    <button data-aba="contato">Contato</button>
+    <button data-aba="imagens">Imagens</button>
+    <button data-aba="botoes">Botões</button>
+    <button data-aba="qrcode">QR Code</button>
+    <button data-aba="estatisticas">Estatísticas</button>
+  </nav>
+
+  <main>
+    <!-- CARDÁPIO -->
+    <section class="aba ativa" id="aba-cardapio">
+      <div class="card">
+        <h2>Cardápio atual</h2>
+        <div id="sem-arquivo" class="msg escondido">Nenhum cardápio enviado ainda.</div>
+        <div id="arquivo-atual-wrap" class="escondido item-lista">
+          <div class="nome" id="arquivo-nome" style="font-weight:600"></div>
+          <div class="meta" id="arquivo-meta"></div>
+        </div>
+        <a class="botao botao-secundario" id="link-ver-cardapio" href="../cardapio.html" target="_blank" rel="noopener">Visualizar cardápio</a>
+      </div>
+      <div class="card">
+        <h2>Enviar / substituir arquivo</h2>
+        <p class="desc">PDF, JPG, PNG ou WEBP. Máximo 15 MB. O link e o QR Code continuam os mesmos.</p>
+        <input type="file" id="arquivo-input" accept=".pdf,application/pdf,.jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" />
+        <button class="botao" id="btn-upload"><span id="spin-upload" class="spinner escondido"></span>Enviar cardápio</button>
+        <div class="msg" id="msg-upload"></div>
+      </div>
+    </section>
+
+    <!-- ALMOÇO -->
+    <section class="aba" id="aba-almoco">
+      <div class="card">
+        <h2>Almoço de hoje</h2>
+        <p class="desc">O que aparece quando o cliente toca em "Almoço de hoje".</p>
+        <label for="almoco-descricao">Descrição</label>
+        <textarea id="almoco-descricao" placeholder="Ex.: Feijoada completa, arroz, couve e torresmo — R$ 32,90"></textarea>
+        <button class="botao" id="btn-publicar-almoco"><span id="spin-almoco" class="spinner escondido"></span>Publicar almoço de hoje</button>
+        <div class="msg" id="msg-almoco"></div>
+      </div>
+    </section>
+
+    <!-- HAPPY HOUR -->
+    <section class="aba" id="aba-happyhour">
+      <div class="card">
+        <h2>Happy Hour</h2>
+        <div class="toggle-linha">
+          <label for="hh-ativo" style="margin:0">Ativo na página</label>
+          <input type="checkbox" id="hh-ativo" />
+        </div>
+        <label for="hh-descricao" style="margin-top:10px">Produtos e condições</label>
+        <textarea id="hh-descricao" placeholder="Ex.: Chopp em dobro e petiscos com 20% off"></textarea>
+        <label>Dias da semana</label>
+        <div class="dias-semana" id="hh-dias"></div>
+        <label for="hh-inicio">Início</label>
+        <input type="time" id="hh-inicio" />
+        <label for="hh-fim">Fim</label>
+        <input type="time" id="hh-fim" />
+        <button class="botao" id="btn-salvar-hh"><span id="spin-hh" class="spinner escondido"></span>Salvar Happy Hour</button>
+        <div class="msg" id="msg-hh"></div>
+      </div>
+    </section>
+
+    <!-- PROMOÇÕES -->
+    <section class="aba" id="aba-promocoes">
+      <div class="card">
+        <h2>Nova promoção</h2>
+        <label for="promo-titulo">Título</label>
+        <input type="text" id="promo-titulo" />
+        <label for="promo-descricao">Descrição</label>
+        <textarea id="promo-descricao"></textarea>
+        <label for="promo-de">Válido de</label>
+        <input type="date" id="promo-de" />
+        <label for="promo-ate">Válido até</label>
+        <input type="date" id="promo-ate" />
+        <button class="botao" id="btn-add-promo">Adicionar promoção</button>
+        <div class="msg" id="msg-promo"></div>
+      </div>
+      <div class="card">
+        <h2>Promoções cadastradas</h2>
+        <div id="lista-promocoes"><p class="msg">Carregando…</p></div>
+      </div>
+    </section>
+
+    <!-- EVENTOS -->
+    <section class="aba" id="aba-eventos">
+      <div class="card">
+        <h2>Novo evento</h2>
+        <label for="evento-titulo">Título</label>
+        <input type="text" id="evento-titulo" placeholder="Ex.: Show ao vivo — Banda Raiz" />
+        <label for="evento-descricao">Descrição</label>
+        <textarea id="evento-descricao"></textarea>
+        <label for="evento-data">Data e hora</label>
+        <input type="datetime-local" id="evento-data" />
+        <button class="botao" id="btn-add-evento">Adicionar evento</button>
+        <div class="msg" id="msg-evento"></div>
+      </div>
+      <div class="card">
+        <h2>Eventos cadastrados</h2>
+        <div id="lista-eventos"><p class="msg">Carregando…</p></div>
+      </div>
+    </section>
+
+    <!-- HORÁRIO -->
+    <section class="aba" id="aba-horario">
+      <div class="card">
+        <h2>Horário de funcionamento</h2>
+        <div id="horario-dias"></div>
+        <button class="botao" id="btn-salvar-horario"><span id="spin-horario" class="spinner escondido"></span>Salvar horário</button>
+        <div class="msg" id="msg-horario"></div>
+      </div>
+    </section>
+
+    <!-- CONTATO -->
+    <section class="aba" id="aba-contato">
+      <div class="card">
+        <h2>Contato e redes</h2>
+        <label for="cfg-mensagem">Mensagem de boas-vindas</label>
+        <textarea id="cfg-mensagem"></textarea>
+        <label for="cfg-whatsapp">WhatsApp (DDD + número, só dígitos)</label>
+        <input type="text" id="cfg-whatsapp" placeholder="Ex.: 62999998888" />
+        <label for="cfg-instagram">Link do Instagram</label>
+        <input type="text" id="cfg-instagram" placeholder="https://instagram.com/serradourada" />
+        <label for="cfg-maps">Link do Google Maps</label>
+        <input type="text" id="cfg-maps" placeholder="https://maps.app.goo.gl/..." />
+        <label for="cfg-avaliacao">Link para avaliar no Google</label>
+        <input type="text" id="cfg-avaliacao" placeholder="https://g.page/r/..." />
+        <button class="botao" id="btn-salvar-contato"><span id="spin-contato" class="spinner escondido"></span>Salvar contato</button>
+        <div class="msg" id="msg-contato"></div>
+      </div>
+    </section>
+
+    <!-- IMAGENS -->
+    <section class="aba" id="aba-imagens">
+      <div class="card">
+        <h2>Imagem de destaque (topo da página)</h2>
+        <img class="preview-img escondido" id="preview-hero" alt="" />
+        <input type="file" id="hero-input" accept="image/jpeg,image/png,image/webp" />
+        <button class="botao" id="btn-upload-hero"><span id="spin-hero" class="spinner escondido"></span>Enviar imagem</button>
+        <div class="msg" id="msg-hero"></div>
+      </div>
+    </section>
+
+    <!-- BOTÕES -->
+    <section class="aba" id="aba-botoes">
+      <div class="card">
+        <h2>Botões da página inicial</h2>
+        <p class="desc">Ative, desative, renomeie ou reordene. Alguns botões usam link automático (WhatsApp/Maps/Instagram/Avaliação configurados em "Contato"); você pode sobrescrever com uma URL própria.</p>
+        <div id="lista-botoes"><p class="msg">Carregando…</p></div>
+      </div>
+    </section>
+
+    <!-- QR CODE -->
+    <section class="aba" id="aba-qrcode">
+      <div class="card">
+        <h2>Link público</h2>
+        <div class="link-publico">
+          <input type="text" id="link-publico" readonly />
+          <button id="btn-copiar">Copiar</button>
+        </div>
+        <div class="msg" id="msg-copiar"></div>
+      </div>
+      <div class="card">
+        <h2>QR Code</h2>
+        <p class="desc">Alto contraste, margem adequada, pronto para impressão.</p>
+        <div class="linha-botoes">
+          <button class="botao" id="btn-gerar-qr">Gerar QR Code</button>
+          <button class="botao botao-secundario escondido" id="btn-baixar-qr-png">Baixar PNG</button>
+          <button class="botao botao-secundario escondido" id="btn-baixar-qr-svg">Baixar SVG</button>
+        </div>
+        <div id="qr-wrap">
+          <canvas id="qr-canvas-tela" width="260" height="260"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- ESTATÍSTICAS -->
+    <section class="aba" id="aba-estatisticas">
+      <div class="card">
+        <h2>Acessos e cliques</h2>
+        <p class="desc">Últimos 30 dias, sem coleta de dados pessoais.</p>
+        <div class="stat-grid">
+          <div class="stat-box"><div class="num" id="stat-views">–</div><div class="lbl">Visualizações</div></div>
+          <div class="stat-box"><div class="num" id="stat-clicks">–</div><div class="lbl">Cliques totais</div></div>
+        </div>
+        <div id="stat-botoes"></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var SUPABASE_URL = "https://bhxnhiggogosootbtwpb.supabase.co";
+  var ANON_KEY = "sb_publishable_Zsg8lPJjUHK5-okGOuYc9g_VbKilzQG";
+  var PUBLIC_SITE_URL = "https://leticiaborgesssadv.github.io/serra-dourada-cardapio/";
+  var MENU_BUCKET = "cardapio-arquivos";
+  var ASSETS_BUCKET = "pagina-assets";
+  var MAX_MENU_BYTES = 15 * 1024 * 1024;
+  var MAX_IMG_BYTES = 8 * 1024 * 1024;
+  var TIPOS_MENU = ["application/pdf", "image/jpeg", "image/png", "image/webp"];
+  var TIPOS_IMG = ["image/jpeg", "image/png", "image/webp"];
+  var DIAS = ["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"];
+  var DIAS_LONGO = ["Domingo","Segunda-feira","Terça-feira","Quarta-feira","Quinta-feira","Sexta-feira","Sábado"];
+
+  var sb = window.supabase.createClient(SUPABASE_URL, ANON_KEY);
+  var estabelecimentoId = null;
+  var diasHHSelecionados = {};
+
+  function setMsg(el, texto, tipo) { el.textContent = texto || ""; el.className = "msg" + (tipo ? " " + tipo : ""); }
+  function formatarBytes(b) { if (b < 1024) return b + " B"; if (b < 1024*1024) return (b/1024).toFixed(0)+" KB"; return (b/(1024*1024)).toFixed(1)+" MB"; }
+  function formatarData(iso) { try { return new Date(iso).toLocaleString("pt-BR"); } catch(e) { return iso; } }
+  function escapeHtml(v) { return String(v==null?"":v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;"); }
+
+  document.getElementById("link-publico").value = PUBLIC_SITE_URL;
+
+  // ---------- LOGIN ----------
+  var telaLogin = document.getElementById("tela-login");
+  var telaAdmin = document.getElementById("tela-admin");
+  document.getElementById("form-login").addEventListener("submit", function (ev) {
+    ev.preventDefault();
+    entrar(document.getElementById("email").value.trim(), document.getElementById("senha").value);
+  });
+  async function entrar(email, senha) {
+    var msg = document.getElementById("msg-login"), btn = document.getElementById("btn-login"), spin = document.getElementById("spin-login");
+    setMsg(msg, "", ""); btn.disabled = true; spin.classList.remove("escondido");
+    try {
+      var r = await sb.auth.signInWithPassword({ email: email, password: senha });
+      if (r.error) { setMsg(msg, "Não foi possível entrar: verifique e-mail e senha.", "erro"); return; }
+      await mostrarAdmin();
+    } catch (e) { setMsg(msg, "Erro de conexão. Tente novamente.", "erro"); }
+    finally { btn.disabled = false; spin.classList.add("escondido"); }
+  }
+  document.getElementById("sair").addEventListener("click", async function () { await sb.auth.signOut(); location.reload(); });
+
+  async function mostrarAdmin() {
+    telaLogin.classList.add("escondido");
+    telaAdmin.classList.remove("escondido");
+    var est = await sb.from("estabelecimento").select("id").limit(1).single();
+    if (!est.data) return;
+    estabelecimentoId = est.data.id;
+    await Promise.all([
+      carregarArquivoAtual(), carregarAlmoco(), carregarHappyHour(), carregarPromocoes(),
+      carregarEventos(), carregarHorario(), carregarContato(), carregarBotoes(), carregarEstatisticas(),
+    ]);
+  }
+
+  // ---------- TABS ----------
+  document.getElementById("tabs").addEventListener("click", function (ev) {
+    var btn = ev.target.closest("button[data-aba]");
+    if (!btn) return;
+    document.querySelectorAll("nav.tabs button").forEach(function (b) { b.classList.remove("ativa"); });
+    document.querySelectorAll("section.aba").forEach(function (s) { s.classList.remove("ativa"); });
+    btn.classList.add("ativa");
+    document.getElementById("aba-" + btn.dataset.aba).classList.add("ativa");
+  });
+
+  // ---------- CARDÁPIO ----------
+  async function carregarArquivoAtual() {
+    var r = await sb.from("cardapio_arquivo").select("nome_original,tamanho_bytes,criado_em").eq("ativo", true).order("criado_em", { ascending: false }).limit(1).maybeSingle();
+    var wrap = document.getElementById("arquivo-atual-wrap"), vazio = document.getElementById("sem-arquivo");
+    if (r.data) {
+      document.getElementById("arquivo-nome").textContent = r.data.nome_original;
+      document.getElementById("arquivo-meta").textContent = formatarBytes(r.data.tamanho_bytes) + " · enviado em " + formatarData(r.data.criado_em);
+      wrap.classList.remove("escondido"); vazio.classList.add("escondido");
+    } else { wrap.classList.add("escondido"); vazio.classList.remove("escondido"); }
+  }
+  function extensaoDoArquivo(file, mapa) {
+    if (mapa[file.type]) return mapa[file.type];
+    var partes = file.name.split(".");
+    return partes.length > 1 ? partes.pop().toLowerCase() : "bin";
+  }
+  document.getElementById("btn-upload").addEventListener("click", async function () {
+    var msg = document.getElementById("msg-upload"), btn = this, spin = document.getElementById("spin-upload");
+    var file = document.getElementById("arquivo-input").files[0];
+    setMsg(msg, "", "");
+    if (!file) return setMsg(msg, "Selecione um arquivo antes de enviar.", "erro");
+    if (TIPOS_MENU.indexOf(file.type) === -1) return setMsg(msg, "Formato não permitido. Envie PDF, JPG, PNG ou WEBP.", "erro");
+    if (file.size > MAX_MENU_BYTES) return setMsg(msg, "Arquivo muito grande (" + formatarBytes(file.size) + "). Limite: 15 MB.", "erro");
+    btn.disabled = true; spin.classList.remove("escondido");
+    try {
+      var ext = extensaoDoArquivo(file, { "application/pdf":"pdf","image/jpeg":"jpg","image/png":"png","image/webp":"webp" });
+      var caminho = estabelecimentoId + "/cardapio-" + Date.now() + "." + ext;
+      var up = await sb.storage.from(MENU_BUCKET).upload(caminho, file, { contentType: file.type, upsert: false });
+      if (up.error) return setMsg(msg, "Falha ao enviar: " + up.error.message, "erro");
+      var rpc = await sb.rpc("substituir_cardapio_arquivo", { p_estabelecimento_id: estabelecimentoId, p_nome_original: file.name, p_storage_path: caminho, p_mime_type: file.type, p_tamanho_bytes: file.size });
+      if (rpc.error) return setMsg(msg, "Enviado, mas houve erro ao publicar: " + rpc.error.message, "erro");
+      setMsg(msg, "Cardápio atualizado com sucesso!", "sucesso");
+      document.getElementById("arquivo-input").value = "";
+      await carregarArquivoAtual();
+    } catch (e) { setMsg(msg, "Erro inesperado. Tente novamente.", "erro"); }
+    finally { btn.disabled = false; spin.classList.add("escondido"); }
+  });
+
+  // ---------- ALMOÇO ----------
+  async function carregarAlmoco() {
+    var r = await sb.from("almoco_dia").select("descricao").eq("ativo", true).limit(1).maybeSingle();
+    document.getElementById("almoco-descricao").value = r.data ? r.data.descricao : "";
+  }
+  document.getElementById("btn-publicar-almoco").addEventListener("click", async function () {
+    var msg = document.getElementById("msg-almoco"), btn = this, spin = document.getElementById("spin-almoco");
+    var texto = document.getElementById("almoco-descricao").value.trim();
+    if (!texto) return setMsg(msg, "Escreva a descrição do almoço.", "erro");
+    btn.disabled = true; spin.classList.remove("escondido");
+    var r = await sb.rpc("publicar_almoco_dia", { p_estabelecimento_id: estabelecimentoId, p_descricao: texto, p_imagem_url: null });
+    btn.disabled = false; spin.classList.add("escondido");
+    if (r.error) return setMsg(msg, "Erro ao publicar: " + r.error.message, "erro");
+    setMsg(msg, "Almoço do dia publicado!", "sucesso");
+  });
+
+  // ---------- HAPPY HOUR ----------
+  function montarDiasHH() {
+    var el = document.getElementById("hh-dias");
+    el.innerHTML = "";
+    DIAS.forEach(function (nome, i) {
+      var chip = document.createElement("div");
+      chip.className = "dia-chip"; chip.textContent = nome; chip.dataset.dia = i;
+      chip.addEventListener("click", function () {
+        diasHHSelecionados[i] = !diasHHSelecionados[i];
+        chip.classList.toggle("marcado", !!diasHHSelecionados[i]);
+      });
+      el.appendChild(chip);
+    });
+  }
+  async function carregarHappyHour() {
+    montarDiasHH();
+    var r = await sb.from("happy_hour").select("*").maybeSingle();
+    if (!r.data) return;
+    document.getElementById("hh-ativo").checked = !!r.data.ativo;
+    document.getElementById("hh-descricao").value = r.data.descricao || "";
+    document.getElementById("hh-inicio").value = (r.data.horario_inicio || "").slice(0,5);
+    document.getElementById("hh-fim").value = (r.data.horario_fim || "").slice(0,5);
+    diasHHSelecionados = {};
+    (r.data.dias_semana || []).forEach(function (d) { diasHHSelecionados[d] = true; });
+    document.querySelectorAll("#hh-dias .dia-chip").forEach(function (chip) {
+      chip.classList.toggle("marcado", !!diasHHSelecionados[chip.dataset.dia]);
+    });
+  }
+  document.getElementById("btn-salvar-hh").addEventListener("click", async function () {
+    var msg = document.getElementById("msg-hh"), btn = this, spin = document.getElementById("spin-hh");
+    btn.disabled = true; spin.classList.remove("escondido");
+    var dias = Object.keys(diasHHSelecionados).filter(function (k) { return diasHHSelecionados[k]; }).map(Number);
+    var r = await sb.from("happy_hour").update({
+      ativo: document.getElementById("hh-ativo").checked,
+      descricao: document.getElementById("hh-descricao").value.trim(),
+      dias_semana: dias,
+      horario_inicio: document.getElementById("hh-inicio").value || null,
+      horario_fim: document.getElementById("hh-fim").value || null,
+      atualizado_em: new Date().toISOString(),
+    }).eq("estabelecimento_id", estabelecimentoId);
+    btn.disabled = false; spin.classList.add("escondido");
+    if (r.error) return setMsg(msg, "Erro ao salvar: " + r.error.message, "erro");
+    setMsg(msg, "Happy Hour salvo!", "sucesso");
+  });
+
+  // ---------- PROMOÇÕES ----------
+  async function carregarPromocoes() {
+    var lista = document.getElementById("lista-promocoes");
+    var r = await sb.from("promocao").select("*").order("ordem", { ascending: true }).order("criado_em", { ascending: false });
+    if (!r.data || !r.data.length) { lista.innerHTML = '<p class="msg">Nenhuma promoção cadastrada.</p>'; return; }
+    lista.innerHTML = "";
+    r.data.forEach(function (p) {
+      var div = document.createElement("div");
+      div.className = "item-lista";
+      var periodo = [p.valido_de, p.valido_ate].filter(Boolean).join(" até ");
+      div.innerHTML =
+        '<div class="item-lista-topo"><div><h3>' + escapeHtml(p.titulo) + '</h3>' +
+        '<div class="meta">' + escapeHtml(periodo || "sem período definido") + '</div></div>' +
+        '<div class="acoes-item">' +
+        '<button class="botao botao-secundario botao-pequeno" data-acao="toggle">' + (p.ativo ? "Ativa" : "Inativa") + '</button>' +
+        '<button class="botao botao-perigo botao-pequeno" data-acao="remover">Excluir</button>' +
+        '</div></div>' +
+        (p.descricao ? '<p class="meta">' + escapeHtml(p.descricao) + '</p>' : '');
+      div.querySelector('[data-acao="toggle"]').addEventListener("click", async function () {
+        await sb.from("promocao").update({ ativo: !p.ativo }).eq("id", p.id);
+        carregarPromocoes();
+      });
+      div.querySelector('[data-acao="remover"]').addEventListener("click", async function () {
+        await sb.from("promocao").delete().eq("id", p.id);
+        carregarPromocoes();
+      });
+      lista.appendChild(div);
+    });
+  }
+  document.getElementById("btn-add-promo").addEventListener("click", async function () {
+    var msg = document.getElementById("msg-promo");
+    var titulo = document.getElementById("promo-titulo").value.trim();
+    if (!titulo) return setMsg(msg, "Informe o título da promoção.", "erro");
+    var r = await sb.from("promocao").insert({
+      estabelecimento_id: estabelecimentoId,
+      titulo: titulo,
+      descricao: document.getElementById("promo-descricao").value.trim() || null,
+      valido_de: document.getElementById("promo-de").value || null,
+      valido_ate: document.getElementById("promo-ate").value || null,
+    });
+    if (r.error) return setMsg(msg, "Erro ao adicionar: " + r.error.message, "erro");
+    setMsg(msg, "Promoção adicionada!", "sucesso");
+    ["promo-titulo","promo-descricao","promo-de","promo-ate"].forEach(function (id) { document.getElementById(id).value = ""; });
+    carregarPromocoes();
+  });
+
+  // ---------- EVENTOS ----------
+  async function carregarEventos() {
+    var lista = document.getElementById("lista-eventos");
+    var r = await sb.from("evento").select("*").order("data_hora", { ascending: true });
+    if (!r.data || !r.data.length) { lista.innerHTML = '<p class="msg">Nenhum evento cadastrado.</p>'; return; }
+    lista.innerHTML = "";
+    r.data.forEach(function (ev) {
+      var div = document.createElement("div");
+      div.className = "item-lista";
+      div.innerHTML =
+        '<div class="item-lista-topo"><div><h3>' + escapeHtml(ev.titulo) + '</h3>' +
+        '<div class="meta">' + escapeHtml(formatarData(ev.data_hora)) + '</div></div>' +
+        '<div class="acoes-item">' +
+        '<button class="botao botao-secundario botao-pequeno" data-acao="toggle">' + (ev.ativo ? "Ativo" : "Inativo") + '</button>' +
+        '<button class="botao botao-perigo botao-pequeno" data-acao="remover">Excluir</button>' +
+        '</div></div>' +
+        (ev.descricao ? '<p class="meta">' + escapeHtml(ev.descricao) + '</p>' : '');
+      div.querySelector('[data-acao="toggle"]').addEventListener("click", async function () {
+        await sb.from("evento").update({ ativo: !ev.ativo }).eq("id", ev.id);
+        carregarEventos();
+      });
+      div.querySelector('[data-acao="remover"]').addEventListener("click", async function () {
+        await sb.from("evento").delete().eq("id", ev.id);
+        carregarEventos();
+      });
+      lista.appendChild(div);
+    });
+  }
+  document.getElementById("btn-add-evento").addEventListener("click", async function () {
+    var msg = document.getElementById("msg-evento");
+    var titulo = document.getElementById("evento-titulo").value.trim();
+    var dataHora = document.getElementById("evento-data").value;
+    if (!titulo) return setMsg(msg, "Informe o título do evento.", "erro");
+    if (!dataHora) return setMsg(msg, "Informe a data e hora do evento.", "erro");
+    var r = await sb.from("evento").insert({
+      estabelecimento_id: estabelecimentoId,
+      titulo: titulo,
+      descricao: document.getElementById("evento-descricao").value.trim() || null,
+      data_hora: new Date(dataHora).toISOString(),
+    });
+    if (r.error) return setMsg(msg, "Erro ao adicionar: " + r.error.message, "erro");
+    setMsg(msg, "Evento adicionado!", "sucesso");
+    ["evento-titulo","evento-descricao","evento-data"].forEach(function (id) { document.getElementById(id).value = ""; });
+    carregarEventos();
+  });
+
+  // ---------- HORÁRIO ----------
+  var horarioAtual = {};
+  async function carregarHorario() {
+    var r = await sb.from("pagina_config").select("horario_funcionamento").eq("estabelecimento_id", estabelecimentoId).maybeSingle();
+    horarioAtual = (r.data && r.data.horario_funcionamento) || {};
+    var el = document.getElementById("horario-dias");
+    el.innerHTML = "";
+    DIAS_LONGO.forEach(function (nome, i) {
+      var v = horarioAtual[String(i)] || {};
+      var linha = document.createElement("div");
+      linha.style.marginBottom = "10px";
+      linha.innerHTML =
+        '<div class="toggle-linha"><label style="margin:0">' + nome + '</label>' +
+        '<input type="checkbox" data-dia="' + i + '" class="chk-aberto" ' + (v.abre ? "checked" : "") + ' /></div>' +
+        '<div style="display:flex;gap:8px">' +
+        '<input type="time" data-dia="' + i + '" class="hr-abre" value="' + (v.abre || "") + '" />' +
+        '<input type="time" data-dia="' + i + '" class="hr-fecha" value="' + (v.fecha || "") + '" />' +
+        '</div>';
+      el.appendChild(linha);
+    });
+  }
+  document.getElementById("btn-salvar-horario").addEventListener("click", async function () {
+    var msg = document.getElementById("msg-horario"), btn = this, spin = document.getElementById("spin-horario");
+    var novo = {};
+    document.querySelectorAll(".chk-aberto").forEach(function (chk) {
+      var dia = chk.dataset.dia;
+      if (chk.checked) {
+        var abre = document.querySelector('.hr-abre[data-dia="' + dia + '"]').value;
+        var fecha = document.querySelector('.hr-fecha[data-dia="' + dia + '"]').value;
+        if (abre && fecha) novo[dia] = { abre: abre, fecha: fecha };
+      }
+    });
+    btn.disabled = true; spin.classList.remove("escondido");
+    var r = await sb.from("pagina_config").update({ horario_funcionamento: novo, atualizado_em: new Date().toISOString() }).eq("estabelecimento_id", estabelecimentoId);
+    btn.disabled = false; spin.classList.add("escondido");
+    if (r.error) return setMsg(msg, "Erro ao salvar: " + r.error.message, "erro");
+    setMsg(msg, "Horário salvo!", "sucesso");
+  });
+
+  // ---------- CONTATO ----------
+  async function carregarContato() {
+    var r = await sb.from("pagina_config").select("*").eq("estabelecimento_id", estabelecimentoId).maybeSingle();
+    if (!r.data) return;
+    document.getElementById("cfg-mensagem").value = r.data.mensagem_boas_vindas || "";
+    document.getElementById("cfg-whatsapp").value = r.data.whatsapp || "";
+    document.getElementById("cfg-instagram").value = r.data.instagram_url || "";
+    document.getElementById("cfg-maps").value = r.data.google_maps_url || "";
+    document.getElementById("cfg-avaliacao").value = r.data.avaliacao_url || "";
+    if (r.data.imagem_hero_url) {
+      var img = document.getElementById("preview-hero");
+      img.src = r.data.imagem_hero_url; img.classList.remove("escondido");
+    }
+  }
+  document.getElementById("btn-salvar-contato").addEventListener("click", async function () {
+    var msg = document.getElementById("msg-contato"), btn = this, spin = document.getElementById("spin-contato");
+    btn.disabled = true; spin.classList.remove("escondido");
+    var r = await sb.from("pagina_config").update({
+      mensagem_boas_vindas: document.getElementById("cfg-mensagem").value.trim(),
+      whatsapp: document.getElementById("cfg-whatsapp").value.replace(/\D/g,"") || null,
+      instagram_url: document.getElementById("cfg-instagram").value.trim() || null,
+      google_maps_url: document.getElementById("cfg-maps").value.trim() || null,
+      avaliacao_url: document.getElementById("cfg-avaliacao").value.trim() || null,
+      atualizado_em: new Date().toISOString(),
+    }).eq("estabelecimento_id", estabelecimentoId);
+    btn.disabled = false; spin.classList.add("escondido");
+    if (r.error) return setMsg(msg, "Erro ao salvar: " + r.error.message, "erro");
+    setMsg(msg, "Contato salvo!", "sucesso");
+  });
+
+  // ---------- IMAGENS ----------
+  document.getElementById("btn-upload-hero").addEventListener("click", async function () {
+    var msg = document.getElementById("msg-hero"), btn = this, spin = document.getElementById("spin-hero");
+    var file = document.getElementById("hero-input").files[0];
+    if (!file) return setMsg(msg, "Selecione uma imagem.", "erro");
+    if (TIPOS_IMG.indexOf(file.type) === -1) return setMsg(msg, "Formato não permitido. Envie JPG, PNG ou WEBP.", "erro");
+    if (file.size > MAX_IMG_BYTES) return setMsg(msg, "Imagem muito grande (" + formatarBytes(file.size) + "). Limite: 8 MB.", "erro");
+    btn.disabled = true; spin.classList.remove("escondido");
+    try {
+      var ext = extensaoDoArquivo(file, { "image/jpeg":"jpg","image/png":"png","image/webp":"webp" });
+      var caminho = estabelecimentoId + "/hero-" + Date.now() + "." + ext;
+      var up = await sb.storage.from(ASSETS_BUCKET).upload(caminho, file, { contentType: file.type, upsert: false });
+      if (up.error) return setMsg(msg, "Falha ao enviar: " + up.error.message, "erro");
+      var url = sb.storage.from(ASSETS_BUCKET).getPublicUrl(caminho).data.publicUrl;
+      var r = await sb.from("pagina_config").update({ imagem_hero_url: url, atualizado_em: new Date().toISOString() }).eq("estabelecimento_id", estabelecimentoId);
+      if (r.error) return setMsg(msg, "Enviado, mas houve erro ao salvar: " + r.error.message, "erro");
+      setMsg(msg, "Imagem atualizada!", "sucesso");
+      var img = document.getElementById("preview-hero");
+      img.src = url; img.classList.remove("escondido");
+    } catch (e) { setMsg(msg, "Erro inesperado. Tente novamente.", "erro"); }
+    finally { btn.disabled = false; spin.classList.add("escondido"); }
+  });
+
+  // ---------- BOTÕES ----------
+  async function carregarBotoes() {
+    var lista = document.getElementById("lista-botoes");
+    var r = await sb.from("botao_pagina").select("*").order("ordem", { ascending: true });
+    if (!r.data) { lista.innerHTML = '<p class="msg">Não foi possível carregar.</p>'; return; }
+    lista.innerHTML = "";
+    r.data.forEach(function (b, i) {
+      var div = document.createElement("div");
+      div.className = "item-lista";
+      div.innerHTML =
+        '<div class="item-lista-topo"><h3>' + escapeHtml(b.label) + ' <span class="meta">(' + b.tipo + ')</span></h3>' +
+        '<div class="acoes-item">' +
+        '<button class="botao botao-pequeno botao-secundario" data-acao="cima">↑</button>' +
+        '<button class="botao botao-pequeno botao-secundario" data-acao="baixo">↓</button>' +
+        '<button class="botao botao-pequeno ' + (b.ativo ? "" : "botao-secundario") + '" data-acao="toggle">' + (b.ativo ? "Ativo" : "Inativo") + '</button>' +
+        '</div></div>' +
+        '<label style="margin-top:8px">Rótulo do botão</label>' +
+        '<input type="text" class="campo-label" value="' + escapeHtml(b.label) + '" />' +
+        '<label>URL personalizada (opcional)</label>' +
+        '<input type="text" class="campo-url" placeholder="deixe em branco para usar o link automático" value="' + escapeHtml(b.url || "") + '" />' +
+        '<button class="botao botao-pequeno" data-acao="salvar">Salvar</button>' +
+        '<span class="msg" data-acao="msg"></span>';
+      div.querySelector('[data-acao="toggle"]').addEventListener("click", async function () {
+        await sb.from("botao_pagina").update({ ativo: !b.ativo }).eq("id", b.id);
+        carregarBotoes();
+      });
+      div.querySelector('[data-acao="cima"]').addEventListener("click", async function () {
+        if (i === 0) return;
+        var anterior = r.data[i - 1];
+        await sb.from("botao_pagina").update({ ordem: anterior.ordem }).eq("id", b.id);
+        await sb.from("botao_pagina").update({ ordem: b.ordem }).eq("id", anterior.id);
+        carregarBotoes();
+      });
+      div.querySelector('[data-acao="baixo"]').addEventListener("click", async function () {
+        if (i === r.data.length - 1) return;
+        var proximo = r.data[i + 1];
+        await sb.from("botao_pagina").update({ ordem: proximo.ordem }).eq("id", b.id);
+        await sb.from("botao_pagina").update({ ordem: b.ordem }).eq("id", proximo.id);
+        carregarBotoes();
+      });
+      div.querySelector('[data-acao="salvar"]').addEventListener("click", async function () {
+        var msgEl = div.querySelector('[data-acao="msg"]');
+        var novoLabel = div.querySelector(".campo-label").value.trim();
+        var novaUrl = div.querySelector(".campo-url").value.trim();
+        var r2 = await sb.from("botao_pagina").update({ label: novoLabel || b.label, url: novaUrl || null }).eq("id", b.id);
+        setMsg(msgEl, r2.error ? "Erro ao salvar." : "Salvo!", r2.error ? "erro" : "sucesso");
+      });
+      lista.appendChild(div);
+    });
+  }
+
+  // ---------- QR CODE ----------
+  document.getElementById("btn-copiar").addEventListener("click", async function () {
+    var msg = document.getElementById("msg-copiar");
+    try { await navigator.clipboard.writeText(PUBLIC_SITE_URL); setMsg(msg, "Link copiado!", "sucesso"); }
+    catch (e) {
+      var campo = document.getElementById("link-publico");
+      campo.removeAttribute("readonly"); campo.select(); document.execCommand("copy"); campo.setAttribute("readonly", "true");
+      setMsg(msg, "Link copiado!", "sucesso");
+    }
+    setTimeout(function () { setMsg(msg, "", ""); }, 2500);
+  });
+
+  var qrPngUrl = null, qrSvgUrl = null;
+  document.getElementById("btn-gerar-qr").addEventListener("click", async function () {
+    var wrap = document.getElementById("qr-wrap");
+    await window.QRCode.toCanvas(document.getElementById("qr-canvas-tela"), PUBLIC_SITE_URL, { width: 320, margin: 3, errorCorrectionLevel: "H", color: { dark: "#000000", light: "#ffffff" } });
+
+    var canvasAlta = document.createElement("canvas");
+    await window.QRCode.toCanvas(canvasAlta, PUBLIC_SITE_URL, { width: 1024, margin: 4, errorCorrectionLevel: "H", color: { dark: "#000000", light: "#ffffff" } });
+    qrPngUrl = canvasAlta.toDataURL("image/png");
+
+    var svgString = await window.QRCode.toString(PUBLIC_SITE_URL, { type: "svg", margin: 4, errorCorrectionLevel: "H", color: { dark: "#000000", light: "#ffffff" } });
+    qrSvgUrl = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svgString);
+
+    wrap.style.display = "flex";
+    document.getElementById("btn-baixar-qr-png").classList.remove("escondido");
+    document.getElementById("btn-baixar-qr-svg").classList.remove("escondido");
+  });
+  function baixar(url, nome) {
+    var a = document.createElement("a"); a.href = url; a.download = nome;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  }
+  document.getElementById("btn-baixar-qr-png").addEventListener("click", function () { if (qrPngUrl) baixar(qrPngUrl, "qrcode-serra-dourada.png"); });
+  document.getElementById("btn-baixar-qr-svg").addEventListener("click", function () { if (qrSvgUrl) baixar(qrSvgUrl, "qrcode-serra-dourada.svg"); });
+
+  // ---------- ESTATÍSTICAS ----------
+  async function carregarEstatisticas() {
+    var desde = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    var [viewsRes, clicksRes] = await Promise.all([
+      sb.from("pagina_acesso_log").select("id", { count: "exact", head: true }).eq("tipo", "pageview").gte("criado_em", desde),
+      sb.from("pagina_acesso_log").select("botao_tipo").eq("tipo", "click").gte("criado_em", desde),
+    ]);
+    document.getElementById("stat-views").textContent = viewsRes.count != null ? viewsRes.count : "0";
+    var cliques = clicksRes.data || [];
+    document.getElementById("stat-clicks").textContent = cliques.length;
+    var contagem = {};
+    cliques.forEach(function (c) { contagem[c.botao_tipo] = (contagem[c.botao_tipo] || 0) + 1; });
+    var maxima = Math.max.apply(null, Object.values(contagem).concat([1]));
+    var el = document.getElementById("stat-botoes");
+    el.innerHTML = "";
+    Object.keys(contagem).sort(function (a, b) { return contagem[b] - contagem[a]; }).forEach(function (tipo) {
+      var pct = Math.round((contagem[tipo] / maxima) * 100);
+      var linha = document.createElement("div");
+      linha.className = "barra-linha";
+      linha.innerHTML = '<span class="rotulo">' + escapeHtml(tipo) + '</span><div class="barra"><div class="barra-preenchida" style="width:' + pct + '%"></div></div><span class="valor">' + contagem[tipo] + '</span>';
+      el.appendChild(linha);
+    });
+  }
+
+  // ---------- Sessão já ativa ----------
+  sb.auth.getSession().then(function (r) { if (r.data && r.data.session) mostrarAdmin(); });
+})();
+</script>
+</body>
+</html>
