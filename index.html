@@ -8,7 +8,7 @@
 <meta name="description" content="Cardápio, promoções, happy hour, eventos e contato do Serra Dourada Bar e Restaurante." />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playball&family=Manrope:wght@500;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playball&family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Manrope:wght@500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" defer></script>
 <style>
   :root {
@@ -55,7 +55,8 @@
     border-radius: 18px;
     overflow: hidden;
     position: relative;
-    aspect-ratio: 16 / 10;
+    aspect-ratio: 2 / 3;
+    max-height: 68vh;
     background: radial-gradient(circle at 30% 20%, #4a3010, #1c1108 70%);
     display: flex;
     align-items: flex-end;
@@ -73,18 +74,55 @@
   .hero-legenda {
     position: relative;
     z-index: 1;
-    padding: 14px 18px;
-    background: linear-gradient(0deg, rgba(0,0,0,0.55), transparent);
+    padding: 22px 20px;
+    background: linear-gradient(0deg, rgba(0,0,0,0.7), rgba(0,0,0,0.15) 65%, transparent);
     width: 100%;
-    font-size: 0.95rem;
-    color: #fff;
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-weight: 500;
+    font-size: 1.15rem;
+    line-height: 1.4;
+    color: #fdf6e8;
   }
   .boas-vindas {
     text-align: center;
     padding: 18px 24px 4px;
-    font-size: 0.98rem;
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-weight: 500;
+    font-size: 1.05rem;
     color: var(--texto-suave);
     line-height: 1.5;
+  }
+  .destaques {
+    padding: 20px 0 4px;
+  }
+  .destaques h2 {
+    margin: 0 0 12px;
+    padding: 0 16px;
+    font-family: 'Playfair Display', serif;
+    font-weight: 600;
+    font-size: 1.15rem;
+    letter-spacing: 0.01em;
+    color: var(--dourado-claro);
+    text-align: center;
+  }
+  .destaques-scroll {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding: 0 16px 6px;
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
+  }
+  .destaques-scroll img {
+    flex: 0 0 auto;
+    width: 148px;
+    aspect-ratio: 2 / 3;
+    object-fit: cover;
+    border-radius: 12px;
+    scroll-snap-align: start;
+    background: var(--marrom-card);
   }
   .botoes {
     display: grid;
@@ -101,26 +139,44 @@
     width: 100%;
     text-align: left;
     padding: 15px 18px;
-    border-radius: 14px;
+    border-radius: 10px;
     background: var(--marrom-card);
     border: 1px solid var(--borda);
     color: var(--texto);
     font-family: inherit;
-    font-size: 1rem;
-    font-weight: 700;
+    font-size: 0.96rem;
+    font-weight: 600;
+    letter-spacing: 0.015em;
     text-decoration: none;
     cursor: pointer;
     min-height: 56px;
-    transition: transform 0.08s ease, border-color 0.15s ease;
+    transition: transform 0.08s ease, border-color 0.15s ease, background 0.15s ease;
   }
   .botao:active { transform: scale(0.98); }
   .botao.destaque {
-    background: linear-gradient(135deg, var(--dourado), #a97f1b);
+    background: var(--dourado);
     color: #241608;
     border-color: transparent;
+    font-weight: 700;
   }
-  .botao .icone { font-size: 1.35rem; flex-shrink: 0; width: 28px; text-align: center; }
-  .botao .seta { margin-left: auto; opacity: 0.55; font-size: 1.1rem; }
+  .botao .icone {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--dourado-claro);
+  }
+  .botao.destaque .icone { color: #241608; }
+  .botao .icone svg { width: 100%; height: 100%; }
+  .botao .seta {
+    margin-left: auto;
+    flex-shrink: 0;
+    width: 15px;
+    height: 15px;
+    opacity: 0.5;
+  }
   .carregando-botoes {
     text-align: center;
     color: var(--texto-suave);
@@ -161,22 +217,52 @@
     align-items: center;
     margin-bottom: 14px;
   }
-  .modal-topo h2 { margin: 0; font-size: 1.15rem; color: var(--dourado-claro); }
+  .modal-topo h2 {
+    margin: 0;
+    font-family: 'Playfair Display', serif;
+    font-weight: 600;
+    font-size: 1.2rem;
+    color: var(--dourado-claro);
+  }
   .modal-fechar {
     background: var(--marrom-card);
     border: 1px solid var(--borda);
     color: var(--texto);
     width: 34px; height: 34px;
     border-radius: 50%;
-    font-size: 1.1rem;
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    flex-shrink: 0;
   }
+  .modal-fechar svg { width: 16px; height: 16px; }
   .modal-item {
     background: var(--marrom-card);
     border: 1px solid var(--borda);
     border-radius: 12px;
     padding: 14px;
     margin-bottom: 10px;
+  }
+  .modal-foto {
+    width: 100%;
+    max-height: 260px;
+    object-fit: cover;
+    border-radius: 12px;
+    margin-bottom: 10px;
+    display: block;
+  }
+  .modal-fotos {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .modal-fotos img {
+    flex: 1;
+    height: 140px;
+    object-fit: cover;
+    border-radius: 12px;
   }
   .modal-item h3 { margin: 0 0 4px; font-size: 0.95rem; color: var(--dourado-claro); }
   .modal-item p { margin: 0; font-size: 0.85rem; color: var(--texto-suave); line-height: 1.4; }
@@ -203,6 +289,17 @@
 
   <p class="boas-vindas" id="boas-vindas">Bem-vindo!</p>
 
+  <section class="destaques">
+    <h2>Destaques da casa</h2>
+    <div class="destaques-scroll">
+      <img src="img/destaque-1.jpg" alt="Prato grelhado com acompanhamentos" loading="lazy" />
+      <img src="img/destaque-2.jpg" alt="Filé à parmegiana" loading="lazy" />
+      <img src="img/destaque-3.jpg" alt="Lombo grelhado com abacaxi" loading="lazy" />
+      <img src="img/destaque-4.jpg" alt="Ceviche com manga" loading="lazy" />
+      <img src="img/destaque-5.jpg" alt="Pernil na chapa com acompanhamentos" loading="lazy" />
+    </div>
+  </section>
+
   <nav class="botoes" id="botoes">
     <div class="carregando-botoes">Carregando…</div>
   </nav>
@@ -213,7 +310,7 @@
     <div class="modal">
       <div class="modal-topo">
         <h2 id="modal-titulo">—</h2>
-        <button class="modal-fechar" id="modal-fechar" aria-label="Fechar">✕</button>
+        <button class="modal-fechar" id="modal-fechar" aria-label="Fechar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
       </div>
       <div id="modal-corpo"></div>
     </div>
@@ -279,7 +376,10 @@ window.addEventListener("DOMContentLoaded", function () {
       abrirModal("Almoço de hoje", '<p class="modal-vazio">O almoço de hoje ainda não foi publicado.</p>');
       return;
     }
-    abrirModal("Almoço de hoje", '<div class="modal-item"><p>' + escapeHtml(r.data.descricao).replace(/\n/g, "<br>") + "</p></div>");
+    var imagemHtml = r.data.imagem_url
+      ? '<img class="modal-foto" src="' + escapeHtml(r.data.imagem_url) + '" alt="Almoço de hoje" />'
+      : "";
+    abrirModal("Almoço de hoje", imagemHtml + '<div class="modal-item"><p>' + escapeHtml(r.data.descricao).replace(/\n/g, "<br>") + "</p></div>");
   }
 
   async function mostrarHappyHour() {
@@ -293,6 +393,9 @@ window.addEventListener("DOMContentLoaded", function () {
     if (hhRes.data && hhRes.data.ativo) {
       var dias = (hhRes.data.dias_semana || []).map(function (d) { return DIAS[d]; }).join(", ");
       var periodo = formatarHora(hhRes.data.horario_inicio) + " às " + formatarHora(hhRes.data.horario_fim);
+      blocos.push(
+        '<div class="modal-fotos"><img src="img/happyhour-1.jpg" alt="Drinks do Happy Hour" /><img src="img/happyhour-3.jpg" alt="Petisco do Happy Hour" /></div>'
+      );
       blocos.push(
         '<div class="modal-item"><h3>Happy Hour · ' + escapeHtml(dias || "Todos os dias") + '</h3><p>' + escapeHtml(periodo) + '</p>' +
         (hhRes.data.descricao ? '<p>' + escapeHtml(hhRes.data.descricao).replace(/\n/g, "<br>") + '</p>' : '') +
@@ -340,11 +443,20 @@ window.addEventListener("DOMContentLoaded", function () {
     eventos: function () { registrar("click", "eventos"); mostrarEventos(); },
   };
 
+  var SW = 'fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"';
   var ICONES = {
-    cardapio: "📖", almoco: "🍽️", happy_hour: "🍻", reserva_whatsapp: "💬",
-    maps: "📍", horario: "🕒", eventos: "🎶", avaliar_google: "⭐",
-    instagram: "📷", trabalhe_conosco: "👋",
+    cardapio: '<svg viewBox="0 0 24 24" ' + SW + '><path d="M4 5.5C4 4.7 4.7 4 5.5 4H12v16H5.5A1.5 1.5 0 0 1 4 18.5z"/><path d="M20 5.5c0-.8-.7-1.5-1.5-1.5H12v16h6.5a1.5 1.5 0 0 0 1.5-1.5z"/></svg>',
+    almoco: '<svg viewBox="0 0 24 24" ' + SW + '><path d="M7 3v7a2 2 0 1 0 4 0V3M9 10v11M15 3c-1.5 1.5-2 3-2 5s1 3 2 3v10"/></svg>',
+    happy_hour: '<svg viewBox="0 0 24 24" ' + SW + '><path d="M6 3h6l-1 8a2 2 0 0 1-2 2 2 2 0 0 1-2-2z"/><path d="M9 13v8M6 21h6"/><path d="M15 8l1.5 1.5L20 6"/><circle cx="17" cy="15" r="4"/><path d="M17 19v2M15 21h4"/></svg>',
+    reserva_whatsapp: '<svg viewBox="0 0 24 24" ' + SW + '><path d="M4 20l1.3-3.9A8 8 0 1 1 8.9 19z"/><path d="M8.5 9.5c0 3.5 2.5 6 6 6"/></svg>',
+    maps: '<svg viewBox="0 0 24 24" ' + SW + '><path d="M12 21s7-6.6 7-11.5A7 7 0 0 0 5 9.5C5 14.4 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.2"/></svg>',
+    horario: '<svg viewBox="0 0 24 24" ' + SW + '><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>',
+    eventos: '<svg viewBox="0 0 24 24" ' + SW + '><path d="M9 18V5l10-2v13"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/></svg>',
+    avaliar_google: '<svg viewBox="0 0 24 24" ' + SW + '><path d="M12 3.5l2.7 5.6 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/></svg>',
+    instagram: '<svg viewBox="0 0 24 24" ' + SW + '><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="0.6" fill="currentColor" stroke="none"/></svg>',
+    trabalhe_conosco: '<svg viewBox="0 0 24 24" ' + SW + '><rect x="3" y="8" width="18" height="12" rx="2"/><path d="M8 8V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>',
   };
+  var SETA = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>';
 
   function urlPadrao(tipo) {
     if (tipo === "reserva_whatsapp") return linkWhatsapp("Olá! Gostaria de fazer uma reserva no Serra Dourada.");
@@ -380,9 +492,9 @@ window.addEventListener("DOMContentLoaded", function () {
       }
       el.className = "botao" + (i === 0 ? " destaque" : "");
       el.innerHTML =
-        '<span class="icone">' + (ICONES[b.tipo] || "•") + '</span>' +
+        '<span class="icone">' + (ICONES[b.tipo] || "") + '</span>' +
         '<span>' + escapeHtml(b.label) + '</span>' +
-        '<span class="seta">›</span>';
+        '<span class="seta">' + SETA + '</span>';
       nav.appendChild(el);
     });
   }
