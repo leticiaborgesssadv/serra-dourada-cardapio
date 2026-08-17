@@ -8,7 +8,7 @@
 <meta name="robots" content="noindex, nofollow" />
 <link rel="icon" type="image/png" sizes="32x32" href="../img/favicon-32.png" />
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 <style>
   :root {
     --dourado: #c9a227; --dourado-claro: #e8c766; --marrom: #241608;
@@ -57,7 +57,7 @@
   .link-publico input { flex: 1; background: transparent; border: none; color: var(--texto); font-size: 0.78rem; margin: 0; }
   .link-publico button { background: var(--dourado); border: none; color: #241608; font-weight: 700; padding: 8px 12px; border-radius: 7px; cursor: pointer; font-size: 0.76rem; flex-shrink: 0; }
   #qr-wrap { display: none; flex-direction: column; align-items: center; gap: 12px; margin-top: 6px; }
-  #qr-wrap canvas { background: #fff; border-radius: 10px; max-width: 100%; height: auto; }
+  #qr-wrap canvas, #qr-wrap img { background: #fff; border-radius: 10px; max-width: 100%; height: auto; }
   input[type=file] { width: 100%; color: var(--texto-suave); font-size: 0.83rem; margin-bottom: 12px; }
   .preview-img { max-width: 100%; border-radius: 10px; margin-bottom: 12px; display: block; border: 1px solid var(--borda); }
   #tela-login, #tela-recuperar { max-width: 380px; margin: 60px auto; padding: 0 16px; }
@@ -298,7 +298,7 @@
           <button class="botao botao-secundario escondido" id="btn-baixar-qr-svg">Baixar SVG</button>
         </div>
         <div id="qr-wrap">
-          <canvas id="qr-canvas-tela" width="260" height="260"></canvas>
+          <img id="qr-canvas-tela" width="260" height="260" alt="QR Code" />
         </div>
       </div>
     </section>
@@ -808,15 +808,19 @@
   });
 
   var qrPngUrl = null, qrSvgUrl = null;
-  document.getElementById("btn-gerar-qr").addEventListener("click", async function () {
+  document.getElementById("btn-gerar-qr").addEventListener("click", function () {
     var wrap = document.getElementById("qr-wrap");
-    await window.QRCode.toCanvas(document.getElementById("qr-canvas-tela"), PUBLIC_SITE_URL, { width: 320, margin: 3, errorCorrectionLevel: "H", color: { dark: "#000000", light: "#ffffff" } });
+    var qr = qrcode(0, "H");
+    qr.addData(PUBLIC_SITE_URL);
+    qr.make();
 
-    var canvasAlta = document.createElement("canvas");
-    await window.QRCode.toCanvas(canvasAlta, PUBLIC_SITE_URL, { width: 1024, margin: 4, errorCorrectionLevel: "H", color: { dark: "#000000", light: "#ffffff" } });
-    qrPngUrl = canvasAlta.toDataURL("image/png");
+    document.getElementById("qr-canvas-tela").src = qr.createDataURL(6, 3);
 
-    var svgString = await window.QRCode.toString(PUBLIC_SITE_URL, { type: "svg", margin: 4, errorCorrectionLevel: "H", color: { dark: "#000000", light: "#ffffff" } });
+    var moduleCount = qr.getModuleCount();
+    var cellAlta = Math.max(4, Math.round(1024 / (moduleCount + 8)));
+    qrPngUrl = qr.createDataURL(cellAlta, 4);
+
+    var svgString = qr.createSvgTag({ cellSize: 8, margin: 16 });
     qrSvgUrl = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svgString);
 
     wrap.style.display = "flex";
