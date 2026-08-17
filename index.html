@@ -609,8 +609,10 @@ window.addEventListener("DOMContentLoaded", function () {
 
   function mostrarComoChegar() {
     var endereco = config && config.endereco_embed;
-    var mapaHtml = endereco
-      ? '<iframe class="mapa-embed" src="https://www.google.com/maps?q=' + encodeURIComponent(endereco) + '&output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>'
+    var temCoord = config && config.mapa_lat != null && config.mapa_lng != null;
+    var consultaMapa = temCoord ? (config.mapa_lat + "," + config.mapa_lng) : endereco;
+    var mapaHtml = consultaMapa
+      ? '<iframe class="mapa-embed" src="https://www.google.com/maps?q=' + encodeURIComponent(consultaMapa) + (temCoord ? "&z=17" : "") + '&output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>'
       : "";
     var linkMaps = (config && config.google_maps_url) || null;
     var botaoHtml = linkMaps
