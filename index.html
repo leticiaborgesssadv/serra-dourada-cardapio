@@ -183,6 +183,60 @@
     padding: 20px;
     font-size: 0.9rem;
   }
+  .badge-ativo {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: 8px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    background: #3a8f52;
+    color: #eafff0;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    vertical-align: middle;
+  }
+  .badge-ativo::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #7cf7a3;
+    box-shadow: 0 0 4px #7cf7a3;
+  }
+  body { padding-bottom: 74px; }
+  .barra-fixa {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    z-index: 40;
+    display: flex;
+    gap: 10px;
+    padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px));
+    background: rgba(28, 17, 8, 0.97);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    border-top: 1px solid var(--borda);
+  }
+  .barra-fixa button {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 12px;
+    border-radius: 10px;
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 0.86rem;
+    border: none;
+    cursor: pointer;
+    min-height: 46px;
+  }
+  .barra-fixa .icone { width: 18px; height: 18px; flex-shrink: 0; }
+  .barra-fixa .icone svg { width: 100%; height: 100%; }
+  .barra-fixa .principal { background: var(--dourado); color: #241608; }
+  .barra-fixa .secundaria { background: var(--marrom-card); color: var(--texto); border: 1px solid var(--borda); }
   footer {
     text-align: center;
     padding: 10px 16px calc(24px + env(safe-area-inset-bottom, 0px));
@@ -333,6 +387,17 @@
 
   <footer>Serra Dourada Bar e Restaurante · Goiânia/GO</footer>
 
+  <div class="barra-fixa">
+    <button type="button" id="barra-cardapio" class="principal">
+      <span class="icone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5C4 4.7 4.7 4 5.5 4H12v16H5.5A1.5 1.5 0 0 1 4 18.5z"/><path d="M20 5.5c0-.8-.7-1.5-1.5-1.5H12v16h6.5a1.5 1.5 0 0 0 1.5-1.5z"/></svg></span>
+      Cardápio
+    </button>
+    <button type="button" id="barra-whatsapp" class="secundaria">
+      <span class="icone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l1.3-3.9A8 8 0 1 1 8.9 19z"/><path d="M8.5 9.5c0 3.5 2.5 6 6 6"/></svg></span>
+      WhatsApp
+    </button>
+  </div>
+
   <div class="overlay" id="overlay">
     <div class="modal">
       <div class="modal-topo">
@@ -365,6 +430,7 @@ window.addEventListener("DOMContentLoaded", function () {
   var DIAS = ["Domingo","Segunda","Terça","Quarta","Quinta","Sexta","Sábado"];
   var estabelecimentoId = null;
   var config = null;
+  var happyHourBadgeAtivo = false;
 
   function escapeHtml(v) {
     return String(v == null ? "" : v)
@@ -527,6 +593,9 @@ window.addEventListener("DOMContentLoaded", function () {
     document.getElementById("form-reserva").reset();
   });
 
+  document.getElementById("barra-cardapio").addEventListener("click", function () { ACOES.cardapio(); });
+  document.getElementById("barra-whatsapp").addEventListener("click", function () { ACOES.reserva_whatsapp(); });
+
   var SW = 'fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"';
   var ICONES = {
     cardapio: '<svg viewBox="0 0 24 24" ' + SW + '><path d="M4 5.5C4 4.7 4.7 4 5.5 4H12v16H5.5A1.5 1.5 0 0 1 4 18.5z"/><path d="M20 5.5c0-.8-.7-1.5-1.5-1.5H12v16h6.5a1.5 1.5 0 0 0 1.5-1.5z"/></svg>',
@@ -574,12 +643,38 @@ window.addEventListener("DOMContentLoaded", function () {
         return; // sem ação nem link configurado — não mostra
       }
       el.className = "botao" + (i === 0 ? " destaque" : "");
+      var badge = (b.tipo === "happy_hour" && happyHourBadgeAtivo) ? '<span class="badge-ativo">Ativo agora</span>' : "";
       el.innerHTML =
         '<span class="icone">' + (ICONES[b.tipo] || "") + '</span>' +
-        '<span>' + escapeHtml(b.label) + '</span>' +
+        '<span>' + escapeHtml(b.label) + badge + '</span>' +
         '<span class="seta">' + SETA + '</span>';
       nav.appendChild(el);
     });
+  }
+
+  function happyHourAtivoAgora(hh) {
+    if (!hh || !hh.ativo || !hh.horario_inicio || !hh.horario_fim) return false;
+    var agora = new Date();
+    var diasSemana = hh.dias_semana || [];
+    var horaAtual = agora.getHours() * 60 + agora.getMinutes();
+    var partesInicio = hh.horario_inicio.split(":");
+    var partesFim = hh.horario_fim.split(":");
+    var inicioMin = Number(partesInicio[0]) * 60 + Number(partesInicio[1]);
+    var fimMin = Number(partesFim[0]) * 60 + Number(partesFim[1]);
+
+    function diaPermitido(dia) { return !diasSemana.length || diasSemana.indexOf(dia) !== -1; }
+    function dentro(dia) {
+      if (!diaPermitido(dia)) return false;
+      if (fimMin > inicioMin) return horaAtual >= inicioMin && horaAtual < fimMin;
+      return horaAtual >= inicioMin || horaAtual < fimMin; // turno vira a noite
+    }
+
+    if (dentro(agora.getDay())) return true;
+    if (fimMin <= inicioMin && horaAtual < fimMin) {
+      var diaAnterior = (agora.getDay() + 6) % 7;
+      if (diaPermitido(diaAnterior)) return true;
+    }
+    return false;
   }
 
   async function carregar() {
@@ -590,10 +685,12 @@ window.addEventListener("DOMContentLoaded", function () {
       var nomeCurto = (estRes.data.nome_fantasia || estRes.data.nome || "").replace(/bar e restaurante/i, "").trim();
       if (nomeCurto) document.getElementById("logo-nome").textContent = nomeCurto;
 
-      var [cfgRes, botoesRes] = await Promise.all([
+      var [cfgRes, botoesRes, hhRes] = await Promise.all([
         sb.from("pagina_config").select("*").eq("estabelecimento_id", estabelecimentoId).maybeSingle(),
         sb.from("botao_pagina").select("*").eq("estabelecimento_id", estabelecimentoId).eq("ativo", true).order("ordem", { ascending: true }),
+        sb.from("happy_hour").select("ativo,dias_semana,horario_inicio,horario_fim").maybeSingle(),
       ]);
+      happyHourBadgeAtivo = happyHourAtivoAgora(hhRes.data);
 
       config = cfgRes.data;
       if (config) {
