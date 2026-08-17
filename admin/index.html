@@ -259,6 +259,14 @@
         <button class="botao" id="btn-upload-hero"><span id="spin-hero" class="spinner escondido"></span>Enviar imagem</button>
         <div class="msg" id="msg-hero"></div>
       </div>
+      <div class="card">
+        <h2>Logo</h2>
+        <p class="desc">Aparece no topo da página, no lugar do nome estilizado. Use um PNG com fundo transparente, se tiver.</p>
+        <img class="preview-img escondido" id="preview-logo" alt="" style="max-width:220px;background:#fff;padding:10px" />
+        <input type="file" id="logo-input" accept="image/jpeg,image/png,image/webp" />
+        <button class="botao" id="btn-upload-logo"><span id="spin-logo" class="spinner escondido"></span>Enviar logo</button>
+        <div class="msg" id="msg-logo"></div>
+      </div>
     </section>
 
     <!-- BOTÕES -->
@@ -669,6 +677,10 @@
       var img = document.getElementById("preview-hero");
       img.src = r.data.imagem_hero_url; img.classList.remove("escondido");
     }
+    if (r.data.imagem_logo_url) {
+      var imgLogo = document.getElementById("preview-logo");
+      imgLogo.src = r.data.imagem_logo_url; imgLogo.classList.remove("escondido");
+    }
   }
   document.getElementById("btn-salvar-contato").addEventListener("click", async function () {
     var msg = document.getElementById("msg-contato"), btn = this, spin = document.getElementById("spin-contato");
@@ -705,6 +717,28 @@
       setMsg(msg, "Imagem atualizada!", "sucesso");
       var img = document.getElementById("preview-hero");
       img.src = url; img.classList.remove("escondido");
+    } catch (e) { setMsg(msg, "Erro inesperado. Tente novamente.", "erro"); }
+    finally { btn.disabled = false; spin.classList.add("escondido"); }
+  });
+
+  document.getElementById("btn-upload-logo").addEventListener("click", async function () {
+    var msg = document.getElementById("msg-logo"), btn = this, spin = document.getElementById("spin-logo");
+    var file = document.getElementById("logo-input").files[0];
+    if (!file) return setMsg(msg, "Selecione uma imagem.", "erro");
+    if (TIPOS_IMG.indexOf(file.type) === -1) return setMsg(msg, "Formato não permitido. Envie JPG, PNG ou WEBP.", "erro");
+    if (file.size > MAX_IMG_BYTES) return setMsg(msg, "Imagem muito grande (" + formatarBytes(file.size) + "). Limite: 8 MB.", "erro");
+    btn.disabled = true; spin.classList.remove("escondido");
+    try {
+      var ext = extensaoDoArquivo(file, { "image/jpeg":"jpg","image/png":"png","image/webp":"webp" });
+      var caminho = estabelecimentoId + "/logo-" + Date.now() + "." + ext;
+      var up = await sb.storage.from(ASSETS_BUCKET).upload(caminho, file, { contentType: file.type, upsert: false });
+      if (up.error) return setMsg(msg, "Falha ao enviar: " + up.error.message, "erro");
+      var url = sb.storage.from(ASSETS_BUCKET).getPublicUrl(caminho).data.publicUrl;
+      var r = await sb.from("pagina_config").update({ imagem_logo_url: url, atualizado_em: new Date().toISOString() }).eq("estabelecimento_id", estabelecimentoId);
+      if (r.error) return setMsg(msg, "Enviado, mas houve erro ao salvar: " + r.error.message, "erro");
+      setMsg(msg, "Logo atualizada!", "sucesso");
+      var imgLogo = document.getElementById("preview-logo");
+      imgLogo.src = url; imgLogo.classList.remove("escondido");
     } catch (e) { setMsg(msg, "Erro inesperado. Tente novamente.", "erro"); }
     finally { btn.disabled = false; spin.classList.add("escondido"); }
   });
