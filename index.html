@@ -50,6 +50,14 @@
     margin-top: 4px;
     font-weight: 700;
   }
+  .logo-imagem {
+    max-width: 190px;
+    max-height: 130px;
+    width: auto;
+    height: auto;
+    margin: 0 auto;
+    display: block;
+  }
   .hero {
     margin: 18px 16px 0;
     border-radius: 18px;
@@ -95,34 +103,40 @@
     line-height: 1.5;
   }
   .destaques {
-    padding: 20px 0 4px;
+    padding: 22px 16px 6px;
+    max-width: 480px;
+    margin: 0 auto;
   }
   .destaques h2 {
-    margin: 0 0 12px;
-    padding: 0 16px;
+    margin: 0 0 14px;
     font-family: 'Playfair Display', serif;
     font-weight: 600;
-    font-size: 1.15rem;
+    font-size: 1.2rem;
     letter-spacing: 0.01em;
     color: var(--dourado-claro);
     text-align: center;
   }
-  .destaques-scroll {
-    display: flex;
+  .destaques-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 10px;
-    overflow-x: auto;
-    padding: 0 16px 6px;
-    scroll-snap-type: x proximity;
-    -webkit-overflow-scrolling: touch;
   }
-  .destaques-scroll img {
-    flex: 0 0 auto;
-    width: 148px;
-    aspect-ratio: 2 / 3;
-    object-fit: cover;
-    border-radius: 12px;
-    scroll-snap-align: start;
+  .destaques-grid figure {
+    margin: 0;
+    border-radius: 14px;
+    overflow: hidden;
     background: var(--marrom-card);
+    aspect-ratio: 4 / 3;
+  }
+  .destaques-grid figure:first-child {
+    grid-column: span 2;
+    aspect-ratio: 16 / 10;
+  }
+  .destaques-grid img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
   }
   .botoes {
     display: grid;
@@ -359,8 +373,11 @@
 </head>
 <body>
   <div class="topo">
-    <p class="logo-script" id="logo-nome">Serra Dourada</p>
-    <p class="logo-label">BAR E RESTAURANTE</p>
+    <img id="logo-img" class="logo-imagem escondido" alt="Serra Dourada Bar e Restaurante" />
+    <div id="logo-texto">
+      <p class="logo-script" id="logo-nome">Serra Dourada</p>
+      <p class="logo-label">BAR E RESTAURANTE</p>
+    </div>
   </div>
 
   <div class="hero" id="hero">
@@ -372,12 +389,12 @@
 
   <section class="destaques">
     <h2>Destaques da casa</h2>
-    <div class="destaques-scroll">
-      <img src="img/destaque-1.jpg" alt="Prato do Serra Dourada" loading="lazy" />
-      <img src="img/destaque-2.jpg" alt="Prato do Serra Dourada" loading="lazy" />
-      <img src="img/destaque-3.jpg" alt="Prato do Serra Dourada" loading="lazy" />
-      <img src="img/destaque-4.jpg" alt="Prato do Serra Dourada" loading="lazy" />
-      <img src="img/destaque-5.jpg" alt="Prato do Serra Dourada" loading="lazy" />
+    <div class="destaques-grid">
+      <figure><img src="img/destaque-5.jpg" alt="Prato do Serra Dourada" loading="lazy" /></figure>
+      <figure><img src="img/destaque-1.jpg" alt="Prato do Serra Dourada" loading="lazy" /></figure>
+      <figure><img src="img/destaque-2.jpg" alt="Prato do Serra Dourada" loading="lazy" /></figure>
+      <figure><img src="img/destaque-3.jpg" alt="Prato do Serra Dourada" loading="lazy" /></figure>
+      <figure><img src="img/destaque-4.jpg" alt="Prato do Serra Dourada" loading="lazy" /></figure>
     </div>
   </section>
 
@@ -694,6 +711,12 @@ window.addEventListener("DOMContentLoaded", function () {
 
       config = cfgRes.data;
       if (config) {
+        if (config.imagem_logo_url) {
+          var logoImg = document.getElementById("logo-img");
+          logoImg.src = config.imagem_logo_url;
+          logoImg.classList.remove("escondido");
+          document.getElementById("logo-texto").classList.add("escondido");
+        }
         var mensagem = config.mensagem_boas_vindas || "";
         if (config.imagem_hero_url) {
           document.getElementById("hero").innerHTML =
