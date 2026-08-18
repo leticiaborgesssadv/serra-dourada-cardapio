@@ -259,6 +259,11 @@
         <input type="file" id="hero-input" accept="image/jpeg,image/png,image/webp" />
         <button class="botao" id="btn-upload-hero"><span id="spin-hero" class="spinner escondido"></span>Enviar imagem</button>
         <div class="msg" id="msg-hero"></div>
+        <div class="toggle-linha" style="margin-top:14px;border-top:1px solid #e5e0d5;padding-top:14px">
+          <label for="hero-clima" style="margin:0">Trocar por drinks em dias quentes</label>
+          <input type="checkbox" id="hero-clima" />
+        </div>
+        <p class="desc">Quando ativado, em dias de calor (30°C ou mais em Goiânia) a foto do topo troca automaticamente para uma imagem de drinks/Happy Hour. Nos demais dias, continua mostrando a imagem escolhida acima.</p>
       </div>
       <div class="card">
         <h2>Logo</h2>
@@ -682,6 +687,7 @@
       var imgLogo = document.getElementById("preview-logo");
       imgLogo.src = r.data.imagem_logo_url; imgLogo.classList.remove("escondido");
     }
+    document.getElementById("hero-clima").checked = !!r.data.hero_por_clima;
   }
   document.getElementById("btn-salvar-contato").addEventListener("click", async function () {
     var msg = document.getElementById("msg-contato"), btn = this, spin = document.getElementById("spin-contato");
@@ -700,6 +706,13 @@
   });
 
   // ---------- IMAGENS ----------
+  document.getElementById("hero-clima").addEventListener("change", async function () {
+    var msg = document.getElementById("msg-hero"), checkbox = this;
+    var r = await sb.from("pagina_config").update({ hero_por_clima: checkbox.checked, atualizado_em: new Date().toISOString() }).eq("estabelecimento_id", estabelecimentoId);
+    if (r.error) { checkbox.checked = !checkbox.checked; return setMsg(msg, "Erro ao salvar: " + r.error.message, "erro"); }
+    setMsg(msg, checkbox.checked ? "Troca por clima ativada." : "Troca por clima desativada.", "sucesso");
+  });
+
   document.getElementById("btn-upload-hero").addEventListener("click", async function () {
     var msg = document.getElementById("msg-hero"), btn = this, spin = document.getElementById("spin-hero");
     var file = document.getElementById("hero-input").files[0];

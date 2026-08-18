@@ -781,6 +781,31 @@ window.addEventListener("DOMContentLoaded", function () {
     return false;
   }
 
+  var LIMIAR_QUENTE_C = 30;
+  var IMAGEM_CLIMA_QUENTE = "https://serradouradabar.com.br/img/happyhour-1.jpg";
+  var LEGENDA_CLIMA_QUENTE = "Dia de calor pede um drink gelado 🍹";
+
+  async function ajustarHeroPorClima(mensagemPadrao) {
+    try {
+      var lat = (config.mapa_lat != null) ? config.mapa_lat : -16.6799;
+      var lng = (config.mapa_lng != null) ? config.mapa_lng : -49.2550;
+      var resp = await fetch(
+        "https://api.open-meteo.com/v1/forecast?latitude=" + lat + "&longitude=" + lng + "&current=temperature_2m"
+      );
+      if (!resp.ok) return;
+      var dados = await resp.json();
+      var temp = dados && dados.current && dados.current.temperature_2m;
+      if (typeof temp !== "number" || temp < LIMIAR_QUENTE_C) return;
+
+      var heroImg = document.querySelector("#hero img");
+      var heroLegenda = document.getElementById("hero-legenda");
+      if (heroImg) heroImg.src = IMAGEM_CLIMA_QUENTE;
+      if (heroLegenda) heroLegenda.textContent = LEGENDA_CLIMA_QUENTE;
+    } catch (e) {
+      // Falha silenciosa: se o clima não carregar, mantém a imagem padrão já exibida.
+    }
+  }
+
   async function carregar() {
     try {
       var estRes = await sb.from("estabelecimento").select("id,nome_fantasia,nome,endereco").limit(1).maybeSingle();
@@ -811,8 +836,9 @@ window.addEventListener("DOMContentLoaded", function () {
         if (config.imagem_hero_url) {
           document.getElementById("hero").innerHTML =
             '<img src="' + escapeHtml(config.imagem_hero_url) + '" alt="Serra Dourada" loading="eager" />' +
-            '<div class="hero-legenda">' + escapeHtml(mensagem) + '</div>';
+            '<div class="hero-legenda" id="hero-legenda">' + escapeHtml(mensagem) + '</div>';
           document.getElementById("boas-vindas").remove();
+          if (config.hero_por_clima) ajustarHeroPorClima(mensagem);
         } else {
           document.getElementById("boas-vindas").textContent = mensagem;
         }
