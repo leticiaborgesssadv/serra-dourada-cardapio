@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Cardápio · Serra Dourada</title>
+<meta name="theme-color" content="#241608" />
+<link rel="icon" type="image/png" sizes="32x32" href="img/favicon-32.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Manrope:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+  :root {
+    --dourado: #c9a227;
+    --dourado-claro: #e8c766;
+    --marrom: #1c1108;
+    --marrom-2: #241608;
+    --marrom-claro: #3a2712;
+    --marrom-card: #2e1c0e;
+    --texto: #f6ead0;
+    --texto-suave: #cdbb99;
+    --borda: #4a3520;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    margin: 0;
+    font-family: 'Manrope', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--marrom);
+    color: var(--texto);
+    min-height: 100vh;
+    padding-bottom: 24px;
+  }
+  header {
+    padding: 14px 16px calc(12px + env(safe-area-inset-top, 0px));
+    padding-top: max(14px, env(safe-area-inset-top, 0px));
+    background: linear-gradient(180deg, var(--marrom-claro), var(--marrom));
+    text-align: center;
+    border-bottom: 2px solid var(--dourado);
+    position: relative;
+  }
+  header a.voltar {
+    position: absolute;
+    left: 14px;
+    top: calc(14px + env(safe-area-inset-top, 0px));
+    color: var(--dourado-claro);
+    text-decoration: none;
+    font-size: 1.3rem;
+    line-height: 1;
+  }
+  header h1 {
+    margin: 0;
+    font-family: 'Playfair Display', serif;
+    font-weight: 700;
+    font-size: 1.2rem;
+    color: var(--dourado-claro);
+  }
+  nav.grupos {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    padding: 12px 12px;
+    background: var(--marrom-claro);
+    border-bottom: 1px solid var(--borda);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    scrollbar-width: none;
+  }
+  nav.grupos::-webkit-scrollbar { display: none; }
+  nav.grupos button {
+    flex-shrink: 0;
+    background: transparent;
+    border: 1px solid var(--borda);
+    color: var(--texto-suave);
+    padding: 9px 15px;
+    border-radius: 20px;
+    font-size: 0.83rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    font-family: inherit;
+  }
+  nav.grupos button.ativo {
+    background: var(--dourado);
+    color: #241608;
+    border-color: transparent;
+  }
+  main {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 18px 16px 8px;
+  }
+  .categoria-titulo {
+    font-family: 'Playfair Display', serif;
+    font-weight: 600;
+    font-size: 1.02rem;
+    color: var(--dourado-claro);
+    margin: 22px 0 12px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--borda);
+  }
+  .categoria-titulo:first-child { margin-top: 0; }
+  .item-card {
+    display: flex;
+    gap: 12px;
+    background: var(--marrom-card);
+    border: 1px solid var(--borda);
+    border-radius: 14px;
+    padding: 12px;
+    margin-bottom: 12px;
+  }
+  .item-foto {
+    flex-shrink: 0;
+    width: 92px;
+    height: 92px;
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--marrom-claro);
+  }
+  .item-foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .item-foto.sem-foto {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+    opacity: 0.3;
+  }
+  .item-info { flex: 1; min-width: 0; }
+  .item-topo {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .item-nome {
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--texto);
+    margin: 0;
+  }
+  .item-preco {
+    font-weight: 700;
+    font-size: 0.92rem;
+    color: var(--dourado-claro);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .item-desc {
+    margin: 4px 0 0;
+    font-size: 0.8rem;
+    color: var(--texto-suave);
+    line-height: 1.4;
+  }
+  .vazio, .carregando {
+    text-align: center;
+    padding: 60px 24px;
+    color: var(--texto-suave);
+  }
+  .escondido { display: none !important; }
+</style>
+</head>
+<body>
+  <header>
+    <a class="voltar" href="index.html" aria-label="Voltar">←</a>
+    <h1>Cardápio</h1>
+  </header>
+
+  <nav class="grupos escondido" id="nav-grupos"></nav>
+
+  <main id="main">
+    <div class="carregando"><p>Carregando cardápio…</p></div>
+  </main>
+
+<script>
+(function () {
+  "use strict";
+  var SUPABASE_URL = "https://bhxnhiggogosootbtwpb.supabase.co";
+  var ANON_KEY = "sb_publishable_Zsg8lPJjUHK5-okGOuYc9g_VbKilzQG";
+  var sb = window.supabase.createClient(SUPABASE_URL, ANON_KEY);
+
+  // Ordem fixa dos grupos (abas), independente da ordem alfabética
+  var ORDEM_GRUPOS = ["Entradas & Petiscos", "Pratos Principais", "Espetinhos", "Bebidas", "Drinks", "Sobremesas"];
+
+  function escapeHtml(v) {
+    return String(v == null ? "" : v)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+
+  function formatarPreco(p) {
+    var n = Number(p);
+    if (isNaN(n)) return "";
+    return "R$ " + n.toFixed(2).replace(".", ",");
+  }
+
+  function renderItens(itens) {
+    var main = document.getElementById("main");
+    if (!itens.length) {
+      main.innerHTML = '<div class="vazio"><p>Nenhum item nesta categoria ainda.</p></div>';
+      return;
+    }
+    // Agrupa por categoria dentro do grupo selecionado, preservando a ordem de aparição
+    var categorias = [];
+    var porCategoria = {};
+    itens.forEach(function (it) {
+      var cat = it.categoria || "Outros";
+      if (!porCategoria[cat]) { porCategoria[cat] = []; categorias.push(cat); }
+      porCategoria[cat].push(it);
+    });
+
+    var html = "";
+    categorias.forEach(function (cat) {
+      html += '<h2 class="categoria-titulo">' + escapeHtml(cat) + '</h2>';
+      porCategoria[cat].forEach(function (it) {
+        var fotoHtml = it.foto_url
+          ? '<div class="item-foto"><img src="' + escapeHtml(it.foto_url) + '" alt="' + escapeHtml(it.nome) + '" loading="lazy" /></div>'
+          : '<div class="item-foto sem-foto">🍽️</div>';
+        html +=
+          '<div class="item-card">' +
+            fotoHtml +
+            '<div class="item-info">' +
+              '<div class="item-topo"><p class="item-nome">' + escapeHtml(it.nome) + '</p>' +
+              '<span class="item-preco">' + formatarPreco(it.preco) + '</span></div>' +
+              (it.descricao ? '<p class="item-desc">' + escapeHtml(it.descricao) + '</p>' : '') +
+            '</div>' +
+          '</div>';
+      });
+    });
+    main.innerHTML = html;
+  }
+
+  function renderNav(gruposComItem, todosItens, ativo) {
+    var nav = document.getElementById("nav-grupos");
+    nav.innerHTML = "";
+    gruposComItem.forEach(function (g) {
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.textContent = g;
+      if (g === ativo) btn.className = "ativo";
+      btn.addEventListener("click", function () {
+        renderNav(gruposComItem, todosItens, g);
+        renderItens(todosItens.filter(function (it) { return (it.grupo || "Pratos Principais") === g; }));
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      });
+      nav.appendChild(btn);
+    });
+    nav.classList.remove("escondido");
+  }
+
+  async function carregar() {
+    try {
+      var r = await sb.from("cardapio_publico").select("*").eq("ativo", true).order("ordem", { ascending: true });
+      var itens = r.data || [];
+      if (!itens.length) {
+        document.getElementById("main").innerHTML =
+          '<div class="vazio"><p>O cardápio visual ainda está sendo montado.</p>' +
+          '<p style="font-size:0.85rem;margin-top:8px"><a href="cardapio.html" style="color:var(--dourado-claro)">Ver cardápio completo em PDF</a></p></div>';
+        return;
+      }
+
+      var gruposPresentes = {};
+      itens.forEach(function (it) { gruposPresentes[it.grupo || "Pratos Principais"] = true; });
+      var gruposOrdenados = ORDEM_GRUPOS.filter(function (g) { return gruposPresentes[g]; });
+      // Inclui grupos fora da lista prevista (segurança), no fim
+      Object.keys(gruposPresentes).forEach(function (g) {
+        if (gruposOrdenados.indexOf(g) === -1) gruposOrdenados.push(g);
+      });
+
+      var primeiroGrupo = gruposOrdenados[0];
+      renderNav(gruposOrdenados, itens, primeiroGrupo);
+      renderItens(itens.filter(function (it) { return (it.grupo || "Pratos Principais") === primeiroGrupo; }));
+    } catch (e) {
+      document.getElementById("main").innerHTML = '<div class="vazio"><p>Não foi possível carregar o cardápio agora.</p></div>';
+    }
+  }
+
+  carregar();
+})();
+</script>
+</body>
+</html>
