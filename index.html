@@ -682,7 +682,7 @@ window.addEventListener("DOMContentLoaded", function () {
   }
 
   var ACOES = {
-    cardapio: function () { registrar("click", "cardapio"); location.href = "cardapio-visual.html"; },
+    cardapio: function () { registrar("click", "cardapio"); location.href = "cardapio.html"; },
     almoco: function () { registrar("click", "almoco"); mostrarAlmoco(); },
     happy_hour: function () { registrar("click", "happy_hour"); mostrarHappyHour(); },
     horario: function () { registrar("click", "horario"); mostrarHorario(); },
@@ -726,6 +726,7 @@ window.addEventListener("DOMContentLoaded", function () {
   var SW = 'fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"';
   var ICONES = {
     cardapio: '<svg viewBox="0 0 24 24" ' + SW + '><path d="M4 5.5C4 4.7 4.7 4 5.5 4H12v16H5.5A1.5 1.5 0 0 1 4 18.5z"/><path d="M20 5.5c0-.8-.7-1.5-1.5-1.5H12v16h6.5a1.5 1.5 0 0 0 1.5-1.5z"/></svg>',
+    cardapio_visual: '<svg viewBox="0 0 24 24" ' + SW + '><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="M4 16l4.5-4.5a1.6 1.6 0 0 1 2.2 0L15 15.8M14 14.5l1.4-1.4a1.6 1.6 0 0 1 2.2 0L20 15.8"/></svg>',
     almoco: '<svg viewBox="0 0 24 24" ' + SW + '><path d="M7 3v7a2 2 0 1 0 4 0V3M9 10v11M15 3c-1.5 1.5-2 3-2 5s1 3 2 3v10"/></svg>',
     happy_hour: '<svg viewBox="0 0 24 24" ' + SW + '><path d="M6 3h6l-1 8a2 2 0 0 1-2 2 2 2 0 0 1-2-2z"/><path d="M9 13v8M6 21h6"/><path d="M15 8l1.5 1.5L20 6"/><circle cx="17" cy="15" r="4"/><path d="M17 19v2M15 21h4"/></svg>',
     reserva_whatsapp: '<svg viewBox="0 0 24 24" ' + SW + '><path d="M4 20l1.3-3.9A8 8 0 1 1 8.9 19z"/><path d="M8.5 9.5c0 3.5 2.5 6 6 6"/></svg>',

@@ -118,7 +118,7 @@
     overflow: hidden;
     background: var(--marrom-claro);
   }
-  .item-foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .item-foto img { width: 100%; height: 100%; object-fit: cover; display: block; cursor: zoom-in; }
   .item-foto.sem-foto {
     display: flex;
     align-items: center;
@@ -158,6 +158,34 @@
     color: var(--texto-suave);
   }
   .escondido { display: none !important; }
+  .lightbox {
+    position: fixed;
+    inset: 0;
+    background: rgba(10, 6, 2, 0.92);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    padding: 24px;
+    animation: lb-fade 0.15s ease-out;
+  }
+  .lightbox.escondido { display: none; }
+  .lightbox img { max-width: 100%; max-height: 100%; border-radius: 10px; object-fit: contain; }
+  .lightbox-fechar {
+    position: absolute;
+    top: max(16px, env(safe-area-inset-top, 0px));
+    right: 16px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.5);
+    border: none;
+    color: var(--texto);
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+  }
+  @keyframes lb-fade { from { opacity: 0; } to { opacity: 1; } }
 </style>
 </head>
 <body>
@@ -171,6 +199,11 @@
   <main id="main">
     <div class="carregando"><p>Carregando cardápio…</p></div>
   </main>
+
+  <div class="lightbox escondido" id="lightbox">
+    <button type="button" class="lightbox-fechar" id="lightbox-fechar" aria-label="Fechar">✕</button>
+    <img id="lightbox-img" src="" alt="" />
+  </div>
 
 <script>
 (function () {
@@ -274,6 +307,27 @@
       document.getElementById("main").innerHTML = '<div class="vazio"><p>Não foi possível carregar o cardápio agora.</p></div>';
     }
   }
+
+  function abrirLightbox(url, nome) {
+    document.getElementById("lightbox-img").src = url;
+    document.getElementById("lightbox-img").alt = nome || "";
+    document.getElementById("lightbox").classList.remove("escondido");
+  }
+
+  function fecharLightbox() {
+    document.getElementById("lightbox").classList.add("escondido");
+    document.getElementById("lightbox-img").src = "";
+  }
+
+  document.getElementById("main").addEventListener("click", function (ev) {
+    var img = ev.target.closest(".item-foto img");
+    if (img) abrirLightbox(img.src, img.alt);
+  });
+  document.getElementById("lightbox").addEventListener("click", fecharLightbox);
+  document.getElementById("lightbox-fechar").addEventListener("click", function (ev) {
+    ev.stopPropagation();
+    fecharLightbox();
+  });
 
   carregar();
 })();
