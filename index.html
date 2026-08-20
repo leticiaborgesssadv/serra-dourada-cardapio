@@ -904,6 +904,7 @@ window.addEventListener("DOMContentLoaded", function () {
           document.getElementById("boas-vindas").remove();
           if (config.hero_por_clima) ajustarHeroPorClima(mensagem);
         } else {
+          document.getElementById("hero").remove();
           document.getElementById("boas-vindas").textContent = mensagem;
         }
       }
