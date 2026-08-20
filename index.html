@@ -578,50 +578,41 @@ window.addEventListener("DOMContentLoaded", function () {
   }
 
   async function mostrarAlmoco() {
-    if (ehSabado()) {
-      var fr = await sb.from("cardapio_publico").select("nome,preco,foto_url").eq("grupo", "Feijoada de Sábado").eq("ativo", true).order("ordem", { ascending: true });
-      var itensFeijoada = fr.data || [];
-      if (itensFeijoada.length) {
-        var fotoFeijoada = itensFeijoada[0].foto_url
-          ? '<img class="modal-foto" src="' + escapeHtml(itensFeijoada[0].foto_url) + '" alt="Feijoada de Sábado" />'
-          : "";
-        var listaHtml = '<div class="hh-itens">' + itensFeijoada.map(function (it) {
-          return '<div class="hh-item"><span class="hh-item-nome">' + escapeHtml(it.nome) + '</span>' +
-            '<span class="hh-item-preco-por">' + formatarPreco(it.preco) + '</span></div>';
-        }).join("") + '</div>';
-        var msgFeijoada = "Olá! Vi a Feijoada de sábado no site e quero fazer um pedido.";
-        var linkFeijoada = linkWhatsapp(msgFeijoada);
-        var botaoFeijoada = linkFeijoada
-          ? '<a class="botao destaque" style="display:block;text-align:center;text-decoration:none;margin-top:12px" href="' + escapeHtml(linkFeijoada) + '" target="_blank" rel="noopener">Pedir pelo WhatsApp</a>'
-          : "";
-        abrirModal("Feijoada de Sábado", fotoFeijoada + '<div class="modal-item"><p>Servida todo sábado, em 4 formatos:</p>' + listaHtml + '</div>' + botaoFeijoada);
-        return;
-      }
-      // Se não houver feijoada cadastrada, cai no fluxo normal abaixo
-    }
+    var [diaRes, precosRes] = await Promise.all([
+      sb.from("almoco_dia").select("descricao,imagem_url").eq("ativo", true).limit(1).maybeSingle(),
+      sb.from("cardapio_publico").select("nome,preco,foto_url").eq("grupo", "Feijoada de Sábado").eq("ativo", true).order("ordem", { ascending: true }),
+    ]);
+    var prato = diaRes.data;
+    var formatos = precosRes.data || [];
 
-    var r = await sb.from("almoco_dia").select("descricao,imagem_url,data,preco,horario_inicio,horario_fim").eq("ativo", true).limit(1).maybeSingle();
-    if (!r.data) {
-      abrirModal("Almoço de hoje", '<p class="modal-vazio">O almoço de hoje ainda não foi publicado.</p>');
-      return;
-    }
-    var imagemHtml = r.data.imagem_url
-      ? '<img class="modal-foto" src="' + escapeHtml(r.data.imagem_url) + '" alt="Almoço de hoje" />'
-      : "";
-    var precoHtml = r.data.preco
-      ? '<p style="margin:6px 0 0"><span class="hh-item-preco-por">' + formatarPreco(r.data.preco) + '</span></p>'
-      : "";
+    var imagemHtml = (prato && prato.imagem_url)
+      ? '<img class="modal-foto" src="' + escapeHtml(prato.imagem_url) + '" alt="Almoço de hoje" />'
+      : ((formatos[0] && formatos[0].foto_url) ? '<img class="modal-foto" src="' + escapeHtml(formatos[0].foto_url) + '" alt="Almoço de hoje" />' : "");
+
+    var descHtml = (prato && prato.descricao)
+      ? '<p>' + escapeHtml(prato.descricao).replace(/\n/g, "<br>") + '</p>'
+      : '<p class="modal-vazio" style="padding:0">Prato do dia ainda não foi definido, mas o almoço está de pé nos formatos abaixo.</p>';
+
     var turnoHoje = ((config && config.horario_funcionamento) || {})[String(new Date().getDay())];
     turnoHoje = turnoHoje && turnoHoje.almoco;
     var horarioHtml = (turnoHoje && turnoHoje.abre && turnoHoje.fecha)
       ? '<p style="font-size:0.8rem;color:var(--texto-suave);margin:6px 0 0">Servido das ' + formatarHora(turnoHoje.abre) + ' às ' + formatarHora(turnoHoje.fecha) + '</p>'
       : "";
-    var mensagem = "Olá! Vi o almoço de hoje no site e quero fazer um pedido: " + r.data.descricao;
+
+    var listaHtml = formatos.length
+      ? '<div class="hh-itens">' + formatos.map(function (it) {
+          return '<div class="hh-item"><span class="hh-item-nome">' + escapeHtml(it.nome) + '</span>' +
+            '<span class="hh-item-preco-por">' + formatarPreco(it.preco) + '</span></div>';
+        }).join("") + '</div>'
+      : "";
+
+    var mensagem = "Olá! Vi o almoço de hoje no site" + (prato && prato.descricao ? " (" + prato.descricao + ")" : "") + " e quero fazer um pedido.";
     var linkPedido = linkWhatsapp(mensagem);
     var botaoHtml = linkPedido
       ? '<a class="botao destaque" style="display:block;text-align:center;text-decoration:none;margin-top:12px" href="' + escapeHtml(linkPedido) + '" target="_blank" rel="noopener">Pedir pelo WhatsApp</a>'
       : "";
-    abrirModal("Almoço de hoje", imagemHtml + '<div class="modal-item"><p>' + escapeHtml(r.data.descricao).replace(/\n/g, "<br>") + "</p>" + precoHtml + horarioHtml + '</div>' + botaoHtml);
+
+    abrirModal("Almoço de hoje", imagemHtml + '<div class="modal-item">' + descHtml + horarioHtml + '</div>' + listaHtml + botaoHtml);
   }
 
   async function mostrarHappyHour() {
@@ -817,10 +808,6 @@ window.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  function ehSabado() {
-    return new Date().getDay() === 6;
-  }
-
   function almocoAtivoAgora(turno) {
     if (!turno || !turno.abre || !turno.fecha) return false;
     var agora = new Date();
@@ -891,12 +878,11 @@ window.addEventListener("DOMContentLoaded", function () {
       var nomeCurto = (estRes.data.nome_fantasia || estRes.data.nome || "").replace(/bar e restaurante/i, "").trim();
       if (nomeCurto) document.getElementById("logo-nome").textContent = nomeCurto;
 
-      var [cfgRes, botoesRes, hhRes, avalRes, almocoRes] = await Promise.all([
+      var [cfgRes, botoesRes, hhRes, avalRes] = await Promise.all([
         sb.from("pagina_config").select("*").eq("estabelecimento_id", estabelecimentoId).maybeSingle(),
         sb.from("botao_pagina").select("*").eq("estabelecimento_id", estabelecimentoId).eq("ativo", true).order("ordem", { ascending: true }),
         sb.from("happy_hour").select("ativo,dias_semana,horario_inicio,horario_fim").maybeSingle(),
         sb.from("google_reviews_cache").select("rating,total_avaliacoes,reviews").eq("estabelecimento_id", estabelecimentoId).maybeSingle(),
-        sb.from("almoco_dia").select("ativo").eq("ativo", true).limit(1).maybeSingle(),
       ]);
       happyHourBadgeAtivo = happyHourAtivoAgora(hhRes.data);
       renderAvaliacoes(avalRes.data);
@@ -924,7 +910,7 @@ window.addEventListener("DOMContentLoaded", function () {
 
       var turnoAlmocoHoje = ((config && config.horario_funcionamento) || {})[String(new Date().getDay())];
       turnoAlmocoHoje = turnoAlmocoHoje && turnoAlmocoHoje.almoco;
-      almocoBadgeAtivo = ehSabado() ? almocoAtivoAgora(turnoAlmocoHoje) : (!!almocoRes.data && almocoAtivoAgora(turnoAlmocoHoje));
+      almocoBadgeAtivo = almocoAtivoAgora(turnoAlmocoHoje);
 
       renderBotoes(botoesRes.data || []);
       document.getElementById("skeleton-botoes").classList.add("escondido");

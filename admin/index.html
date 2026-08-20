@@ -156,8 +156,7 @@
         <p class="msg erro escondido" id="almoco-desatualizado">⚠ Este prato foi publicado antes de hoje — clientes ainda estão vendo o almoço de outro dia. Atualize a descrição e publique novamente.</p>
         <label for="almoco-descricao">Descrição</label>
         <textarea id="almoco-descricao" placeholder="Ex.: Feijoada completa, arroz, couve e torresmo"></textarea>
-        <label for="almoco-preco">Preço (opcional)</label>
-        <input type="number" id="almoco-preco" step="0.01" min="0" placeholder="Ex.: 32.90" />
+        <p class="desc" style="margin-top:-4px">Os preços (prato feito, self-service, quilo, marmitex) são fixos e já vêm do cardápio visual — não precisa informar aqui.</p>
         <button class="botao" id="btn-publicar-almoco"><span id="spin-almoco" class="spinner escondido"></span>Publicar almoço de hoje</button>
         <div class="msg" id="msg-almoco"></div>
       </div>
@@ -467,9 +466,8 @@
 
   // ---------- ALMOÇO ----------
   async function carregarAlmoco() {
-    var r = await sb.from("almoco_dia").select("descricao,data,preco").eq("ativo", true).limit(1).maybeSingle();
+    var r = await sb.from("almoco_dia").select("descricao,data").eq("ativo", true).limit(1).maybeSingle();
     document.getElementById("almoco-descricao").value = r.data ? r.data.descricao : "";
-    document.getElementById("almoco-preco").value = (r.data && r.data.preco != null) ? r.data.preco : "";
     var hoje = new Date().toISOString().slice(0, 10);
     var aviso = document.getElementById("almoco-desatualizado");
     aviso.classList.toggle("escondido", !r.data || r.data.data === hoje);
@@ -477,11 +475,9 @@
   document.getElementById("btn-publicar-almoco").addEventListener("click", async function () {
     var msg = document.getElementById("msg-almoco"), btn = this, spin = document.getElementById("spin-almoco");
     var texto = document.getElementById("almoco-descricao").value.trim();
-    var precoStr = document.getElementById("almoco-preco").value.trim();
-    var preco = precoStr ? Number(precoStr) : null;
     if (!texto) return setMsg(msg, "Escreva a descrição do almoço.", "erro");
     btn.disabled = true; spin.classList.remove("escondido");
-    var r = await sb.rpc("publicar_almoco_dia", { p_estabelecimento_id: estabelecimentoId, p_descricao: texto, p_imagem_url: null, p_preco: preco });
+    var r = await sb.rpc("publicar_almoco_dia", { p_estabelecimento_id: estabelecimentoId, p_descricao: texto, p_imagem_url: null });
     btn.disabled = false; spin.classList.add("escondido");
     if (r.error) return setMsg(msg, "Erro ao publicar: " + r.error.message, "erro");
     setMsg(msg, "Almoço do dia publicado!", "sucesso");
