@@ -101,6 +101,54 @@
     border-bottom: 1px solid var(--borda);
   }
   .categoria-titulo:first-child { margin-top: 0; }
+  .grupo-tagline {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: 1.05rem;
+    color: var(--dourado-claro);
+    text-align: center;
+    margin: 0 0 20px;
+    padding: 14px 10px;
+    background: linear-gradient(135deg, var(--marrom-claro), var(--marrom-card));
+    border: 1px solid var(--dourado);
+    border-radius: 14px;
+  }
+  .grade-espetinhos {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .card-espetinho {
+    background: var(--marrom-card);
+    border: 1px solid var(--borda);
+    border-radius: 14px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .card-espetinho .item-foto {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 0;
+  }
+  .card-espetinho .info {
+    padding: 10px 10px 12px;
+    text-align: center;
+  }
+  .card-espetinho .item-nome {
+    font-size: 0.85rem;
+    line-height: 1.25;
+    margin: 0 0 4px;
+    min-height: 2.1em;
+  }
+  .card-espetinho .item-preco {
+    display: block;
+    font-family: 'Playfair Display', serif;
+    font-weight: 700;
+    color: var(--dourado-claro);
+    font-size: 1rem;
+  }
   .item-card {
     display: flex;
     gap: 12px;
@@ -213,7 +261,7 @@
   var sb = window.supabase.createClient(SUPABASE_URL, ANON_KEY);
 
   // Ordem fixa dos grupos (abas), independente da ordem alfabética
-  var ORDEM_GRUPOS = ["Entradas & Petiscos", "Panelinhas", "Parmegianas", "Completão do Serra", "Carnes na Chapa & Espetinhos", "Jantinha & Adicionais", "Feijoada de Sábado", "Sobremesas & Bebidas", "Bebidas Alcoólicas"];
+  var ORDEM_GRUPOS = ["Entradas & Petiscos", "Panelinhas", "Parmegianas", "Completão do Serra", "Espetinhos", "Carnes na Chapa", "Jantinha & Adicionais", "Feijoada de Sábado", "Sobremesas & Bebidas", "Bebidas Alcoólicas"];
 
   function escapeHtml(v) {
     return String(v == null ? "" : v)
@@ -227,12 +275,27 @@
     return "R$ " + n.toFixed(2).replace(".", ",");
   }
 
-  function renderItens(itens) {
+  function renderItens(itens, grupo) {
     var main = document.getElementById("main");
     if (!itens.length) {
       main.innerHTML = '<div class="vazio"><p>Nenhum item nesta categoria ainda.</p></div>';
       return;
     }
+
+    if (grupo === "Espetinhos") {
+      var tagline = '<p class="grupo-tagline">🍢 Na brasa, no palito — peça quantos quiser</p>';
+      var grade = '<div class="grade-espetinhos">' + itens.map(function (it) {
+        var fotoHtml = it.foto_url
+          ? '<div class="item-foto"><img src="' + escapeHtml(it.foto_url) + '" alt="' + escapeHtml(it.nome) + '" loading="lazy" /></div>'
+          : '<div class="item-foto sem-foto">🍢</div>';
+        return '<div class="card-espetinho">' + fotoHtml +
+          '<div class="info"><p class="item-nome">' + escapeHtml(it.nome) + '</p>' +
+          '<span class="item-preco">' + formatarPreco(it.preco) + '</span></div></div>';
+      }).join("") + '</div>';
+      main.innerHTML = tagline + grade;
+      return;
+    }
+
     // Agrupa por categoria dentro do grupo selecionado, preservando a ordem de aparição
     var categorias = [];
     var porCategoria = {};
@@ -273,7 +336,7 @@
       if (g === ativo) btn.className = "ativo";
       btn.addEventListener("click", function () {
         renderNav(gruposComItem, todosItens, g);
-        renderItens(todosItens.filter(function (it) { return (it.grupo || "Pratos Principais") === g; }));
+        renderItens(todosItens.filter(function (it) { return (it.grupo || "Pratos Principais") === g; }), g);
         window.scrollTo({ top: 0, behavior: "smooth" });
       });
       nav.appendChild(btn);
@@ -302,7 +365,7 @@
 
       var primeiroGrupo = gruposOrdenados[0];
       renderNav(gruposOrdenados, itens, primeiroGrupo);
-      renderItens(itens.filter(function (it) { return (it.grupo || "Pratos Principais") === primeiroGrupo; }));
+      renderItens(itens.filter(function (it) { return (it.grupo || "Pratos Principais") === primeiroGrupo; }), primeiroGrupo);
     } catch (e) {
       document.getElementById("main").innerHTML = '<div class="vazio"><p>Não foi possível carregar o cardápio agora.</p></div>';
     }
