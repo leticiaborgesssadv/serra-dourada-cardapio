@@ -239,8 +239,12 @@
         <h2>Contato e redes</h2>
         <label for="cfg-mensagem">Mensagem de boas-vindas</label>
         <textarea id="cfg-mensagem"></textarea>
-        <label for="cfg-whatsapp">WhatsApp (DDD + número, só dígitos)</label>
+        <label for="cfg-whatsapp">WhatsApp geral (DDD + número, só dígitos)</label>
         <input type="text" id="cfg-whatsapp" placeholder="Ex.: 62999998888" />
+        <p class="desc" style="margin-top:-4px">Usado em reservas, pedidos de almoço, Happy Hour e Feijoada.</p>
+        <label for="cfg-whatsapp-trabalhe">WhatsApp de "Trabalhe conosco" (DDD + número, só dígitos)</label>
+        <input type="text" id="cfg-whatsapp-trabalhe" placeholder="Ex.: 62999998888" />
+        <p class="desc" style="margin-top:-4px">Número separado, só para candidatos a vaga.</p>
         <label for="cfg-instagram">Link do Instagram</label>
         <input type="text" id="cfg-instagram" placeholder="https://instagram.com/serradourada" />
         <label for="cfg-maps">Link do Google Maps</label>
@@ -677,6 +681,7 @@
     if (!r.data) return;
     document.getElementById("cfg-mensagem").value = r.data.mensagem_boas_vindas || "";
     document.getElementById("cfg-whatsapp").value = r.data.whatsapp || "";
+    document.getElementById("cfg-whatsapp-trabalhe").value = r.data.whatsapp_trabalhe_conosco || "";
     document.getElementById("cfg-instagram").value = r.data.instagram_url || "";
     document.getElementById("cfg-maps").value = r.data.google_maps_url || "";
     document.getElementById("cfg-avaliacao").value = r.data.avaliacao_url || "";
@@ -696,6 +701,7 @@
     var r = await sb.from("pagina_config").update({
       mensagem_boas_vindas: document.getElementById("cfg-mensagem").value.trim(),
       whatsapp: document.getElementById("cfg-whatsapp").value.replace(/\D/g,"") || null,
+      whatsapp_trabalhe_conosco: document.getElementById("cfg-whatsapp-trabalhe").value.replace(/\D/g,"") || null,
       instagram_url: document.getElementById("cfg-instagram").value.trim() || null,
       google_maps_url: document.getElementById("cfg-maps").value.trim() || null,
       avaliacao_url: document.getElementById("cfg-avaliacao").value.trim() || null,

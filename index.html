@@ -702,8 +702,8 @@ window.addEventListener("DOMContentLoaded", function () {
     abrirModal("Próximos eventos", html);
   }
 
-  function linkWhatsapp(mensagem) {
-    var numero = (config && config.whatsapp || "").replace(/\D/g, "");
+  function linkWhatsapp(mensagem, numeroOverride) {
+    var numero = (numeroOverride || (config && config.whatsapp) || "").replace(/\D/g, "");
     if (!numero) return null;
     return "https://wa.me/" + numero + (mensagem ? "?text=" + encodeURIComponent(mensagem) : "");
   }
@@ -767,7 +767,7 @@ window.addEventListener("DOMContentLoaded", function () {
   var SETA = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>';
 
   function urlPadrao(tipo) {
-    if (tipo === "trabalhe_conosco") return linkWhatsapp("Olá! Tenho interesse em trabalhar no Serra Dourada.");
+    if (tipo === "trabalhe_conosco") return linkWhatsapp("Olá! Tenho interesse em trabalhar no Serra Dourada.", config && config.whatsapp_trabalhe_conosco);
     if (tipo === "avaliar_google") return config && config.avaliacao_url;
     if (tipo === "instagram") return config && config.instagram_url;
     return null;
