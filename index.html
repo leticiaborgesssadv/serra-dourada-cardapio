@@ -585,7 +585,12 @@ window.addEventListener("DOMContentLoaded", function () {
     var imagemHtml = r.data.imagem_url
       ? '<img class="modal-foto" src="' + escapeHtml(r.data.imagem_url) + '" alt="Almoço de hoje" />'
       : "";
-    abrirModal("Almoço de hoje", imagemHtml + '<div class="modal-item"><p>' + escapeHtml(r.data.descricao).replace(/\n/g, "<br>") + "</p></div>");
+    var mensagem = "Olá! Vi o almoço de hoje no site e quero fazer um pedido: " + r.data.descricao;
+    var linkPedido = linkWhatsapp(mensagem);
+    var botaoHtml = linkPedido
+      ? '<a class="botao destaque" style="display:block;text-align:center;text-decoration:none;margin-top:12px" href="' + escapeHtml(linkPedido) + '" target="_blank" rel="noopener">Pedir pelo WhatsApp</a>'
+      : "";
+    abrirModal("Almoço de hoje", imagemHtml + '<div class="modal-item"><p>' + escapeHtml(r.data.descricao).replace(/\n/g, "<br>") + "</p></div>" + botaoHtml);
   }
 
   async function mostrarHappyHour() {
