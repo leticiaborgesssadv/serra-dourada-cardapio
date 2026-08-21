@@ -5,7 +5,7 @@ import { sb } from "./lib/supabase.js";
 
 const html = htm.bind(h);
 
-const VERSAO_CACHE = "15";
+const VERSAO_CACHE = "16";
 
 const MODULOS = [
   { rota: "financeiro", rotulo: "Financeiro", pronto: true },
