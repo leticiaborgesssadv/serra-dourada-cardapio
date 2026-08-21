@@ -217,7 +217,9 @@
     telaPonto.classList.remove("escondido");
     atualizarRelogio();
 
-    var r = await sb.from("funcionario").select("id, nome").limit(1).maybeSingle();
+    var sessao = await sb.auth.getSession();
+    var meuUid = sessao.data && sessao.data.session ? sessao.data.session.user.id : null;
+    var r = await sb.from("funcionario").select("id, nome").eq("user_id", meuUid).maybeSingle();
     if (!r.data) {
       document.getElementById("nome-funcionario").textContent = "Conta não vinculada a um funcionário. Fale com a gerência.";
       return;
@@ -232,6 +234,7 @@
     var inicio = inicioDoDiaLocal(new Date());
     var r = await sb.from("ponto_registro")
       .select("tipo, registrado_em")
+      .eq("funcionario_id", funcionario.id)
       .neq("tipo", "correcao")
       .gte("registrado_em", inicio.toISOString())
       .order("registrado_em", { ascending: true });
@@ -285,6 +288,7 @@
     var inicioMes = new Date(agora.getFullYear(), agora.getMonth(), 1);
     var r = await sb.from("ponto_registro")
       .select("tipo, registrado_em, motivo, registro_original_id")
+      .eq("funcionario_id", funcionario.id)
       .gte("registrado_em", inicioMes.toISOString())
       .order("registrado_em", { ascending: false });
 
