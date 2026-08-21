@@ -20,7 +20,98 @@ function Secao({ titulo, children }) {
   return html`<div class="card"><h3 style="margin-bottom: 14px;">${titulo}</h3>${children}</div>`;
 }
 
-export default function Dashboard() {
+const DIAS_SEMANA = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
+
+function PainelGarconsHorarios() {
+  const [carregando, setCarregando] = useState(true);
+  const [vendas, setVendas] = useState([]);
+
+  useEffect(() => {
+    sb.from("venda").select("garcom_nome, data_hora, valor_liquido, cancelado").then((r) => {
+      setVendas((r.data || []).filter((v) => !v.cancelado));
+      setCarregando(false);
+    });
+  }, []);
+
+  if (carregando) return html`<p class="vazio">Carregando…</p>`;
+
+  if (!vendas.length) {
+    return html`
+      <div class="card">
+        <h3>Garçons e horários</h3>
+        <p class="desc-form">
+          Esta análise usa o nome do garçom e o horário de cada venda (vindos do Colibri) para mostrar quem mais
+          vende e quais dias/horários têm mais movimento — útil para montar a escala.
+        </p>
+        <p class="vazio">Ainda não há vendas importadas do Colibri para gerar esta análise.</p>
+      </div>
+    `;
+  }
+
+  const porGarcom = {};
+  vendas.forEach((v) => {
+    const nome = (v.garcom_nome || "").trim() || "Não informado";
+    if (!porGarcom[nome]) porGarcom[nome] = { faturamento: 0, qtd: 0 };
+    porGarcom[nome].faturamento += Number(v.valor_liquido);
+    porGarcom[nome].qtd += 1;
+  });
+  const ranking = Object.entries(porGarcom)
+    .map(([nome, r]) => ({ nome, ...r, ticketMedio: r.qtd ? r.faturamento / r.qtd : 0 }))
+    .sort((a, b) => b.faturamento - a.faturamento);
+
+  const porHora = Array.from({ length: 24 }, () => 0);
+  const porDiaSemana = Array.from({ length: 7 }, () => 0);
+  vendas.forEach((v) => {
+    const d = new Date(v.data_hora);
+    porHora[d.getHours()] += Number(v.valor_liquido);
+    porDiaSemana[d.getDay()] += Number(v.valor_liquido);
+  });
+  const maxHora = Math.max(1, ...porHora);
+  const maxDia = Math.max(1, ...porDiaSemana);
+
+  return html`
+    <div class="colunas-financeiro">
+      <div>
+        <h3 class="titulo-lista">Ranking de garçons</h3>
+        <div class="lista-contas">
+          ${ranking.map((r, idx) => html`
+            <div class="item-conta" key=${r.nome}>
+              <div class="item-conta-topo">
+                <span class="item-conta-desc">${idx + 1}º — ${r.nome}</span>
+                <span class="item-conta-valor">${formatarMoeda(r.faturamento)}</span>
+              </div>
+              <div class="item-conta-meta">${r.qtd} venda(s) · ticket médio ${formatarMoeda(r.ticketMedio)}</div>
+            </div>
+          `)}
+        </div>
+      </div>
+      <div>
+        <h3 class="titulo-lista">Faturamento por dia da semana</h3>
+        <div class="card" style="margin-bottom: 16px;">
+          ${DIAS_SEMANA.map((dia, i) => html`
+            <div class="barra-linha" key=${dia}>
+              <span class="rotulo">${dia}</span>
+              <div class="barra"><div class="barra-preenchida" style="width: ${(porDiaSemana[i] / maxDia) * 100}%"></div></div>
+              <span class="valor">${formatarMoeda(porDiaSemana[i])}</span>
+            </div>
+          `)}
+        </div>
+        <h3 class="titulo-lista">Faturamento por horário</h3>
+        <div class="card">
+          ${porHora.map((valor, hora) => valor > 0 && html`
+            <div class="barra-linha" key=${hora}>
+              <span class="rotulo">${String(hora).padStart(2, "0")}h</span>
+              <div class="barra"><div class="barra-preenchida" style="width: ${(valor / maxHora) * 100}%"></div></div>
+              <span class="valor">${formatarMoeda(valor)}</span>
+            </div>
+          `)}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function VisaoGeral() {
   const [carregando, setCarregando] = useState(true);
   const [dados, setDados] = useState(null);
 
@@ -83,8 +174,6 @@ export default function Dashboard() {
 
   return html`
     <div>
-      <h2>Dashboard</h2>
-
       <${Secao} titulo="Hoje">
         <div class="stat-grid">
           <div class="stat-box"><div class="stat-num">${formatarMoeda(d.faturamentoHoje)}</div><div class="stat-lbl">Faturamento</div></div>
@@ -121,6 +210,20 @@ export default function Dashboard() {
         ${d.vencendo7.length > 0 && html`<div class="alerta-banner">${d.vencendo7.length} conta(s) vencendo nos próximos 7 dias: ${formatarMoeda(d.vencendo7.reduce((a, c) => a + Number(c.valor), 0))}</div>`}
         ${d.insumosBaixos.length > 0 && html`<div class="alerta-banner">${d.insumosBaixos.length} insumo(s) com estoque baixo: ${d.insumosBaixos.map((i) => i.nome).join(", ")}</div>`}
       </${Secao}>
+    </div>
+  `;
+}
+
+export default function Dashboard() {
+  const [aba, setAba] = useState("visao-geral");
+  return html`
+    <div>
+      <h2>Dashboard</h2>
+      <div class="sub-tabs">
+        <button class=${"sub-tab" + (aba === "visao-geral" ? " ativo" : "")} onClick=${() => setAba("visao-geral")}>Visão geral</button>
+        <button class=${"sub-tab" + (aba === "garcons" ? " ativo" : "")} onClick=${() => setAba("garcons")}>Garçons e horários</button>
+      </div>
+      ${aba === "visao-geral" ? html`<${VisaoGeral} />` : html`<${PainelGarconsHorarios} />`}
     </div>
   `;
 }
