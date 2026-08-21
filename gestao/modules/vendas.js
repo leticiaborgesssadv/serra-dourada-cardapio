@@ -83,8 +83,23 @@ function ImportadorCSV({ onImportado }) {
         setCabecalho(cabecalho);
         setLinhasDados(linhasDados);
         const mapaAuto = {};
+        const PALAVRAS_CHAVE = {
+          data_hora: ["data"],
+          valor_bruto: ["valor", "total"],
+          desconto: ["desconto"],
+          taxa_servico: ["taxa"],
+          mesa: ["mesa"],
+          garcom_nome: ["garcom", "garçom", "atendente"],
+          forma_pagamento: ["pagamento", "forma"],
+          cancelado: ["cancelad"],
+          collibri_id: ["colibri", "id venda", "idvenda"],
+        };
         CAMPOS.forEach((campo) => {
-          const idx = cabecalho.findIndex((h) => h.toLowerCase().includes(campo.chave.split("_")[0]));
+          const palavras = PALAVRAS_CHAVE[campo.chave] || [campo.chave.split("_")[0]];
+          const idx = cabecalho.findIndex((h) => {
+            const hLower = h.toLowerCase();
+            return palavras.some((p) => hLower.includes(p));
+          });
           if (idx >= 0) mapaAuto[campo.chave] = idx;
         });
         setMapeamento(mapaAuto);
