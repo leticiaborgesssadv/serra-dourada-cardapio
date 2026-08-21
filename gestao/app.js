@@ -5,6 +5,8 @@ import { sb } from "./lib/supabase.js";
 
 const html = htm.bind(h);
 
+const VERSAO_CACHE = "5";
+
 const MODULOS = [
   { rota: "financeiro", rotulo: "Financeiro", pronto: true },
   { rota: "estoque", rotulo: "Estoque e CMV", pronto: true },
@@ -77,7 +79,7 @@ function App() {
   useEffect(() => {
     const def = MODULOS.find((m) => m.rota === rota);
     if (!def || !def.pronto) { setModulo(() => null); return; }
-    import(`./modules/${def.rota}.js`).then((mod) => setModulo(() => mod.default));
+    import(`./modules/${def.rota}.js?v=${VERSAO_CACHE}`).then((mod) => setModulo(() => mod.default));
   }, [rota]);
 
   async function entrar(ev) {
