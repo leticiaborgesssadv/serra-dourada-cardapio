@@ -5,14 +5,14 @@ import { sb } from "./lib/supabase.js";
 
 const html = htm.bind(h);
 
-const VERSAO_CACHE = "6";
+const VERSAO_CACHE = "7";
 
 const MODULOS = [
   { rota: "financeiro", rotulo: "Financeiro", pronto: true },
   { rota: "estoque", rotulo: "Estoque e CMV", pronto: true },
   { rota: "compras", rotulo: "Compras e fornecedores", pronto: true },
   { rota: "vendas", rotulo: "Vendas e Colibri", pronto: true },
-  { rota: "dashboard", rotulo: "Dashboard", pronto: false },
+  { rota: "dashboard", rotulo: "Dashboard", pronto: true },
   { rota: "rh", rotulo: "RH e equipe", pronto: false },
   { rota: "documentos", rotulo: "Documentos e fiscal", pronto: false },
   { rota: "marketing", rotulo: "Marketing e CRM", pronto: false },
