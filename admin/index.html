@@ -899,7 +899,7 @@
   var pontoFuncionarios = [];
 
   async function carregarPonto() {
-    var r = await sb.from("funcionario").select("id,nome,papel,ativo,email,user_id").order("papel", { ascending: true }).order("nome", { ascending: true });
+    var r = await sb.from("funcionario").select("id,nome,papel,ativo,email,user_id").eq("isento_ponto", false).order("papel", { ascending: true }).order("nome", { ascending: true });
     pontoFuncionarios = r.data || [];
     renderizarEquipePonto();
     popularSelectCorrecaoFuncionario();
