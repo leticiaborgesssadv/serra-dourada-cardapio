@@ -88,7 +88,7 @@ function FormaDadosSensiveis({ funcionario, dadosExistentes, onSalvo }) {
         <div><label>Contato de emergência — telefone</label><input type="text" value=${contatoTelefone} onInput=${(e) => setContatoTelefone(e.target.value)} /></div>
       </div>
       <label>Observações</label>
-      <textarea rows="2" style="width:100%;padding:9px 11px;border-radius:8px;border:1px solid var(--borda);background:#1a1006;color:var(--texto);font-family:inherit;font-size:0.88rem;" value=${observacoes} onInput=${(e) => setObservacoes(e.target.value)}></textarea>
+      <textarea rows="2" style="width:100%;padding:9px 11px;border-radius:8px;border:1px solid var(--borda);background:var(--fundo-input);color:var(--texto);font-family:inherit;font-size:0.88rem;" value=${observacoes} onInput=${(e) => setObservacoes(e.target.value)}></textarea>
       <button class="botao" type="submit" disabled=${salvando} style="margin-top:10px;">${salvando ? "Salvando…" : "Salvar dados de RH"}</button>
       ${erro && html`<div class="msg-erro">${erro}</div>`}
       ${msgOk && html`<div style="color: var(--sucesso); font-size: 0.8rem; margin-top: 6px;">${msgOk}</div>`}
@@ -509,7 +509,7 @@ function FormaOcorrencia({ funcionarios, onSalvo }) {
         <div><label>Data</label><input type="date" value=${data} onInput=${(e) => setData(e.target.value)} /></div>
       </div>
       <label>Descrição</label>
-      <textarea rows="3" style="width:100%;padding:9px 11px;border-radius:8px;border:1px solid var(--borda);background:#1a1006;color:var(--texto);font-family:inherit;font-size:0.88rem;" value=${descricao} onInput=${(e) => setDescricao(e.target.value)}></textarea>
+      <textarea rows="3" style="width:100%;padding:9px 11px;border-radius:8px;border:1px solid var(--borda);background:var(--fundo-input);color:var(--texto);font-family:inherit;font-size:0.88rem;" value=${descricao} onInput=${(e) => setDescricao(e.target.value)}></textarea>
       <button class="botao" type="submit" disabled=${salvando} style="margin-top:10px;">${salvando ? "Salvando…" : "Registrar ocorrência"}</button>
       ${erro && html`<div class="msg-erro">${erro}</div>`}
     </form>
