@@ -168,16 +168,17 @@ function ImportadorCSV({ onImportado }) {
         else inseridos = linhas.length;
       }
 
-      await sb.from("collibri_sync_log").insert({
+      const logResp = await sb.from("collibri_sync_log").insert({
         estabelecimento_id,
         tipo_entidade: "venda",
         iniciado_em: inicioSync,
         finalizado_em: new Date().toISOString(),
         registros_processados: inseridos,
         registros_com_erro: invalidas.length + (erroInsercao ? linhas.length : 0),
-        status: erroInsercao ? "erro" : (invalidas.length ? "parcial" : "sucesso"),
-        erro_detalhe: erroInsercao || (invalidas.length ? `${invalidas.length} linha(s) inválida(s), ${duplicadas} duplicada(s) ignorada(s)` : null),
+        status: erroInsercao ? "erro" : "concluido",
+        erro_detalhe: erroInsercao || (invalidas.length || duplicadas ? `${invalidas.length} linha(s) inválida(s), ${duplicadas} duplicada(s) ignorada(s)` : null),
       });
+      if (logResp.error) console.error("Falha ao registrar log de sincronização:", logResp.error.message);
 
       if (erroInsercao) { setErro("Falha ao importar: " + erroInsercao); return; }
 
@@ -310,7 +311,7 @@ function HistoricoSincronizacao() {
         <div class="item-conta" key=${l.id}>
           <div class="item-conta-topo">
             <span class="item-conta-desc">${l.tipo_entidade}</span>
-            <span class="chip ${l.status === "sucesso" ? "chip-ok" : l.status === "erro" ? "chip-erro" : "chip-alerta"}">${l.status}</span>
+            <span class="chip ${l.status === "concluido" ? "chip-ok" : l.status === "erro" ? "chip-erro" : "chip-alerta"}">${l.status}</span>
           </div>
           <div class="item-conta-meta">
             ${new Date(l.iniciado_em).toLocaleString("pt-BR")} · ${l.registros_processados} processado(s), ${l.registros_com_erro} com erro
