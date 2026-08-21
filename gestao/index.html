@@ -101,6 +101,8 @@
   .barra-linha .barra { flex: 1; background: #1a1006; border-radius: 6px; overflow: hidden; height: 16px; }
   .barra-linha .barra-preenchida { background: var(--dourado); height: 100%; }
   .barra-linha .valor { width: 90px; text-align: right; flex-shrink: 0; font-variant-numeric: tabular-nums; }
+  .toggle-linha { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 4px 0; }
+  input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--dourado); flex-shrink: 0; }
 
   @media (max-width: 820px) {
     .gestao-shell { flex-direction: column; }
@@ -115,6 +117,6 @@
 </head>
 <body>
 <div id="app"></div>
-<script type="module" src="./app.js?v=9"></script>
+<script type="module" src="./app.js?v=10"></script>
 </body>
 </html>
