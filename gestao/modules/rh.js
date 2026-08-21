@@ -1,11 +1,33 @@
 import { h } from "https://esm.sh/preact@10.19.6";
 import { useState, useEffect, useMemo } from "https://esm.sh/preact@10.19.6/hooks";
 import htm from "https://esm.sh/htm@3.1.1";
-import { sb, formatarMoeda, formatarData, getEstabelecimentoId, hojeISO } from "../lib/supabase.js";
+import { sb, formatarMoeda, formatarData, getEstabelecimentoId, hojeISO, diasAte } from "../lib/supabase.js";
 
 const html = htm.bind(h);
 
 const DIAS = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
+
+const TIPOS_OCORRENCIA = [
+  { valor: "advertencia", rotulo: "Advertência" },
+  { valor: "suspensao", rotulo: "Suspensão" },
+  { valor: "elogio", rotulo: "Elogio" },
+  { valor: "atraso", rotulo: "Atraso" },
+  { valor: "falta", rotulo: "Falta" },
+  { valor: "acidente", rotulo: "Acidente de trabalho" },
+  { valor: "outro", rotulo: "Outro" },
+];
+function chipOcorrencia(tipo) {
+  if (tipo === "elogio") return "chip-ok";
+  if (tipo === "advertencia" || tipo === "suspensao") return "chip-erro";
+  if (tipo === "atraso" || tipo === "falta") return "chip-alerta";
+  return "chip-neutro";
+}
+function somarAno(dataISO, anos) {
+  const d = new Date(dataISO + "T00:00:00");
+  d.setFullYear(d.getFullYear() + anos);
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
 
 function FormaDadosSensiveis({ funcionario, dadosExistentes, onSalvo }) {
   const [cpf, setCpf] = useState(dadosExistentes?.cpf || "");
@@ -320,6 +342,223 @@ function PainelChecklists() {
   `;
 }
 
+function FormaFerias({ funcionarios, onSalvo }) {
+  const [funcionarioId, setFuncionarioId] = useState("");
+  const [inicio, setInicio] = useState("");
+  const [fim, setFim] = useState("");
+  const [limite, setLimite] = useState("");
+  const [salvando, setSalvando] = useState(false);
+  const [erro, setErro] = useState("");
+
+  function aoMudarFim(valor) {
+    setFim(valor);
+    if (valor) setLimite(somarAno(valor, 1));
+  }
+
+  async function salvar(ev) {
+    ev.preventDefault();
+    setErro("");
+    if (!funcionarioId || !inicio || !fim || !limite) { setErro("Preencha funcionário e as datas do período aquisitivo."); return; }
+    setSalvando(true);
+    const r = await sb.from("funcionario_ferias").insert({
+      funcionario_id: funcionarioId, periodo_aquisitivo_inicio: inicio, periodo_aquisitivo_fim: fim, limite_para_gozo: limite,
+    });
+    setSalvando(false);
+    if (r.error) { setErro("Não foi possível salvar: " + r.error.message); return; }
+    setFuncionarioId(""); setInicio(""); setFim(""); setLimite("");
+    onSalvo();
+  }
+
+  return html`
+    <form class="card" onSubmit=${salvar}>
+      <h3>Novo período aquisitivo de férias</h3>
+      <label>Funcionário</label>
+      <select value=${funcionarioId} onChange=${(e) => setFuncionarioId(e.target.value)}>
+        <option value="">Selecione…</option>
+        ${funcionarios.map((f) => html`<option value=${f.id}>${f.nome}</option>`)}
+      </select>
+      <div class="linha-campos">
+        <div><label>Início do período aquisitivo</label><input type="date" value=${inicio} onInput=${(e) => setInicio(e.target.value)} /></div>
+        <div><label>Fim do período aquisitivo</label><input type="date" value=${fim} onInput=${(e) => aoMudarFim(e.target.value)} /></div>
+      </div>
+      <label>Prazo limite para gozo</label>
+      <input type="date" value=${limite} onInput=${(e) => setLimite(e.target.value)} />
+      <p class="desc-form">Sugerido automaticamente como 1 ano após o fim do período aquisitivo (prazo legal); pode ajustar.</p>
+      <button class="botao" type="submit" disabled=${salvando}>${salvando ? "Salvando…" : "Adicionar período"}</button>
+      ${erro && html`<div class="msg-erro">${erro}</div>`}
+    </form>
+  `;
+}
+
+function ItemFerias({ item, nomeFuncionario, onMudou }) {
+  const [programando, setProgramando] = useState(false);
+  const [dataInicioGozo, setDataInicioGozo] = useState(item.data_inicio_gozo || "");
+  const [dataFimGozo, setDataFimGozo] = useState(item.data_fim_gozo || "");
+  const [salvando, setSalvando] = useState(false);
+
+  async function programar() {
+    if (!dataInicioGozo || !dataFimGozo) return;
+    setSalvando(true);
+    await sb.from("funcionario_ferias").update({ data_inicio_gozo: dataInicioGozo, data_fim_gozo: dataFimGozo, status: "programada" }).eq("id", item.id);
+    setSalvando(false);
+    setProgramando(false);
+    onMudou();
+  }
+  async function concluir() {
+    setSalvando(true);
+    await sb.from("funcionario_ferias").update({ status: "gozada" }).eq("id", item.id);
+    setSalvando(false);
+    onMudou();
+  }
+
+  const dias = diasAte(item.limite_para_gozo);
+  const chip = item.status === "gozada" ? html`<span class="chip chip-ok">Gozada</span>`
+    : item.status === "programada" ? html`<span class="chip chip-neutro">Programada</span>`
+    : dias < 0 ? html`<span class="chip chip-erro">Prazo vencido há ${Math.abs(dias)}d</span>`
+    : dias <= 60 ? html`<span class="chip chip-alerta">Prazo em ${dias}d</span>`
+    : html`<span class="chip chip-neutro">Pendente</span>`;
+
+  return html`
+    <div class="item-conta">
+      <div class="item-conta-topo">
+        <span class="item-conta-desc">${nomeFuncionario}</span>
+        ${chip}
+      </div>
+      <div class="item-conta-meta">
+        Aquisitivo ${formatarData(item.periodo_aquisitivo_inicio)} – ${formatarData(item.periodo_aquisitivo_fim)} · limite ${formatarData(item.limite_para_gozo)}
+        ${item.data_inicio_gozo ? html` · gozo ${formatarData(item.data_inicio_gozo)} – ${formatarData(item.data_fim_gozo)}` : ""}
+      </div>
+      ${item.status === "pendente" && !programando && html`<button class="botao-pequeno" onClick=${() => setProgramando(true)}>Programar</button>`}
+      ${item.status === "pendente" && programando && html`
+        <div class="linha-campos" style="margin-top:8px;">
+          <div><label>Início do gozo</label><input type="date" value=${dataInicioGozo} onInput=${(e) => setDataInicioGozo(e.target.value)} /></div>
+          <div><label>Fim do gozo</label><input type="date" value=${dataFimGozo} onInput=${(e) => setDataFimGozo(e.target.value)} /></div>
+        </div>
+        <button class="botao-pequeno" disabled=${salvando} onClick=${programar}>Confirmar</button>
+      `}
+      ${item.status === "programada" && html`<button class="botao-pequeno" disabled=${salvando} onClick=${concluir}>Marcar como gozada</button>`}
+    </div>
+  `;
+}
+
+function PainelFerias() {
+  const [funcionarios, setFuncionarios] = useState([]);
+  const [ferias, setFerias] = useState([]);
+  const [carregando, setCarregando] = useState(true);
+
+  async function carregar() {
+    const [funcRes, feriasRes] = await Promise.all([
+      sb.from("funcionario").select("id,nome").eq("ativo", true).order("nome"),
+      sb.from("funcionario_ferias").select("*").order("limite_para_gozo"),
+    ]);
+    setFuncionarios(funcRes.data || []);
+    setFerias(feriasRes.data || []);
+    setCarregando(false);
+  }
+  useEffect(() => { carregar(); }, []);
+
+  if (carregando) return html`<p class="vazio">Carregando…</p>`;
+
+  const nomesPorId = Object.fromEntries(funcionarios.map((f) => [f.id, f.nome]));
+
+  return html`
+    <div class="colunas-financeiro">
+      <div><${FormaFerias} funcionarios=${funcionarios} onSalvo=${carregar} /></div>
+      <div>
+        <h3 class="titulo-lista">Períodos de férias</h3>
+        ${!ferias.length && html`<p class="vazio">Nenhum período de férias cadastrado ainda.</p>`}
+        <div class="lista-contas">
+          ${ferias.map((f) => html`<${ItemFerias} key=${f.id} item=${f} nomeFuncionario=${nomesPorId[f.funcionario_id] || "?"} onMudou=${carregar} />`)}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function FormaOcorrencia({ funcionarios, onSalvo }) {
+  const [funcionarioId, setFuncionarioId] = useState("");
+  const [tipo, setTipo] = useState(TIPOS_OCORRENCIA[0].valor);
+  const [descricao, setDescricao] = useState("");
+  const [data, setData] = useState(hojeISO());
+  const [salvando, setSalvando] = useState(false);
+  const [erro, setErro] = useState("");
+
+  async function salvar(ev) {
+    ev.preventDefault();
+    setErro("");
+    if (!funcionarioId || !descricao.trim()) { setErro("Selecione o funcionário e descreva a ocorrência."); return; }
+    setSalvando(true);
+    const r = await sb.from("funcionario_ocorrencia").insert({ funcionario_id: funcionarioId, tipo, descricao: descricao.trim(), data });
+    setSalvando(false);
+    if (r.error) { setErro("Não foi possível salvar: " + r.error.message); return; }
+    setDescricao("");
+    onSalvo();
+  }
+
+  return html`
+    <form class="card" onSubmit=${salvar}>
+      <h3>Nova ocorrência</h3>
+      <p class="desc-form">Registro fica no histórico permanente do funcionário e no log de auditoria — não pode ser editado ou apagado depois de salvo.</p>
+      <label>Funcionário</label>
+      <select value=${funcionarioId} onChange=${(e) => setFuncionarioId(e.target.value)}>
+        <option value="">Selecione…</option>
+        ${funcionarios.map((f) => html`<option value=${f.id}>${f.nome}</option>`)}
+      </select>
+      <div class="linha-campos">
+        <div><label>Tipo</label><select value=${tipo} onChange=${(e) => setTipo(e.target.value)}>${TIPOS_OCORRENCIA.map((t) => html`<option value=${t.valor}>${t.rotulo}</option>`)}</select></div>
+        <div><label>Data</label><input type="date" value=${data} onInput=${(e) => setData(e.target.value)} /></div>
+      </div>
+      <label>Descrição</label>
+      <textarea rows="3" style="width:100%;padding:9px 11px;border-radius:8px;border:1px solid var(--borda);background:#1a1006;color:var(--texto);font-family:inherit;font-size:0.88rem;" value=${descricao} onInput=${(e) => setDescricao(e.target.value)}></textarea>
+      <button class="botao" type="submit" disabled=${salvando} style="margin-top:10px;">${salvando ? "Salvando…" : "Registrar ocorrência"}</button>
+      ${erro && html`<div class="msg-erro">${erro}</div>`}
+    </form>
+  `;
+}
+
+function PainelOcorrencias() {
+  const [funcionarios, setFuncionarios] = useState([]);
+  const [ocorrencias, setOcorrencias] = useState([]);
+  const [carregando, setCarregando] = useState(true);
+
+  async function carregar() {
+    const [funcRes, ocoRes] = await Promise.all([
+      sb.from("funcionario").select("id,nome").eq("ativo", true).order("nome"),
+      sb.from("funcionario_ocorrencia").select("*").order("data", { ascending: false }),
+    ]);
+    setFuncionarios(funcRes.data || []);
+    setOcorrencias(ocoRes.data || []);
+    setCarregando(false);
+  }
+  useEffect(() => { carregar(); }, []);
+
+  if (carregando) return html`<p class="vazio">Carregando…</p>`;
+
+  const nomesPorId = Object.fromEntries(funcionarios.map((f) => [f.id, f.nome]));
+
+  return html`
+    <div class="colunas-financeiro">
+      <div><${FormaOcorrencia} funcionarios=${funcionarios} onSalvo=${carregar} /></div>
+      <div>
+        <h3 class="titulo-lista">Histórico</h3>
+        ${!ocorrencias.length && html`<p class="vazio">Nenhuma ocorrência registrada ainda.</p>`}
+        <div class="lista-contas">
+          ${ocorrencias.map((o) => html`
+            <div class="item-conta" key=${o.id}>
+              <div class="item-conta-topo">
+                <span class="item-conta-desc">${nomesPorId[o.funcionario_id] || "?"}</span>
+                <span class="chip ${chipOcorrencia(o.tipo)}">${TIPOS_OCORRENCIA.find((t) => t.valor === o.tipo)?.rotulo || o.tipo}</span>
+              </div>
+              <div class="item-conta-meta">${formatarData(o.data)}</div>
+              <p style="font-size:0.82rem; margin: 4px 0 0;">${o.descricao}</p>
+            </div>
+          `)}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 export default function RH() {
   const [aba, setAba] = useState("equipe");
   return html`
@@ -329,8 +568,14 @@ export default function RH() {
         <button class=${"sub-tab" + (aba === "equipe" ? " ativo" : "")} onClick=${() => setAba("equipe")}>Equipe</button>
         <button class=${"sub-tab" + (aba === "escala" ? " ativo" : "")} onClick=${() => setAba("escala")}>Escala</button>
         <button class=${"sub-tab" + (aba === "checklists" ? " ativo" : "")} onClick=${() => setAba("checklists")}>Checklists</button>
+        <button class=${"sub-tab" + (aba === "ferias" ? " ativo" : "")} onClick=${() => setAba("ferias")}>Férias</button>
+        <button class=${"sub-tab" + (aba === "ocorrencias" ? " ativo" : "")} onClick=${() => setAba("ocorrencias")}>Ocorrências</button>
       </div>
-      ${aba === "equipe" ? html`<${PainelEquipe} />` : aba === "escala" ? html`<${PainelEscala} />` : html`<${PainelChecklists} />`}
+      ${aba === "equipe" && html`<${PainelEquipe} />`}
+      ${aba === "escala" && html`<${PainelEscala} />`}
+      ${aba === "checklists" && html`<${PainelChecklists} />`}
+      ${aba === "ferias" && html`<${PainelFerias} />`}
+      ${aba === "ocorrencias" && html`<${PainelOcorrencias} />`}
     </div>
   `;
 }
