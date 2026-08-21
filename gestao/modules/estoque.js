@@ -579,6 +579,125 @@ function PainelDesperdicio({ insumos }) {
   `;
 }
 
+function normalizarNome(s) {
+  return (s || "").trim().toLowerCase();
+}
+
+const QUADRANTES = [
+  { chave: "estrela", rotulo: "Estrela", desc: "Popular e rentável — o carro-chefe do cardápio.", chip: "chip-ok" },
+  { chave: "cavalo", rotulo: "Cavalo de batalha", desc: "Muito vendido, mas com margem baixa — considere reajustar preço ou custo.", chip: "chip-neutro" },
+  { chave: "quebra_cabeca", rotulo: "Quebra-cabeça", desc: "Boa margem, mas pouco vendido — precisa de mais destaque ou divulgação.", chip: "chip-alerta" },
+  { chave: "abacaxi", rotulo: "Abacaxi", desc: "Pouco vendido e pouco rentável — candidato a sair do cardápio.", chip: "chip-erro" },
+];
+
+function PainelEngenharia({ insumos }) {
+  const [produtos, setProdutos] = useState([]);
+  const [itensFicha, setItensFicha] = useState([]);
+  const [vendaItens, setVendaItens] = useState([]);
+  const [carregando, setCarregando] = useState(true);
+
+  async function carregar() {
+    const [prodRes, itensRes, vendaRes] = await Promise.all([
+      sb.from("produto").select("*").eq("ativo", true).order("nome"),
+      sb.from("ficha_tecnica_item").select("*"),
+      sb.from("venda").select("id, cancelado"),
+    ]);
+    const canceladas = new Set((vendaRes.data || []).filter((v) => v.cancelado).map((v) => v.id));
+    const itemRes = await sb.from("venda_item").select("venda_id, produto_nome, quantidade, valor_total");
+    setProdutos(prodRes.data || []);
+    setItensFicha(itensRes.data || []);
+    setVendaItens((itemRes.data || []).filter((it) => !canceladas.has(it.venda_id)));
+    setCarregando(false);
+  }
+  useEffect(() => { carregar(); }, []);
+
+  const insumosPorId = useMemo(() => Object.fromEntries(insumos.map((i) => [i.id, i])), [insumos]);
+
+  if (carregando) return html`<p class="vazio">Carregando…</p>`;
+
+  const vendidoPorNome = {};
+  vendaItens.forEach((it) => {
+    const chave = normalizarNome(it.produto_nome);
+    if (!vendidoPorNome[chave]) vendidoPorNome[chave] = { quantidade: 0, receita: 0 };
+    vendidoPorNome[chave].quantidade += Number(it.quantidade);
+    vendidoPorNome[chave].receita += Number(it.valor_total);
+  });
+
+  const analise = produtos.map((p) => {
+    const itensDoProduto = itensFicha.filter((it) => it.produto_id === p.id);
+    const custo = itensDoProduto.reduce((acc, it) => {
+      const ins = insumosPorId[it.insumo_id];
+      return acc + (ins ? Number(it.quantidade) * Number(ins.custo_unitario) : 0);
+    }, 0);
+    const margemPct = p.preco_venda > 0 ? ((p.preco_venda - custo) / p.preco_venda) * 100 : 0;
+    const vendido = vendidoPorNome[normalizarNome(p.nome)] || { quantidade: 0, receita: 0 };
+    return { produto: p, custo, margemPct, quantidadeVendida: vendido.quantidade, temFicha: itensDoProduto.length > 0 };
+  });
+
+  const totalVendido = analise.reduce((acc, a) => acc + a.quantidadeVendida, 0);
+  const comFicha = analise.filter((a) => a.temFicha);
+
+  if (totalVendido === 0 || !comFicha.length) {
+    return html`
+      <div class="card">
+        <h3>Engenharia de cardápio</h3>
+        <p class="desc-form">
+          Esta análise cruza a popularidade de cada prato (quantidade vendida, vinda do Colibri) com a margem de
+          cada ficha técnica, para classificar o cardápio em 4 grupos e ajudar a decidir o que manter, destacar,
+          reprecificar ou tirar do menu.
+        </p>
+        <p class="vazio">
+          ${!comFicha.length
+            ? "Cadastre a ficha técnica dos produtos (aba \"Produtos e ficha técnica\") para habilitar esta análise."
+            : "Ainda não há vendas por item importadas do Colibri para calcular a popularidade dos pratos."}
+        </p>
+      </div>
+    `;
+  }
+
+  const mediaQuantidade = comFicha.reduce((acc, a) => acc + a.quantidadeVendida, 0) / comFicha.length;
+  const mediaMargem = comFicha.reduce((acc, a) => acc + a.margemPct, 0) / comFicha.length;
+
+  const classificados = comFicha.map((a) => {
+    const popular = a.quantidadeVendida >= mediaQuantidade * 0.7;
+    const rentavel = a.margemPct >= mediaMargem;
+    const quadrante = popular && rentavel ? "estrela" : popular && !rentavel ? "cavalo" : !popular && rentavel ? "quebra_cabeca" : "abacaxi";
+    return { ...a, quadrante };
+  });
+
+  return html`
+    <div>
+      <p class="desc-form">
+        Classificação com base na média do cardápio: popularidade média de ${mediaQuantidade.toFixed(1)} unidades vendidas
+        e margem média de ${mediaMargem.toFixed(0)}%.
+      </p>
+      <div class="stat-grid" style="grid-template-columns: repeat(2, 1fr);">
+        ${QUADRANTES.map((q) => html`
+          <div class="card" key=${q.chave} style="margin-bottom:0;">
+            <div class="item-conta-topo">
+              <h3 style="margin:0;">${q.rotulo}</h3>
+              <span class="chip ${q.chip}">${classificados.filter((c) => c.quadrante === q.chave).length}</span>
+            </div>
+            <p class="desc-form">${q.desc}</p>
+            <div class="lista-contas">
+              ${classificados.filter((c) => c.quadrante === q.chave).map((c) => html`
+                <div class="item-conta" key=${c.produto.id}>
+                  <div class="item-conta-topo">
+                    <span class="item-conta-desc">${c.produto.nome}</span>
+                    <span class="item-conta-valor">${formatarMoeda(c.produto.preco_venda)}</span>
+                  </div>
+                  <div class="item-conta-meta">${c.quantidadeVendida} vendido(s) · margem ${c.margemPct.toFixed(0)}%</div>
+                </div>
+              `)}
+              ${!classificados.filter((c) => c.quadrante === q.chave).length && html`<p class="vazio">Nenhum item neste grupo.</p>`}
+            </div>
+          </div>
+        `)}
+      </div>
+    </div>
+  `;
+}
+
 export default function Estoque() {
   const [aba, setAba] = useState("insumos");
   const [insumos, setInsumos] = useState([]);
@@ -604,6 +723,7 @@ export default function Estoque() {
         <button class=${"sub-tab" + (aba === "produtos" ? " ativo" : "")} onClick=${() => setAba("produtos")}>Produtos e ficha técnica</button>
         <button class=${"sub-tab" + (aba === "inventario" ? " ativo" : "")} onClick=${() => setAba("inventario")}>Inventário</button>
         <button class=${"sub-tab" + (aba === "desperdicio" ? " ativo" : "")} onClick=${() => setAba("desperdicio")}>Desperdício</button>
+        <button class=${"sub-tab" + (aba === "engenharia" ? " ativo" : "")} onClick=${() => setAba("engenharia")}>Engenharia de cardápio</button>
       </div>
       ${carregando
         ? html`<p class="vazio">Carregando…</p>`
@@ -613,7 +733,9 @@ export default function Estoque() {
             ? html`<${PainelProdutos} insumos=${insumos} />`
             : aba === "inventario"
               ? html`<${PainelInventario} insumos=${insumos} />`
-              : html`<${PainelDesperdicio} insumos=${insumos} />`}
+              : aba === "desperdicio"
+                ? html`<${PainelDesperdicio} insumos=${insumos} />`
+                : html`<${PainelEngenharia} insumos=${insumos} />`}
     </div>
   `;
 }
