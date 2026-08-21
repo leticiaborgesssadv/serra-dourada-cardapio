@@ -125,6 +125,7 @@
     <button data-aba="botoes">Botões</button>
     <button data-aba="qrcode">QR Code</button>
     <button data-aba="estatisticas">Estatísticas</button>
+    <button data-aba="ponto">Ponto</button>
   </nav>
 
   <main>
@@ -155,8 +156,7 @@
         <p class="desc">O que aparece quando o cliente toca em "Almoço de hoje".</p>
         <p class="msg erro escondido" id="almoco-desatualizado">⚠ Este prato foi publicado antes de hoje — clientes ainda estão vendo o almoço de outro dia. Atualize a descrição e publique novamente.</p>
         <label for="almoco-descricao">Descrição</label>
-        <textarea id="almoco-descricao" placeholder="Ex.: Feijoada completa, arroz, couve e torresmo"></textarea>
-        <p class="desc" style="margin-top:-4px">Os preços (prato feito, self-service, quilo, marmitex) são fixos e já vêm do cardápio visual — não precisa informar aqui.</p>
+        <textarea id="almoco-descricao" placeholder="Ex.: Feijoada completa, arroz, couve e torresmo — R$ 32,90"></textarea>
         <button class="botao" id="btn-publicar-almoco"><span id="spin-almoco" class="spinner escondido"></span>Publicar almoço de hoje</button>
         <div class="msg" id="msg-almoco"></div>
       </div>
@@ -239,12 +239,8 @@
         <h2>Contato e redes</h2>
         <label for="cfg-mensagem">Mensagem de boas-vindas</label>
         <textarea id="cfg-mensagem"></textarea>
-        <label for="cfg-whatsapp">WhatsApp geral (DDD + número, só dígitos)</label>
+        <label for="cfg-whatsapp">WhatsApp (DDD + número, só dígitos)</label>
         <input type="text" id="cfg-whatsapp" placeholder="Ex.: 62999998888" />
-        <p class="desc" style="margin-top:-4px">Usado em reservas, pedidos de almoço, Happy Hour e Feijoada.</p>
-        <label for="cfg-whatsapp-trabalhe">WhatsApp de "Trabalhe conosco" (DDD + número, só dígitos)</label>
-        <input type="text" id="cfg-whatsapp-trabalhe" placeholder="Ex.: 62999998888" />
-        <p class="desc" style="margin-top:-4px">Número separado, só para candidatos a vaga.</p>
         <label for="cfg-instagram">Link do Instagram</label>
         <input type="text" id="cfg-instagram" placeholder="https://instagram.com/serradourada" />
         <label for="cfg-maps">Link do Google Maps</label>
@@ -264,11 +260,6 @@
         <input type="file" id="hero-input" accept="image/jpeg,image/png,image/webp" />
         <button class="botao" id="btn-upload-hero"><span id="spin-hero" class="spinner escondido"></span>Enviar imagem</button>
         <div class="msg" id="msg-hero"></div>
-        <div class="toggle-linha" style="margin-top:14px;border-top:1px solid #e5e0d5;padding-top:14px">
-          <label for="hero-clima" style="margin:0">Trocar por drinks em dias quentes</label>
-          <input type="checkbox" id="hero-clima" />
-        </div>
-        <p class="desc">Quando ativado, em dias de calor (30°C ou mais em Goiânia) a foto do topo troca automaticamente para uma imagem de drinks/Happy Hour. Nos demais dias, continua mostrando a imagem escolhida acima.</p>
       </div>
       <div class="card">
         <h2>Logo</h2>
@@ -323,6 +314,40 @@
           <div class="stat-box"><div class="num" id="stat-clicks">–</div><div class="lbl">Cliques totais</div></div>
         </div>
         <div id="stat-botoes"></div>
+      </div>
+    </section>
+
+    <!-- PONTO -->
+    <section class="aba" id="aba-ponto">
+      <div class="card">
+        <h2>Equipe e login individual</h2>
+        <p class="desc">Cada funcionário bate o próprio ponto pelo celular em <strong>ponto.html</strong>, com login individual (exigência da Portaria MTP 671/2021). Crie o login de quem ainda não tem.</p>
+        <div id="lista-equipe-ponto"><p class="msg">Carregando…</p></div>
+      </div>
+
+      <div class="card">
+        <h2>Registros por dia</h2>
+        <label for="ponto-data">Data</label>
+        <input type="date" id="ponto-data" />
+        <button class="botao botao-secundario" id="btn-carregar-dia">Ver registros</button>
+        <div id="lista-registros-dia" style="margin-top:14px"><p class="msg">Selecione uma data.</p></div>
+      </div>
+
+      <div class="card">
+        <h2>Registrar correção</h2>
+        <p class="desc">Corrige um horário sem apagar o original — o registro antigo continua no histórico, com a correção ao lado e o motivo (trilha de auditoria).</p>
+        <label for="correcao-funcionario">Funcionário</label>
+        <select id="correcao-funcionario"></select>
+        <label for="correcao-data">Data do registro a corrigir</label>
+        <input type="date" id="correcao-data" />
+        <label for="correcao-registro-original">Registro original</label>
+        <select id="correcao-registro-original"><option value="">Selecione o funcionário e a data acima</option></select>
+        <label for="correcao-datahora">Horário correto</label>
+        <input type="datetime-local" id="correcao-datahora" />
+        <label for="correcao-motivo">Motivo da correção</label>
+        <textarea id="correcao-motivo" placeholder="Ex.: esqueceu de bater o ponto no retorno do intervalo"></textarea>
+        <button class="botao" id="btn-salvar-correcao">Salvar correção</button>
+        <div class="msg" id="msg-correcao"></div>
       </div>
     </section>
   </main>
@@ -418,6 +443,7 @@
     await Promise.all([
       carregarArquivoAtual(), carregarAlmoco(), carregarHappyHour(), carregarPromocoes(),
       carregarEventos(), carregarHorario(), carregarContato(), carregarBotoes(), carregarEstatisticas(),
+      carregarPonto(),
     ]);
   }
 
@@ -681,7 +707,6 @@
     if (!r.data) return;
     document.getElementById("cfg-mensagem").value = r.data.mensagem_boas_vindas || "";
     document.getElementById("cfg-whatsapp").value = r.data.whatsapp || "";
-    document.getElementById("cfg-whatsapp-trabalhe").value = r.data.whatsapp_trabalhe_conosco || "";
     document.getElementById("cfg-instagram").value = r.data.instagram_url || "";
     document.getElementById("cfg-maps").value = r.data.google_maps_url || "";
     document.getElementById("cfg-avaliacao").value = r.data.avaliacao_url || "";
@@ -693,7 +718,6 @@
       var imgLogo = document.getElementById("preview-logo");
       imgLogo.src = r.data.imagem_logo_url; imgLogo.classList.remove("escondido");
     }
-    document.getElementById("hero-clima").checked = !!r.data.hero_por_clima;
   }
   document.getElementById("btn-salvar-contato").addEventListener("click", async function () {
     var msg = document.getElementById("msg-contato"), btn = this, spin = document.getElementById("spin-contato");
@@ -701,7 +725,6 @@
     var r = await sb.from("pagina_config").update({
       mensagem_boas_vindas: document.getElementById("cfg-mensagem").value.trim(),
       whatsapp: document.getElementById("cfg-whatsapp").value.replace(/\D/g,"") || null,
-      whatsapp_trabalhe_conosco: document.getElementById("cfg-whatsapp-trabalhe").value.replace(/\D/g,"") || null,
       instagram_url: document.getElementById("cfg-instagram").value.trim() || null,
       google_maps_url: document.getElementById("cfg-maps").value.trim() || null,
       avaliacao_url: document.getElementById("cfg-avaliacao").value.trim() || null,
@@ -713,13 +736,6 @@
   });
 
   // ---------- IMAGENS ----------
-  document.getElementById("hero-clima").addEventListener("change", async function () {
-    var msg = document.getElementById("msg-hero"), checkbox = this;
-    var r = await sb.from("pagina_config").update({ hero_por_clima: checkbox.checked, atualizado_em: new Date().toISOString() }).eq("estabelecimento_id", estabelecimentoId);
-    if (r.error) { checkbox.checked = !checkbox.checked; return setMsg(msg, "Erro ao salvar: " + r.error.message, "erro"); }
-    setMsg(msg, checkbox.checked ? "Troca por clima ativada." : "Troca por clima desativada.", "sucesso");
-  });
-
   document.getElementById("btn-upload-hero").addEventListener("click", async function () {
     var msg = document.getElementById("msg-hero"), btn = this, spin = document.getElementById("spin-hero");
     var file = document.getElementById("hero-input").files[0];
@@ -877,6 +893,176 @@
       el.appendChild(linha);
     });
   }
+
+  // ---------- PONTO ----------
+  var PONTO_ROTULOS = { entrada: "Entrada", saida_intervalo: "Início intervalo", retorno_intervalo: "Fim intervalo", saida: "Saída", correcao: "Correção" };
+  var pontoFuncionarios = [];
+
+  async function carregarPonto() {
+    var r = await sb.from("funcionario").select("id,nome,papel,ativo,email,user_id").order("papel", { ascending: true }).order("nome", { ascending: true });
+    pontoFuncionarios = r.data || [];
+    renderizarEquipePonto();
+    popularSelectCorrecaoFuncionario();
+
+    var hoje = new Date().toISOString().slice(0, 10);
+    var campoData = document.getElementById("ponto-data");
+    var campoDataCorrecao = document.getElementById("correcao-data");
+    if (!campoData.value) campoData.value = hoje;
+    if (!campoDataCorrecao.value) campoDataCorrecao.value = hoje;
+    await carregarRegistrosDoDia();
+  }
+
+  function renderizarEquipePonto() {
+    var el = document.getElementById("lista-equipe-ponto");
+    el.innerHTML = "";
+    pontoFuncionarios.forEach(function (f) {
+      var item = document.createElement("div");
+      item.className = "item-lista";
+      var statusHtml = f.user_id
+        ? '<span style="color:var(--sucesso)">Login ativo' + (f.email ? " · " + escapeHtml(f.email) : "") + "</span>"
+        : '<span style="color:var(--texto-suave)">Sem login</span>';
+      item.innerHTML =
+        '<div class="item-lista-topo"><div><h3>' + escapeHtml(f.nome) + '</h3><div class="meta">' + escapeHtml(f.papel) + (f.ativo ? "" : " · inativo") + "</div></div></div>" +
+        '<div class="meta" style="margin-bottom:8px">' + statusHtml + "</div>" +
+        (f.user_id ? "" : '<button class="botao botao-secundario botao-pequeno" data-criar-login="' + f.id + '">Criar login</button>') +
+        '<div class="msg" id="msg-login-' + f.id + '"></div>';
+      el.appendChild(item);
+    });
+  }
+
+  document.getElementById("lista-equipe-ponto").addEventListener("click", async function (ev) {
+    var btn = ev.target.closest("button[data-criar-login]");
+    if (!btn) return;
+    var funcId = btn.dataset.criarLogin;
+    var func = pontoFuncionarios.find(function (f) { return f.id === funcId; });
+    var msg = document.getElementById("msg-login-" + funcId);
+    var email = window.prompt("E-mail de login para " + (func ? func.nome : "funcionário") + ":\n(não precisa ser um e-mail que a pessoa usa no dia a dia — só precisa ser único no sistema)");
+    if (email == null) return;
+    email = email.trim();
+    if (!email) return;
+    btn.disabled = true;
+    setMsg(msg, "Criando login…", "");
+    try {
+      var sess = await sb.auth.getSession();
+      var token = sess.data && sess.data.session ? sess.data.session.access_token : null;
+      var resp = await fetch(SUPABASE_URL + "/functions/v1/ponto-criar-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token, "apikey": ANON_KEY },
+        body: JSON.stringify({ funcionario_id: funcId, email: email }),
+      });
+      var out = await resp.json();
+      if (!resp.ok) { setMsg(msg, out.error || "Não foi possível criar o login.", "erro"); btn.disabled = false; return; }
+      setMsg(msg, "Login criado! Repasse ao funcionário — e-mail: " + out.email + " · senha: " + out.senha + " (anote agora, essa senha não aparece de novo).", "sucesso");
+      await carregarPonto();
+    } catch (e) {
+      setMsg(msg, "Erro de conexão. Tente novamente.", "erro");
+      btn.disabled = false;
+    }
+  });
+
+  function popularSelectCorrecaoFuncionario() {
+    var sel = document.getElementById("correcao-funcionario");
+    var atual = sel.value;
+    sel.innerHTML = '<option value="">Selecione…</option>';
+    pontoFuncionarios.forEach(function (f) {
+      var op = document.createElement("option");
+      op.value = f.id; op.textContent = f.nome;
+      sel.appendChild(op);
+    });
+    sel.value = atual || "";
+  }
+
+  document.getElementById("btn-carregar-dia").addEventListener("click", carregarRegistrosDoDia);
+
+  async function carregarRegistrosDoDia() {
+    var dataStr = document.getElementById("ponto-data").value;
+    var el = document.getElementById("lista-registros-dia");
+    if (!dataStr) { el.innerHTML = '<p class="msg">Selecione uma data.</p>'; return; }
+    var inicio = new Date(dataStr + "T00:00:00");
+    var fim = new Date(inicio.getTime() + 24 * 60 * 60 * 1000);
+    var r = await sb.from("ponto_registro")
+      .select("id, tipo, registrado_em, motivo, funcionario_id")
+      .gte("registrado_em", inicio.toISOString())
+      .lt("registrado_em", fim.toISOString())
+      .order("registrado_em", { ascending: true });
+
+    var linhas = r.data || [];
+    if (!linhas.length) { el.innerHTML = '<p class="msg">Nenhum registro nesta data.</p>'; return; }
+
+    var porFunc = {}, ordem = [];
+    linhas.forEach(function (l) {
+      if (!porFunc[l.funcionario_id]) { porFunc[l.funcionario_id] = []; ordem.push(l.funcionario_id); }
+      porFunc[l.funcionario_id].push(l);
+    });
+
+    el.innerHTML = "";
+    ordem.forEach(function (funcId) {
+      var func = pontoFuncionarios.find(function (f) { return f.id === funcId; });
+      var bloco = document.createElement("div");
+      bloco.className = "item-lista";
+      var linhasHtml = porFunc[funcId].map(function (l) {
+        var rotulo = PONTO_ROTULOS[l.tipo] || l.tipo;
+        var hora = new Date(l.registrado_em).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+        return '<div class="meta">' + escapeHtml(rotulo) + " — " + hora + (l.motivo ? " · " + escapeHtml(l.motivo) : "") + "</div>";
+      }).join("");
+      bloco.innerHTML = '<h3 style="margin:0 0 6px">' + escapeHtml(func ? func.nome : "Funcionário") + "</h3>" + linhasHtml;
+      el.appendChild(bloco);
+    });
+  }
+
+  document.getElementById("correcao-funcionario").addEventListener("change", carregarRegistrosParaCorrecao);
+  document.getElementById("correcao-data").addEventListener("change", carregarRegistrosParaCorrecao);
+
+  async function carregarRegistrosParaCorrecao() {
+    var funcId = document.getElementById("correcao-funcionario").value;
+    var dataStr = document.getElementById("correcao-data").value;
+    var sel = document.getElementById("correcao-registro-original");
+    sel.innerHTML = '<option value="">Selecione o registro a corrigir…</option>';
+    if (!funcId || !dataStr) return;
+    var inicio = new Date(dataStr + "T00:00:00");
+    var fim = new Date(inicio.getTime() + 24 * 60 * 60 * 1000);
+    var r = await sb.from("ponto_registro")
+      .select("id, tipo, registrado_em")
+      .eq("funcionario_id", funcId)
+      .neq("tipo", "correcao")
+      .gte("registrado_em", inicio.toISOString())
+      .lt("registrado_em", fim.toISOString())
+      .order("registrado_em", { ascending: true });
+    (r.data || []).forEach(function (l) {
+      var op = document.createElement("option");
+      op.value = l.id;
+      op.textContent = (PONTO_ROTULOS[l.tipo] || l.tipo) + " — " + new Date(l.registrado_em).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+      sel.appendChild(op);
+    });
+  }
+
+  document.getElementById("btn-salvar-correcao").addEventListener("click", async function () {
+    var msg = document.getElementById("msg-correcao");
+    var funcId = document.getElementById("correcao-funcionario").value;
+    var origId = document.getElementById("correcao-registro-original").value;
+    var novaDataHora = document.getElementById("correcao-datahora").value;
+    var motivo = document.getElementById("correcao-motivo").value.trim();
+    setMsg(msg, "", "");
+    if (!funcId || !origId || !novaDataHora || !motivo) { setMsg(msg, "Preencha funcionário, registro original, novo horário e motivo.", "erro"); return; }
+    var btn = document.getElementById("btn-salvar-correcao");
+    btn.disabled = true;
+    try {
+      var r = await sb.from("ponto_registro").insert({
+        tipo: "correcao",
+        funcionario_id: funcId,
+        registro_original_id: origId,
+        registrado_em: new Date(novaDataHora).toISOString(),
+        motivo: motivo,
+      });
+      if (r.error) { setMsg(msg, "Não foi possível salvar: " + r.error.message, "erro"); return; }
+      setMsg(msg, "Correção registrada.", "sucesso");
+      document.getElementById("correcao-motivo").value = "";
+      document.getElementById("correcao-datahora").value = "";
+      await carregarRegistrosDoDia();
+      await carregarRegistrosParaCorrecao();
+    } catch (e) { setMsg(msg, "Erro de conexão.", "erro"); }
+    finally { btn.disabled = false; }
+  });
 
   // ---------- Sessão já ativa ----------
   sb.auth.getSession().then(function (r) { if (r.data && r.data.session) mostrarAdmin(); });
