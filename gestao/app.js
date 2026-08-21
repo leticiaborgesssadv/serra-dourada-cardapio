@@ -7,7 +7,7 @@ const html = htm.bind(h);
 
 const MODULOS = [
   { rota: "financeiro", rotulo: "Financeiro", pronto: true },
-  { rota: "estoque", rotulo: "Estoque e CMV", pronto: false },
+  { rota: "estoque", rotulo: "Estoque e CMV", pronto: true },
   { rota: "compras", rotulo: "Compras e fornecedores", pronto: false },
   { rota: "vendas", rotulo: "Vendas e Colibri", pronto: false },
   { rota: "dashboard", rotulo: "Dashboard", pronto: false },
