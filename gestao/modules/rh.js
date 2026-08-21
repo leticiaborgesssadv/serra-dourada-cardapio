@@ -1,7 +1,7 @@
 import { h } from "https://esm.sh/preact@10.19.6";
 import { useState, useEffect, useMemo } from "https://esm.sh/preact@10.19.6/hooks";
 import htm from "https://esm.sh/htm@3.1.1";
-import { sb, formatarMoeda, formatarData } from "../lib/supabase.js";
+import { sb, formatarMoeda, formatarData, getEstabelecimentoId, hojeISO } from "../lib/supabase.js";
 
 const html = htm.bind(h);
 
@@ -216,6 +216,110 @@ function PainelEscala() {
   `;
 }
 
+function FormaChecklistItem({ ordemSeguinte, onSalvo }) {
+  const [nome, setNome] = useState("");
+  const [salvando, setSalvando] = useState(false);
+  const [erro, setErro] = useState("");
+
+  async function salvar(ev) {
+    ev.preventDefault();
+    setErro("");
+    if (!nome.trim()) { setErro("Descreva o item do checklist."); return; }
+    setSalvando(true);
+    try {
+      const estabelecimento_id = await getEstabelecimentoId();
+      const r = await sb.from("checklist_item").insert({ estabelecimento_id, nome: nome.trim(), ativo: true, ordem: ordemSeguinte });
+      if (r.error) { setErro("Não foi possível salvar: " + r.error.message); return; }
+      setNome("");
+      onSalvo();
+    } catch (e) { setErro("Erro de conexão."); }
+    finally { setSalvando(false); }
+  }
+
+  return html`
+    <form class="card" onSubmit=${salvar}>
+      <h3>Novo item de checklist</h3>
+      <label>Descrição</label>
+      <input type="text" value=${nome} onInput=${(e) => setNome(e.target.value)} placeholder="Ex.: Salão limpo e organizado" />
+      <button class="botao" type="submit" disabled=${salvando}>${salvando ? "Salvando…" : "Adicionar item"}</button>
+      ${erro && html`<div class="msg-erro">${erro}</div>`}
+    </form>
+  `;
+}
+
+function PainelChecklists() {
+  const [itens, setItens] = useState([]);
+  const [execucoesHoje, setExecucoesHoje] = useState([]);
+  const [funcionarios, setFuncionarios] = useState([]);
+  const [funcionarioId, setFuncionarioId] = useState("");
+  const [carregando, setCarregando] = useState(true);
+  const [processandoId, setProcessandoId] = useState(null);
+
+  async function carregar() {
+    const hoje = hojeISO();
+    const [itensRes, execRes, funcRes] = await Promise.all([
+      sb.from("checklist_item").select("*").eq("ativo", true).order("ordem"),
+      sb.from("checklist_execucao").select("*").eq("data", hoje),
+      sb.from("funcionario").select("id,nome").eq("ativo", true).order("nome"),
+    ]);
+    setItens(itensRes.data || []);
+    setExecucoesHoje(execRes.data || []);
+    setFuncionarios(funcRes.data || []);
+    setCarregando(false);
+  }
+  useEffect(() => { carregar(); }, []);
+
+  async function marcar(itemId, conforme) {
+    setProcessandoId(itemId);
+    await sb.from("checklist_execucao").insert({
+      checklist_item_id: itemId, data: hojeISO(), conforme, funcionario_id: funcionarioId || null,
+    });
+    setProcessandoId(null);
+    carregar();
+  }
+
+  if (carregando) return html`<p class="vazio">Carregando…</p>`;
+
+  const execucoesPorItem = Object.fromEntries(execucoesHoje.map((e) => [e.checklist_item_id, e]));
+  const ordemSeguinte = itens.length ? Math.max(...itens.map((i) => i.ordem)) + 1 : 1;
+
+  return html`
+    <div class="colunas-financeiro">
+      <div><${FormaChecklistItem} ordemSeguinte=${ordemSeguinte} onSalvo=${carregar} /></div>
+      <div>
+        <h3 class="titulo-lista">Execução de hoje</h3>
+        <label style="max-width: 260px;">Quem está executando</label>
+        <select style="max-width: 260px;" value=${funcionarioId} onChange=${(e) => setFuncionarioId(e.target.value)}>
+          <option value="">— não informar —</option>
+          ${funcionarios.map((f) => html`<option value=${f.id}>${f.nome}</option>`)}
+        </select>
+        ${!itens.length && html`<p class="vazio">Nenhum item de checklist cadastrado ainda.</p>`}
+        <div class="lista-contas" style="margin-top: 10px;">
+          ${itens.map((item) => {
+            const exec = execucoesPorItem[item.id];
+            return html`
+              <div class="item-conta" key=${item.id}>
+                <div class="item-conta-topo">
+                  <span class="item-conta-desc">${item.nome}</span>
+                  ${exec
+                    ? html`<span class="chip ${exec.conforme ? "chip-ok" : "chip-erro"}">${exec.conforme ? "Conforme" : "Não conforme"}</span>`
+                    : html`<span class="chip chip-neutro">Pendente</span>`}
+                </div>
+                ${!exec && html`
+                  <div class="linha-botoes" style="margin-top:8px; display:flex; gap:8px;">
+                    <button class="botao-pequeno" disabled=${processandoId === item.id} onClick=${() => marcar(item.id, true)}>Conforme</button>
+                    <button class="botao-secundario-pequeno" disabled=${processandoId === item.id} onClick=${() => marcar(item.id, false)}>Não conforme</button>
+                  </div>
+                `}
+              </div>
+            `;
+          })}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 export default function RH() {
   const [aba, setAba] = useState("equipe");
   return html`
@@ -224,8 +328,9 @@ export default function RH() {
       <div class="sub-tabs">
         <button class=${"sub-tab" + (aba === "equipe" ? " ativo" : "")} onClick=${() => setAba("equipe")}>Equipe</button>
         <button class=${"sub-tab" + (aba === "escala" ? " ativo" : "")} onClick=${() => setAba("escala")}>Escala</button>
+        <button class=${"sub-tab" + (aba === "checklists" ? " ativo" : "")} onClick=${() => setAba("checklists")}>Checklists</button>
       </div>
-      ${aba === "equipe" ? html`<${PainelEquipe} />` : html`<${PainelEscala} />`}
+      ${aba === "equipe" ? html`<${PainelEquipe} />` : aba === "escala" ? html`<${PainelEscala} />` : html`<${PainelChecklists} />`}
     </div>
   `;
 }
