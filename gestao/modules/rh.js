@@ -29,6 +29,21 @@ function somarAno(dataISO, anos) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
+const TIPOS_DOCUMENTO_FUNCIONARIO = [
+  { valor: "rg", rotulo: "RG" },
+  { valor: "cpf", rotulo: "CPF" },
+  { valor: "ctps", rotulo: "CTPS" },
+  { valor: "pis", rotulo: "PIS/PASEP" },
+  { valor: "titulo_eleitor", rotulo: "Título de eleitor" },
+  { valor: "comprovante_residencia", rotulo: "Comprovante de residência" },
+  { valor: "aso_admissional", rotulo: "ASO admissional" },
+  { valor: "aso_periodico", rotulo: "ASO periódico" },
+  { valor: "aso_demissional", rotulo: "ASO demissional" },
+  { valor: "certificado_curso", rotulo: "Certificado de curso" },
+  { valor: "contrato_assinado", rotulo: "Contrato assinado" },
+  { valor: "outro", rotulo: "Outro" },
+];
+
 function FormaDadosSensiveis({ funcionario, dadosExistentes, onSalvo }) {
   const [cpf, setCpf] = useState(dadosExistentes?.cpf || "");
   const [telefone, setTelefone] = useState(dadosExistentes?.telefone || "");
@@ -559,6 +574,212 @@ function PainelOcorrencias() {
   `;
 }
 
+function FormaUniforme({ funcionarios, onSalvo }) {
+  const [funcionarioId, setFuncionarioId] = useState("");
+  const [item, setItem] = useState("");
+  const [tamanho, setTamanho] = useState("");
+  const [quantidade, setQuantidade] = useState("1");
+  const [dataEntrega, setDataEntrega] = useState(hojeISO());
+  const [observacoes, setObservacoes] = useState("");
+  const [salvando, setSalvando] = useState(false);
+  const [erro, setErro] = useState("");
+
+  async function salvar(ev) {
+    ev.preventDefault();
+    setErro("");
+    if (!funcionarioId || !item.trim()) { setErro("Selecione o funcionário e informe o item."); return; }
+    setSalvando(true);
+    const r = await sb.from("funcionario_uniforme").insert({
+      funcionario_id: funcionarioId, item: item.trim(), tamanho: tamanho.trim() || null,
+      quantidade: Number(quantidade) || 1, data_entrega: dataEntrega, observacoes: observacoes.trim() || null,
+    });
+    setSalvando(false);
+    if (r.error) { setErro("Não foi possível salvar: " + r.error.message); return; }
+    setItem(""); setTamanho(""); setQuantidade("1"); setObservacoes("");
+    onSalvo();
+  }
+
+  return html`
+    <form class="card" onSubmit=${salvar}>
+      <h3>Nova entrega de uniforme</h3>
+      <label>Funcionário</label>
+      <select value=${funcionarioId} onChange=${(e) => setFuncionarioId(e.target.value)}>
+        <option value="">Selecione…</option>
+        ${funcionarios.map((f) => html`<option value=${f.id}>${f.nome}</option>`)}
+      </select>
+      <label>Item</label>
+      <input type="text" value=${item} onInput=${(e) => setItem(e.target.value)} placeholder="Ex.: Camisa polo, avental, tênis" />
+      <div class="linha-campos">
+        <div><label>Tamanho</label><input type="text" value=${tamanho} onInput=${(e) => setTamanho(e.target.value)} placeholder="Ex.: M, 40" /></div>
+        <div><label>Quantidade</label><input type="number" min="1" value=${quantidade} onInput=${(e) => setQuantidade(e.target.value)} /></div>
+      </div>
+      <label>Data de entrega</label>
+      <input type="date" value=${dataEntrega} onInput=${(e) => setDataEntrega(e.target.value)} />
+      <label>Observações</label>
+      <input type="text" value=${observacoes} onInput=${(e) => setObservacoes(e.target.value)} />
+      <button class="botao" type="submit" disabled=${salvando} style="margin-top:10px;">${salvando ? "Salvando…" : "Registrar entrega"}</button>
+      ${erro && html`<div class="msg-erro">${erro}</div>`}
+    </form>
+  `;
+}
+
+function PainelUniformes() {
+  const [funcionarios, setFuncionarios] = useState([]);
+  const [uniformes, setUniformes] = useState([]);
+  const [carregando, setCarregando] = useState(true);
+
+  async function carregar() {
+    const [funcRes, uniRes] = await Promise.all([
+      sb.from("funcionario").select("id,nome").eq("ativo", true).order("nome"),
+      sb.from("funcionario_uniforme").select("*").order("data_entrega", { ascending: false }),
+    ]);
+    setFuncionarios(funcRes.data || []);
+    setUniformes(uniRes.data || []);
+    setCarregando(false);
+  }
+  useEffect(() => { carregar(); }, []);
+
+  async function remover(id) {
+    await sb.from("funcionario_uniforme").delete().eq("id", id);
+    carregar();
+  }
+
+  if (carregando) return html`<p class="vazio">Carregando…</p>`;
+
+  const nomesPorId = Object.fromEntries(funcionarios.map((f) => [f.id, f.nome]));
+
+  return html`
+    <div class="colunas-financeiro">
+      <div><${FormaUniforme} funcionarios=${funcionarios} onSalvo=${carregar} /></div>
+      <div>
+        <h3 class="titulo-lista">Entregas registradas</h3>
+        ${!uniformes.length && html`<p class="vazio">Nenhuma entrega registrada ainda.</p>`}
+        <div class="lista-contas">
+          ${uniformes.map((u) => html`
+            <div class="item-conta" key=${u.id}>
+              <div class="item-conta-topo">
+                <span class="item-conta-desc">${nomesPorId[u.funcionario_id] || "?"} — ${u.item}</span>
+                <span class="chip chip-neutro">${u.quantidade}x${u.tamanho ? ` · ${u.tamanho}` : ""}</span>
+              </div>
+              <div class="item-conta-meta">${formatarData(u.data_entrega)}${u.observacoes ? ` · ${u.observacoes}` : ""}</div>
+              <div class="item-conta-rodape" style="margin-top:6px;">
+                <span></span>
+                <button class="botao-secundario-pequeno" onClick=${() => remover(u.id)}>Remover</button>
+              </div>
+            </div>
+          `)}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function FormaDocumentoFuncionario({ funcionarios, onSalvo }) {
+  const [funcionarioId, setFuncionarioId] = useState("");
+  const [tipo, setTipo] = useState(TIPOS_DOCUMENTO_FUNCIONARIO[0].valor);
+  const [nome, setNome] = useState("");
+  const [validade, setValidade] = useState("");
+  const [arquivoUrl, setArquivoUrl] = useState("");
+  const [salvando, setSalvando] = useState(false);
+  const [erro, setErro] = useState("");
+
+  async function salvar(ev) {
+    ev.preventDefault();
+    setErro("");
+    if (!funcionarioId || !nome.trim()) { setErro("Selecione o funcionário e preencha o nome do documento."); return; }
+    setSalvando(true);
+    const r = await sb.from("funcionario_documento").insert({
+      funcionario_id: funcionarioId, tipo, nome: nome.trim(), validade: validade || null, arquivo_url: arquivoUrl.trim() || null,
+    });
+    setSalvando(false);
+    if (r.error) { setErro("Não foi possível salvar: " + r.error.message); return; }
+    setNome(""); setValidade(""); setArquivoUrl("");
+    onSalvo();
+  }
+
+  return html`
+    <form class="card" onSubmit=${salvar}>
+      <h3>Novo documento</h3>
+      <label>Funcionário</label>
+      <select value=${funcionarioId} onChange=${(e) => setFuncionarioId(e.target.value)}>
+        <option value="">Selecione…</option>
+        ${funcionarios.map((f) => html`<option value=${f.id}>${f.nome}</option>`)}
+      </select>
+      <div class="linha-campos">
+        <div><label>Tipo</label><select value=${tipo} onChange=${(e) => setTipo(e.target.value)}>${TIPOS_DOCUMENTO_FUNCIONARIO.map((t) => html`<option value=${t.valor}>${t.rotulo}</option>`)}</select></div>
+        <div><label>Nome</label><input type="text" value=${nome} onInput=${(e) => setNome(e.target.value)} placeholder="Ex.: ASO periódico 2026" /></div>
+      </div>
+      <label>Validade (se houver)</label>
+      <input type="date" value=${validade} onInput=${(e) => setValidade(e.target.value)} />
+      <label>Link do arquivo (opcional)</label>
+      <input type="text" value=${arquivoUrl} onInput=${(e) => setArquivoUrl(e.target.value)} placeholder="https://..." />
+      <button class="botao" type="submit" disabled=${salvando} style="margin-top:10px;">${salvando ? "Salvando…" : "Adicionar documento"}</button>
+      ${erro && html`<div class="msg-erro">${erro}</div>`}
+    </form>
+  `;
+}
+
+function PainelDocumentosFuncionario() {
+  const [funcionarios, setFuncionarios] = useState([]);
+  const [documentos, setDocumentos] = useState([]);
+  const [carregando, setCarregando] = useState(true);
+
+  async function carregar() {
+    const [funcRes, docRes] = await Promise.all([
+      sb.from("funcionario").select("id,nome").eq("ativo", true).order("nome"),
+      sb.from("funcionario_documento").select("*").order("validade", { ascending: true, nullsFirst: false }),
+    ]);
+    setFuncionarios(funcRes.data || []);
+    setDocumentos(docRes.data || []);
+    setCarregando(false);
+  }
+  useEffect(() => { carregar(); }, []);
+
+  async function remover(id) {
+    await sb.from("funcionario_documento").delete().eq("id", id);
+    carregar();
+  }
+
+  if (carregando) return html`<p class="vazio">Carregando…</p>`;
+
+  const nomesPorId = Object.fromEntries(funcionarios.map((f) => [f.id, f.nome]));
+
+  return html`
+    <div class="colunas-financeiro">
+      <div><${FormaDocumentoFuncionario} funcionarios=${funcionarios} onSalvo=${carregar} /></div>
+      <div>
+        <h3 class="titulo-lista">Documentos cadastrados</h3>
+        ${!documentos.length && html`<p class="vazio">Nenhum documento cadastrado ainda.</p>`}
+        <div class="lista-contas">
+          ${documentos.map((d) => {
+            const dias = d.validade ? diasAte(d.validade) : null;
+            const chip = !d.validade ? html`<span class="chip chip-neutro">Sem validade</span>`
+              : dias < 0 ? html`<span class="chip chip-erro">Vencido há ${Math.abs(dias)}d</span>`
+              : dias <= 30 ? html`<span class="chip chip-alerta">Vence em ${dias}d</span>`
+              : html`<span class="chip chip-neutro">Vence ${formatarData(d.validade)}</span>`;
+            return html`
+              <div class="item-conta" key=${d.id}>
+                <div class="item-conta-topo">
+                  <span class="item-conta-desc">${nomesPorId[d.funcionario_id] || "?"} — ${d.nome}</span>
+                  ${chip}
+                </div>
+                <div class="item-conta-meta">
+                  ${TIPOS_DOCUMENTO_FUNCIONARIO.find((t) => t.valor === d.tipo)?.rotulo || d.tipo}
+                  ${d.arquivo_url ? html` · <a href=${d.arquivo_url} target="_blank" rel="noopener" style="color:var(--dourado-claro)">ver arquivo</a>` : ""}
+                </div>
+                <div class="item-conta-rodape" style="margin-top:6px;">
+                  <span></span>
+                  <button class="botao-secundario-pequeno" onClick=${() => remover(d.id)}>Remover</button>
+                </div>
+              </div>
+            `;
+          })}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 export default function RH() {
   const [aba, setAba] = useState("equipe");
   return html`
@@ -570,12 +791,16 @@ export default function RH() {
         <button class=${"sub-tab" + (aba === "checklists" ? " ativo" : "")} onClick=${() => setAba("checklists")}>Checklists</button>
         <button class=${"sub-tab" + (aba === "ferias" ? " ativo" : "")} onClick=${() => setAba("ferias")}>Férias</button>
         <button class=${"sub-tab" + (aba === "ocorrencias" ? " ativo" : "")} onClick=${() => setAba("ocorrencias")}>Ocorrências</button>
+        <button class=${"sub-tab" + (aba === "uniformes" ? " ativo" : "")} onClick=${() => setAba("uniformes")}>Uniformes</button>
+        <button class=${"sub-tab" + (aba === "documentos" ? " ativo" : "")} onClick=${() => setAba("documentos")}>Documentos</button>
       </div>
       ${aba === "equipe" && html`<${PainelEquipe} />`}
       ${aba === "escala" && html`<${PainelEscala} />`}
       ${aba === "checklists" && html`<${PainelChecklists} />`}
       ${aba === "ferias" && html`<${PainelFerias} />`}
       ${aba === "ocorrencias" && html`<${PainelOcorrencias} />`}
+      ${aba === "uniformes" && html`<${PainelUniformes} />`}
+      ${aba === "documentos" && html`<${PainelDocumentosFuncionario} />`}
     </div>
   `;
 }
