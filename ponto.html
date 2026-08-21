@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Bater ponto · Serra Dourada</title>
+<meta name="theme-color" content="#241608" />
+<meta name="robots" content="noindex, nofollow" />
+<link rel="icon" type="image/png" sizes="32x32" href="img/favicon-32.png" />
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+  :root {
+    --dourado: #c9a227; --dourado-claro: #e8c766; --marrom: #241608;
+    --marrom-claro: #3a2712; --marrom-card: #2e1c0e; --texto: #f6ead0;
+    --texto-suave: #cdbb99; --erro: #e5484d; --sucesso: #4caf6d; --borda: #4a3520;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; background: var(--marrom); color: var(--texto); }
+  header { padding: 14px 16px calc(12px + env(safe-area-inset-top,0px)); padding-top: max(14px, env(safe-area-inset-top,0px)); background: linear-gradient(180deg, var(--marrom-claro), var(--marrom)); border-bottom: 2px solid var(--dourado); display: flex; align-items: center; justify-content: space-between; gap: 12px; position: sticky; top: 0; z-index: 10; }
+  header h1 { margin: 0; font-size: 1rem; color: var(--dourado-claro); }
+  header .sub { font-size: 0.76rem; color: var(--texto-suave); margin-top: 2px; }
+  #sair { background: transparent; border: 1px solid var(--borda); color: var(--texto-suave); padding: 7px 12px; border-radius: 8px; cursor: pointer; font-size: 0.8rem; }
+  main { max-width: 520px; margin: 0 auto; padding: 18px 16px 60px; }
+  .card { background: var(--marrom-card); border: 1px solid var(--borda); border-radius: 14px; padding: 20px; margin-bottom: 16px; }
+  .card h2 { margin: 0 0 6px; font-size: 1rem; color: var(--dourado-claro); }
+  .card p.desc { margin: 0 0 14px; font-size: 0.82rem; color: var(--texto-suave); }
+  label { display: block; font-size: 0.83rem; margin-bottom: 6px; color: var(--texto-suave); }
+  input[type=email], input[type=password] {
+    width: 100%; padding: 11px 13px; border-radius: 8px; border: 1px solid var(--borda);
+    background: #1a1006; color: var(--texto); font-size: 0.92rem; margin-bottom: 12px; font-family: inherit;
+  }
+  .botao { display: inline-block; text-align: center; padding: 12px 18px; border-radius: 10px; background: var(--dourado); color: #241608; font-weight: 700; text-decoration: none; border: none; font-size: 0.9rem; cursor: pointer; }
+  .botao:disabled { opacity: 0.4; cursor: default; }
+  .botao-secundario { background: transparent; border: 1.5px solid var(--dourado); color: var(--dourado-claro); }
+  .msg { font-size: 0.83rem; margin-top: 8px; min-height: 1.1em; }
+  .msg.erro { color: var(--erro); } .msg.sucesso { color: var(--sucesso); }
+  #tela-login, #tela-recuperar { max-width: 380px; margin: 60px auto; padding: 0 16px; }
+  .escondido { display: none !important; }
+  .spinner { display: inline-block; width: 13px; height: 13px; border: 2px solid #241608; border-top-color: transparent; border-radius: 50%; animation: girar 0.7s linear infinite; vertical-align: middle; margin-right: 6px; }
+  @keyframes girar { to { transform: rotate(360deg); } }
+
+  .relogio { text-align: center; font-size: 2.1rem; font-weight: 800; color: var(--dourado-claro); letter-spacing: 1px; margin-bottom: 2px; }
+  .data-hoje { text-align: center; font-size: 0.82rem; color: var(--texto-suave); margin-bottom: 18px; text-transform: capitalize; }
+  .status-hoje { text-align: center; font-size: 0.85rem; color: var(--texto-suave); margin-bottom: 16px; }
+  .status-hoje strong { color: var(--dourado-claro); }
+  .grade-batidas { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 6px; }
+  .marca-botao { padding: 16px 10px; border-radius: 12px; border: 1.5px solid var(--borda); background: #1a1006; color: var(--texto-suave); font-size: 0.82rem; font-weight: 600; text-align: center; cursor: pointer; }
+  .marca-botao .hora { display: block; font-size: 1.05rem; font-weight: 800; margin-top: 4px; color: var(--texto-suave); }
+  .marca-botao.pendente { border-color: var(--dourado); background: var(--marrom-claro); color: var(--texto); }
+  .marca-botao.feita { border-color: var(--sucesso); color: var(--sucesso); }
+  .marca-botao.feita .hora { color: var(--sucesso); }
+  .marca-botao.proxima { border-color: var(--dourado); background: var(--dourado); color: #241608; cursor: pointer; }
+  .marca-botao.proxima .hora { color: #241608; }
+  .marca-botao.desabilitada { opacity: 0.35; cursor: default; }
+  .btn-grande { width: 100%; padding: 18px; font-size: 1.05rem; margin-top: 8px; }
+
+  .registro-dia { margin-bottom: 14px; }
+  .registro-dia .titulo-dia { font-size: 0.78rem; color: var(--texto-suave); margin-bottom: 6px; text-transform: capitalize; }
+  .registro-linha { display: flex; justify-content: space-between; align-items: baseline; background: #1a1006; border: 1px solid var(--borda); border-radius: 8px; padding: 9px 12px; margin-bottom: 6px; font-size: 0.85rem; }
+  .registro-linha .tipo { color: var(--texto); }
+  .registro-linha .hora { color: var(--dourado-claro); font-weight: 700; }
+  .registro-linha.correcao { border-color: var(--dourado); }
+  .registro-linha .motivo { display: block; font-size: 0.74rem; color: var(--texto-suave); margin-top: 3px; }
+  .vazio { font-size: 0.83rem; color: var(--texto-suave); }
+</style>
+</head>
+<body>
+
+<div id="tela-login">
+  <div class="card">
+    <h2>Bater ponto · Serra Dourada</h2>
+    <p class="desc">Entre com o login e senha cadastrados pela gerência.</p>
+    <form id="form-login">
+      <label for="email">E-mail</label>
+      <input type="email" id="email" autocomplete="username" required />
+      <label for="senha">Senha</label>
+      <input type="password" id="senha" autocomplete="current-password" required />
+      <button class="botao" type="submit" id="btn-login" style="width:100%"><span id="spin-login" class="spinner escondido"></span>Entrar</button>
+      <div class="msg erro" id="msg-login"></div>
+      <button type="button" id="btn-esqueci" class="botao botao-secundario" style="width:100%;margin-top:10px">Esqueci minha senha</button>
+      <div class="msg" id="msg-esqueci"></div>
+    </form>
+  </div>
+</div>
+
+<div id="tela-recuperar" class="escondido">
+  <div class="card">
+    <h2>Criar nova senha</h2>
+    <p class="desc">Você clicou em um link de recuperação. Defina sua nova senha.</p>
+    <form id="form-recuperar">
+      <label for="nova-senha">Nova senha</label>
+      <input type="password" id="nova-senha" autocomplete="new-password" required minlength="6" />
+      <button class="botao" type="submit" id="btn-salvar-senha" style="width:100%"><span id="spin-recuperar" class="spinner escondido"></span>Salvar nova senha</button>
+      <div class="msg" id="msg-recuperar"></div>
+    </form>
+  </div>
+</div>
+
+<div id="tela-ponto" class="escondido">
+  <header>
+    <div>
+      <h1>Bater ponto</h1>
+      <div class="sub" id="nome-funcionario">&nbsp;</div>
+    </div>
+    <button id="sair">Sair</button>
+  </header>
+
+  <main>
+    <div class="card">
+      <div class="relogio" id="relogio">--:--:--</div>
+      <div class="data-hoje" id="data-hoje">&nbsp;</div>
+      <div class="status-hoje" id="status-hoje"></div>
+      <div class="grade-batidas" id="grade-batidas"></div>
+      <div class="msg" id="msg-bater"></div>
+    </div>
+
+    <div class="card">
+      <h2>Meus registros do mês</h2>
+      <p class="desc">Somente leitura. Se algum horário estiver errado, avise a gerência — a correção aparece aqui com o motivo, sem apagar o registro original.</p>
+      <div id="lista-registros"><p class="vazio">Carregando…</p></div>
+    </div>
+  </main>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var SUPABASE_URL = "https://bhxnhiggogosootbtwpb.supabase.co";
+  var ANON_KEY = "sb_publishable_Zsg8lPJjUHK5-okGOuYc9g_VbKilzQG";
+
+  var TIPOS = [
+    { tipo: "entrada", rotulo: "Entrada" },
+    { tipo: "saida_intervalo", rotulo: "Início intervalo" },
+    { tipo: "retorno_intervalo", rotulo: "Fim intervalo" },
+    { tipo: "saida", rotulo: "Saída" },
+  ];
+  var ROTULOS = { entrada: "Entrada", saida_intervalo: "Início do intervalo", retorno_intervalo: "Fim do intervalo", saida: "Saída", correcao: "Correção" };
+
+  var sb = window.supabase.createClient(SUPABASE_URL, ANON_KEY);
+  var funcionario = null;
+
+  function setMsg(el, texto, tipo) { el.textContent = texto || ""; el.className = "msg" + (tipo ? " " + tipo : ""); }
+  function horaLocal(iso) { try { return new Date(iso).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }); } catch (e) { return "--:--"; } }
+  function dataLocal(iso) { try { return new Date(iso).toLocaleDateString("pt-BR"); } catch (e) { return iso; } }
+  function escapeHtml(v) { return String(v == null ? "" : v).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;"); }
+  function inicioDoDiaLocal(d) { var x = new Date(d); x.setHours(0, 0, 0, 0); return x; }
+
+  // ---------- LOGIN ----------
+  var telaLogin = document.getElementById("tela-login");
+  var telaPonto = document.getElementById("tela-ponto");
+  var telaRecuperar = document.getElementById("tela-recuperar");
+
+  document.getElementById("form-login").addEventListener("submit", function (ev) {
+    ev.preventDefault();
+    entrar(document.getElementById("email").value.trim(), document.getElementById("senha").value);
+  });
+
+  async function entrar(email, senha) {
+    var msg = document.getElementById("msg-login"), btn = document.getElementById("btn-login"), spin = document.getElementById("spin-login");
+    setMsg(msg, "", ""); btn.disabled = true; spin.classList.remove("escondido");
+    try {
+      var r = await sb.auth.signInWithPassword({ email: email, password: senha });
+      if (r.error) { setMsg(msg, "Não foi possível entrar: verifique e-mail e senha.", "erro"); return; }
+      await mostrarPonto();
+    } catch (e) { setMsg(msg, "Erro de conexão. Tente novamente.", "erro"); }
+    finally { btn.disabled = false; spin.classList.add("escondido"); }
+  }
+
+  document.getElementById("btn-esqueci").addEventListener("click", async function () {
+    var msg = document.getElementById("msg-esqueci");
+    var email = document.getElementById("email").value.trim();
+    if (!email) { setMsg(msg, "Digite seu e-mail no campo acima primeiro.", "erro"); return; }
+    setMsg(msg, "Enviando...", "");
+    try {
+      var r = await sb.auth.resetPasswordForEmail(email, { redirectTo: window.location.href });
+      if (r.error) { setMsg(msg, "Não foi possível enviar: " + r.error.message, "erro"); return; }
+      setMsg(msg, "Link de recuperação enviado! Confira seu e-mail.", "sucesso");
+    } catch (e) { setMsg(msg, "Erro de conexão. Tente novamente.", "erro"); }
+  });
+
+  sb.auth.onAuthStateChange(function (event) {
+    if (event === "PASSWORD_RECOVERY") {
+      telaLogin.classList.add("escondido");
+      telaPonto.classList.add("escondido");
+      telaRecuperar.classList.remove("escondido");
+    }
+  });
+
+  document.getElementById("form-recuperar").addEventListener("submit", async function (ev) {
+    ev.preventDefault();
+    var msg = document.getElementById("msg-recuperar"), btn = document.getElementById("btn-salvar-senha"), spin = document.getElementById("spin-recuperar");
+    var novaSenha = document.getElementById("nova-senha").value;
+    setMsg(msg, "", ""); btn.disabled = true; spin.classList.remove("escondido");
+    try {
+      var r = await sb.auth.updateUser({ password: novaSenha });
+      if (r.error) { setMsg(msg, "Não foi possível salvar: " + r.error.message, "erro"); return; }
+      telaRecuperar.classList.add("escondido");
+      await mostrarPonto();
+    } catch (e) { setMsg(msg, "Erro de conexão. Tente novamente.", "erro"); }
+    finally { btn.disabled = false; spin.classList.add("escondido"); }
+  });
+
+  document.getElementById("sair").addEventListener("click", async function () { await sb.auth.signOut(); location.reload(); });
+
+  // ---------- RELÓGIO ----------
+  function atualizarRelogio() {
+    var agora = new Date();
+    document.getElementById("relogio").textContent = agora.toLocaleTimeString("pt-BR");
+    document.getElementById("data-hoje").textContent = agora.toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long" });
+  }
+  setInterval(atualizarRelogio, 1000);
+
+  // ---------- TELA PRINCIPAL ----------
+  async function mostrarPonto() {
+    telaLogin.classList.add("escondido");
+    telaRecuperar.classList.add("escondido");
+    telaPonto.classList.remove("escondido");
+    atualizarRelogio();
+
+    var r = await sb.from("funcionario").select("id, nome").limit(1).maybeSingle();
+    if (!r.data) {
+      document.getElementById("nome-funcionario").textContent = "Conta não vinculada a um funcionário. Fale com a gerência.";
+      return;
+    }
+    funcionario = r.data;
+    document.getElementById("nome-funcionario").textContent = funcionario.nome;
+
+    await Promise.all([carregarBatidasHoje(), carregarRegistrosDoMes()]);
+  }
+
+  async function carregarBatidasHoje() {
+    var inicio = inicioDoDiaLocal(new Date());
+    var r = await sb.from("ponto_registro")
+      .select("tipo, registrado_em")
+      .neq("tipo", "correcao")
+      .gte("registrado_em", inicio.toISOString())
+      .order("registrado_em", { ascending: true });
+
+    var feitas = {};
+    (r.data || []).forEach(function (linha) { if (!feitas[linha.tipo]) feitas[linha.tipo] = linha.registrado_em; });
+
+    var proximoIndex = TIPOS.findIndex(function (t) { return !feitas[t.tipo]; });
+
+    var grade = document.getElementById("grade-batidas");
+    grade.innerHTML = "";
+    TIPOS.forEach(function (t, i) {
+      var div = document.createElement("div");
+      var classes = ["marca-botao"];
+      if (feitas[t.tipo]) classes.push("feita");
+      else if (i === proximoIndex) classes.push("proxima");
+      else classes.push("desabilitada");
+      div.className = classes.join(" ");
+      div.innerHTML = escapeHtml(t.rotulo) + '<span class="hora">' + (feitas[t.tipo] ? horaLocal(feitas[t.tipo]) : "—") + "</span>";
+      if (i === proximoIndex) {
+        div.addEventListener("click", function () { registrarBatida(t.tipo); });
+      }
+      grade.appendChild(div);
+    });
+
+    var status = document.getElementById("status-hoje");
+    if (proximoIndex === -1) {
+      status.innerHTML = "Jornada de hoje <strong>concluída</strong>. Bom descanso!";
+    } else if (proximoIndex === 0) {
+      status.innerHTML = "Toque em <strong>Entrada</strong> para começar o dia.";
+    } else {
+      status.innerHTML = "Próxima marcação: <strong>" + escapeHtml(TIPOS[proximoIndex].rotulo) + "</strong>";
+    }
+  }
+
+  async function registrarBatida(tipo) {
+    var msg = document.getElementById("msg-bater");
+    setMsg(msg, "Registrando…", "");
+    var r = await sb.from("ponto_registro").insert({ tipo: tipo });
+    if (r.error) {
+      setMsg(msg, "Não foi possível registrar: " + r.error.message, "erro");
+      return;
+    }
+    setMsg(msg, "Ponto registrado às " + new Date().toLocaleTimeString("pt-BR") + ".", "sucesso");
+    await carregarBatidasHoje();
+    await carregarRegistrosDoMes();
+  }
+
+  async function carregarRegistrosDoMes() {
+    var agora = new Date();
+    var inicioMes = new Date(agora.getFullYear(), agora.getMonth(), 1);
+    var r = await sb.from("ponto_registro")
+      .select("tipo, registrado_em, motivo, registro_original_id")
+      .gte("registrado_em", inicioMes.toISOString())
+      .order("registrado_em", { ascending: false });
+
+    var el = document.getElementById("lista-registros");
+    var linhas = r.data || [];
+    if (!linhas.length) { el.innerHTML = '<p class="vazio">Nenhum registro neste mês ainda.</p>'; return; }
+
+    var porDia = {};
+    var ordemDias = [];
+    linhas.forEach(function (linha) {
+      var d = dataLocal(linha.registrado_em);
+      if (!porDia[d]) { porDia[d] = []; ordemDias.push(d); }
+      porDia[d].push(linha);
+    });
+
+    el.innerHTML = "";
+    ordemDias.forEach(function (dia) {
+      var bloco = document.createElement("div");
+      bloco.className = "registro-dia";
+      var titulo = document.createElement("div");
+      titulo.className = "titulo-dia";
+      titulo.textContent = dia;
+      bloco.appendChild(titulo);
+      porDia[dia].forEach(function (linha) {
+        var lin = document.createElement("div");
+        lin.className = "registro-linha" + (linha.tipo === "correcao" ? " correcao" : "");
+        var rotulo = ROTULOS[linha.tipo] || linha.tipo;
+        lin.innerHTML =
+          '<span class="tipo">' + escapeHtml(rotulo) +
+          (linha.motivo ? '<span class="motivo">Motivo: ' + escapeHtml(linha.motivo) + "</span>" : "") +
+          '</span><span class="hora">' + horaLocal(linha.registrado_em) + "</span>";
+        bloco.appendChild(lin);
+      });
+      el.appendChild(bloco);
+    });
+  }
+
+  // ---------- Sessão já ativa ----------
+  sb.auth.getSession().then(function (r) { if (r.data && r.data.session) mostrarPonto(); });
+})();
+</script>
+</body>
+</html>
