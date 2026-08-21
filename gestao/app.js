@@ -9,7 +9,7 @@ const MODULOS = [
   { rota: "financeiro", rotulo: "Financeiro", pronto: true },
   { rota: "estoque", rotulo: "Estoque e CMV", pronto: true },
   { rota: "compras", rotulo: "Compras e fornecedores", pronto: true },
-  { rota: "vendas", rotulo: "Vendas e Colibri", pronto: false },
+  { rota: "vendas", rotulo: "Vendas e Colibri", pronto: true },
   { rota: "dashboard", rotulo: "Dashboard", pronto: false },
   { rota: "rh", rotulo: "RH e equipe", pronto: false },
   { rota: "documentos", rotulo: "Documentos e fiscal", pronto: false },
