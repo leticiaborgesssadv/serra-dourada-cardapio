@@ -1,7 +1,7 @@
 import { h } from "https://esm.sh/preact@10.19.6";
 import { useState, useEffect, useMemo } from "https://esm.sh/preact@10.19.6/hooks";
 import htm from "https://esm.sh/htm@3.1.1";
-import { sb, getEstabelecimentoId, formatarMoeda, formatarData, diasAte } from "../lib/supabase.js";
+import { sb, getEstabelecimentoId, formatarMoeda, formatarData, diasAte, hojeISO } from "../lib/supabase.js";
 
 const html = htm.bind(h);
 
@@ -289,6 +289,166 @@ function PainelLembretes({ lembretes, onMudou }) {
   `;
 }
 
+function FormaEquipamento({ onSalvo }) {
+  const [nome, setNome] = useState("");
+  const [patrimonio, setPatrimonio] = useState("");
+  const [categoria, setCategoria] = useState("");
+  const [dataCompra, setDataCompra] = useState("");
+  const [valorCompra, setValorCompra] = useState("");
+  const [garantiaAte, setGarantiaAte] = useState("");
+  const [proximaRevisao, setProximaRevisao] = useState("");
+  const [observacoes, setObservacoes] = useState("");
+  const [salvando, setSalvando] = useState(false);
+  const [erro, setErro] = useState("");
+
+  async function salvar(ev) {
+    ev.preventDefault();
+    setErro("");
+    if (!nome.trim()) { setErro("Preencha o nome do equipamento."); return; }
+    setSalvando(true);
+    try {
+      const estabelecimento_id = await getEstabelecimentoId();
+      const r = await sb.from("equipamento").insert({
+        estabelecimento_id, nome: nome.trim(), patrimonio: patrimonio.trim() || null, categoria: categoria.trim() || null,
+        data_compra: dataCompra || null, valor_compra: valorCompra ? Number(valorCompra) : null,
+        garantia_ate: garantiaAte || null, proxima_revisao: proximaRevisao || null, observacoes: observacoes.trim() || null,
+      });
+      if (r.error) { setErro("Não foi possível salvar: " + r.error.message); return; }
+      setNome(""); setPatrimonio(""); setCategoria(""); setDataCompra(""); setValorCompra(""); setGarantiaAte(""); setProximaRevisao(""); setObservacoes("");
+      onSalvo();
+    } catch (e) { setErro("Erro de conexão."); }
+    finally { setSalvando(false); }
+  }
+
+  return html`
+    <form class="card" onSubmit=${salvar}>
+      <h3>Novo equipamento</h3>
+      <label>Nome</label>
+      <input type="text" value=${nome} onInput=${(e) => setNome(e.target.value)} placeholder="Ex.: Câmara fria 2" />
+      <div class="linha-campos">
+        <div><label>Patrimônio / série</label><input type="text" value=${patrimonio} onInput=${(e) => setPatrimonio(e.target.value)} /></div>
+        <div><label>Categoria</label><input type="text" value=${categoria} onInput=${(e) => setCategoria(e.target.value)} placeholder="Ex.: Refrigeração" /></div>
+      </div>
+      <div class="linha-campos">
+        <div><label>Data de compra</label><input type="date" value=${dataCompra} onInput=${(e) => setDataCompra(e.target.value)} /></div>
+        <div><label>Valor de compra (R$)</label><input type="number" step="0.01" min="0" value=${valorCompra} onInput=${(e) => setValorCompra(e.target.value)} /></div>
+      </div>
+      <div class="linha-campos">
+        <div><label>Garantia até</label><input type="date" value=${garantiaAte} onInput=${(e) => setGarantiaAte(e.target.value)} /></div>
+        <div><label>Próxima revisão</label><input type="date" value=${proximaRevisao} onInput=${(e) => setProximaRevisao(e.target.value)} /></div>
+      </div>
+      <label>Observações</label>
+      <input type="text" value=${observacoes} onInput=${(e) => setObservacoes(e.target.value)} />
+      <button class="botao" type="submit" disabled=${salvando}>${salvando ? "Salvando…" : "Adicionar equipamento"}</button>
+      ${erro && html`<div class="msg-erro">${erro}</div>`}
+    </form>
+  `;
+}
+
+function FormaManutencao({ equipamentoId, onSalvo }) {
+  const [data, setData] = useState(hojeISO());
+  const [tipo, setTipo] = useState("preventiva");
+  const [descricao, setDescricao] = useState("");
+  const [custo, setCusto] = useState("");
+  const [salvando, setSalvando] = useState(false);
+  const [erro, setErro] = useState("");
+
+  async function salvar(ev) {
+    ev.preventDefault();
+    setErro("");
+    if (!descricao.trim()) { setErro("Descreva o serviço de manutenção."); return; }
+    setSalvando(true);
+    const r = await sb.from("manutencao_equipamento").insert({
+      equipamento_id: equipamentoId, data, tipo, descricao: descricao.trim(), custo: custo ? Number(custo) : null,
+    });
+    setSalvando(false);
+    if (r.error) { setErro("Não foi possível salvar: " + r.error.message); return; }
+    setDescricao(""); setCusto("");
+    onSalvo();
+  }
+
+  return html`
+    <form class="card" onSubmit=${salvar}>
+      <h3>Registrar manutenção</h3>
+      <div class="linha-campos">
+        <div><label>Data</label><input type="date" value=${data} onInput=${(e) => setData(e.target.value)} /></div>
+        <div><label>Tipo</label><select value=${tipo} onChange=${(e) => setTipo(e.target.value)}><option value="preventiva">Preventiva</option><option value="corretiva">Corretiva</option></select></div>
+      </div>
+      <label>Descrição</label>
+      <input type="text" value=${descricao} onInput=${(e) => setDescricao(e.target.value)} placeholder="Ex.: Troca de gás e limpeza do condensador" />
+      <label>Custo (R$)</label>
+      <input type="number" step="0.01" min="0" value=${custo} onInput=${(e) => setCusto(e.target.value)} />
+      <button class="botao" type="submit" disabled=${salvando}>${salvando ? "Salvando…" : "Registrar"}</button>
+      ${erro && html`<div class="msg-erro">${erro}</div>`}
+    </form>
+  `;
+}
+
+function PainelManutencao() {
+  const [equipamentos, setEquipamentos] = useState([]);
+  const [manutencoes, setManutencoes] = useState([]);
+  const [carregando, setCarregando] = useState(true);
+  const [selecionadoId, setSelecionadoId] = useState(null);
+
+  async function carregar() {
+    const [eqRes, manRes] = await Promise.all([
+      sb.from("equipamento").select("*").order("proxima_revisao", { ascending: true, nullsFirst: false }),
+      sb.from("manutencao_equipamento").select("*").order("data", { ascending: false }),
+    ]);
+    setEquipamentos(eqRes.data || []);
+    setManutencoes(manRes.data || []);
+    setCarregando(false);
+  }
+  useEffect(() => { carregar(); }, []);
+
+  if (carregando) return html`<p class="vazio">Carregando…</p>`;
+
+  const selecionado = equipamentos.find((e) => e.id === selecionadoId) || null;
+  const historicoSelecionado = manutencoes.filter((m) => m.equipamento_id === selecionadoId);
+
+  return html`
+    <div class="colunas-financeiro">
+      <div>
+        <${FormaEquipamento} onSalvo=${carregar} />
+        <h3 class="titulo-lista">Equipamentos cadastrados</h3>
+        ${!equipamentos.length && html`<p class="vazio">Nenhum equipamento cadastrado ainda.</p>`}
+        <div class="lista-contas">
+          ${equipamentos.map((eq) => html`
+            <div class="item-conta item-clicavel ${selecionadoId === eq.id ? "selecionado" : ""}" key=${eq.id} onClick=${() => setSelecionadoId(eq.id)}>
+              <div class="item-conta-topo">
+                <span class="item-conta-desc">${eq.nome}</span>
+                ${eq.proxima_revisao ? html`<${ChipVencimento} data=${eq.proxima_revisao} />` : html`<span class="chip chip-neutro">Sem revisão agendada</span>`}
+              </div>
+              <div class="item-conta-meta">${eq.categoria || ""}${eq.patrimonio ? ` · ${eq.patrimonio}` : ""}</div>
+            </div>
+          `)}
+        </div>
+      </div>
+      <div>
+        ${!selecionado
+          ? html`<p class="vazio">Clique em um equipamento à esquerda para ver ou registrar manutenções.</p>`
+          : html`
+            <h3 class="titulo-lista">Histórico — ${selecionado.nome}</h3>
+            <${FormaManutencao} equipamentoId=${selecionado.id} onSalvo=${carregar} />
+            ${!historicoSelecionado.length && html`<p class="vazio">Nenhuma manutenção registrada ainda.</p>`}
+            <div class="lista-contas">
+              ${historicoSelecionado.map((m) => html`
+                <div class="item-conta" key=${m.id}>
+                  <div class="item-conta-topo">
+                    <span class="item-conta-desc">${m.tipo === "preventiva" ? "Preventiva" : "Corretiva"}</span>
+                    ${m.custo ? html`<span class="item-conta-valor">${formatarMoeda(m.custo)}</span>` : ""}
+                  </div>
+                  <div class="item-conta-meta">${formatarData(m.data)}</div>
+                  <p style="font-size:0.82rem; margin: 4px 0 0;">${m.descricao}</p>
+                </div>
+              `)}
+            </div>
+          `}
+      </div>
+    </div>
+  `;
+}
+
 export default function Documentos() {
   const [aba, setAba] = useState("vencimentos");
   const [documentos, setDocumentos] = useState([]);
@@ -319,11 +479,13 @@ export default function Documentos() {
         <button class=${"sub-tab" + (aba === "documentos" ? " ativo" : "")} onClick=${() => setAba("documentos")}>Documentos</button>
         <button class=${"sub-tab" + (aba === "contratos" ? " ativo" : "")} onClick=${() => setAba("contratos")}>Contratos</button>
         <button class=${"sub-tab" + (aba === "lembretes" ? " ativo" : "")} onClick=${() => setAba("lembretes")}>Lembretes</button>
+        <button class=${"sub-tab" + (aba === "manutencao" ? " ativo" : "")} onClick=${() => setAba("manutencao")}>Manutenção</button>
       </div>
       ${aba === "vencimentos" && html`<${PainelVencimentos} documentos=${documentos} contratos=${contratos} lembretes=${lembretes} />`}
       ${aba === "documentos" && html`<${PainelDocumentos} documentos=${documentos} onMudou=${carregar} />`}
       ${aba === "contratos" && html`<${PainelContratos} contratos=${contratos} onMudou=${carregar} />`}
       ${aba === "lembretes" && html`<${PainelLembretes} lembretes=${lembretes} onMudou=${carregar} />`}
+      ${aba === "manutencao" && html`<${PainelManutencao} />`}
     </div>
   `;
 }
