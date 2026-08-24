@@ -119,6 +119,7 @@ function FormaPagar({ centrosCusto, fornecedores, onSalvo }) {
           </select>
         </div>
       </div>
+      ${recorrencia !== "nenhuma" && html`<p class="desc-form" style="margin-top:-6px;">Ao marcar esta conta como paga, a próxima (${recorrencia === "mensal" ? "1 mês" : "1 ano"} depois) é criada automaticamente.</p>`}
       <div class="linha-campos">
         <div>
           <label>Centro de custo</label>
@@ -244,6 +245,7 @@ function ListaContas({ tipo, contas, fornecedoresPorId, centrosPorId, onMudou })
             ${tipo === "pagar" ? c.categoria : c.origem} · vence ${formatarData(c.vencimento)}
             ${tipo === "pagar" && c.fornecedor_id && fornecedoresPorId[c.fornecedor_id] ? ` · ${fornecedoresPorId[c.fornecedor_id]}` : ""}
             ${tipo === "pagar" && c.centro_custo_id && centrosPorId[c.centro_custo_id] ? ` · ${centrosPorId[c.centro_custo_id]}` : ""}
+            ${tipo === "pagar" && c.recorrencia && c.recorrencia !== "nenhuma" ? ` · 🔁 ${c.recorrencia}` : ""}
           </div>
           <div class="item-conta-rodape">
             <span class="item-conta-valor">${formatarMoeda(c.valor)}</span>
