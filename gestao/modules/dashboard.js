@@ -1,9 +1,74 @@
 import { h } from "https://esm.sh/preact@10.19.6";
-import { useState, useEffect } from "https://esm.sh/preact@10.19.6/hooks";
+import { useState, useEffect, useRef } from "https://esm.sh/preact@10.19.6/hooks";
 import htm from "https://esm.sh/htm@3.1.1";
+import Chart from "https://esm.sh/chart.js@4.4.4/auto";
 import { sb, formatarMoeda, formatarData, diasAte } from "../lib/supabase.js";
 
 const html = htm.bind(h);
+
+const NOMES_MES = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+function formatarMesLabel(mesISO) {
+  const [ano, mes] = mesISO.split("-");
+  return `${NOMES_MES[Number(mes) - 1]}/${ano.slice(2)}`;
+}
+
+function GraficoFaturamentoMensal() {
+  const canvasRef = useRef(null);
+  const chartRef = useRef(null);
+  const [dados, setDados] = useState([]);
+  const [carregando, setCarregando] = useState(true);
+
+  useEffect(() => {
+    sb.from("faturamento_mensal").select("mes, receita_bruta").order("mes").then((r) => {
+      setDados(r.data || []);
+      setCarregando(false);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (carregando || !canvasRef.current || !dados.length) return;
+    if (chartRef.current) chartRef.current.destroy();
+    chartRef.current = new Chart(canvasRef.current, {
+      type: "line",
+      data: {
+        labels: dados.map((d) => formatarMesLabel(d.mes)),
+        datasets: [{
+          label: "Faturamento",
+          data: dados.map((d) => Number(d.receita_bruta)),
+          borderColor: "#c9a227",
+          backgroundColor: "rgba(201,162,39,0.15)",
+          fill: true,
+          tension: 0.3,
+          pointBackgroundColor: "#c9a227",
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: (ctx) => formatarMoeda(ctx.parsed.y) } },
+        },
+        scales: {
+          y: { ticks: { color: "#9aa1a8", callback: (v) => formatarMoeda(v) }, grid: { color: "#383d42" } },
+          x: { ticks: { color: "#9aa1a8" }, grid: { display: false } },
+        },
+      },
+    });
+    return () => { if (chartRef.current) { chartRef.current.destroy(); chartRef.current = null; } };
+  }, [dados, carregando]);
+
+  return html`
+    <div class="card">
+      <h3 style="margin-bottom: 14px;">Faturamento nos últimos meses</h3>
+      ${carregando
+        ? html`<p class="vazio">Carregando…</p>`
+        : !dados.length
+          ? html`<p class="vazio">Sem histórico de faturamento mensal ainda.</p>`
+          : html`<div style="height: 260px;"><canvas ref=${canvasRef}></canvas></div>`}
+    </div>
+  `;
+}
 
 function inicioDoDiaISO() {
   const d = new Date();
@@ -203,6 +268,8 @@ function VisaoGeral() {
         </div>
         <p class="desc-form">Resultado estimado = faturamento − despesas pagas − compras do mês. Não inclui folha, impostos e outras despesas ainda não lançadas como conta a pagar.</p>
       </${Secao}>
+
+      <${GraficoFaturamentoMensal} />
 
       <${Secao} titulo="Precisa de atenção">
         ${!d.vencidas.length && !d.vencendo7.length && !d.insumosBaixos.length && html`<p class="vazio">Nada pendente no momento.</p>`}
