@@ -2,6 +2,7 @@ import { h } from "https://esm.sh/preact@10.19.6";
 import { useState, useEffect, useRef } from "https://esm.sh/preact@10.19.6/hooks";
 import htm from "https://esm.sh/htm@3.1.1";
 import Chart from "https://esm.sh/chart.js@4.4.4/auto";
+import { jsPDF } from "https://esm.sh/jspdf@2.5.1";
 import { sb, formatarMoeda, formatarData, diasAte } from "../lib/supabase.js";
 
 const html = htm.bind(h);
@@ -79,6 +80,18 @@ function inicioDoDiaISO() {
 function inicioDoMesISO() {
   const d = new Date();
   return new Date(d.getFullYear(), d.getMonth(), 1).toISOString();
+}
+
+function inicioMesPassadoISO() {
+  const d = new Date();
+  return new Date(d.getFullYear(), d.getMonth() - 1, 1).toISOString();
+}
+
+function Variacao({ atual, anterior }) {
+  if (!anterior) return null;
+  const pct = ((atual - anterior) / anterior) * 100;
+  const positivo = pct >= 0;
+  return html`<span style="font-size:0.72rem; font-weight:700; color: var(${positivo ? "--sucesso" : "--erro"}); margin-left:6px;">${positivo ? "▲" : "▼"} ${Math.abs(pct).toFixed(0)}%</span>`;
 }
 
 function Secao({ titulo, children }) {
@@ -182,10 +195,12 @@ function VisaoGeral() {
 
   useEffect(() => {
     async function carregar() {
-      const [vendasHojeRes, vendasMesRes, comprasRes, contasPagarRes, insumosRes] = await Promise.all([
+      const [vendasHojeRes, vendasMesRes, vendasMesPassadoRes, comprasRes, comprasMesPassadoRes, contasPagarRes, insumosRes] = await Promise.all([
         sb.from("venda").select("valor_liquido, cancelado, forma_pagamento").gte("data_hora", inicioDoDiaISO()),
         sb.from("venda").select("valor_liquido, cancelado").gte("data_hora", inicioDoMesISO()),
+        sb.from("venda").select("valor_liquido, cancelado").gte("data_hora", inicioMesPassadoISO()).lt("data_hora", inicioDoMesISO()),
         sb.from("compra").select("quantidade, custo_unitario").gte("created_at", inicioDoMesISO()),
+        sb.from("compra").select("quantidade, custo_unitario").gte("created_at", inicioMesPassadoISO()).lt("created_at", inicioDoMesISO()),
         sb.from("conta_pagar").select("valor, status, vencimento, pago_em"),
         sb.from("insumo").select("nome, estoque_atual, ponto_reposicao"),
       ]);
@@ -204,7 +219,11 @@ function VisaoGeral() {
       const vendasMes = (vendasMesRes.data || []).filter((v) => !v.cancelado);
       const faturamentoMes = vendasMes.reduce((acc, v) => acc + Number(v.valor_liquido), 0);
 
+      const vendasMesPassado = (vendasMesPassadoRes.data || []).filter((v) => !v.cancelado);
+      const faturamentoMesPassado = vendasMesPassado.reduce((acc, v) => acc + Number(v.valor_liquido), 0);
+
       const comprasMes = (comprasRes.data || []).reduce((acc, c) => acc + Number(c.quantidade) * Number(c.custo_unitario), 0);
+      const comprasMesPassado = (comprasMesPassadoRes.data || []).reduce((acc, c) => acc + Number(c.quantidade) * Number(c.custo_unitario), 0);
 
       const contas = contasPagarRes.data || [];
       const hoje = new Date().toISOString().slice(0, 10);
@@ -224,7 +243,7 @@ function VisaoGeral() {
         faturamentoHoje, ticketMedioHoje, pedidosHoje: vendasHoje.length,
         canceladasHoje: canceladasHoje.length, valorCanceladoHoje: canceladasHoje.reduce((acc, v) => acc + Number(v.valor_liquido), 0),
         porFormaPagamento,
-        faturamentoMes, comprasMes, despesasPagasMes, resultadoEstimadoMes,
+        faturamentoMes, faturamentoMesPassado, comprasMes, comprasMesPassado, despesasPagasMes, resultadoEstimadoMes,
         vencidas, vencendo7,
         insumosBaixos,
       });
@@ -261,8 +280,8 @@ function VisaoGeral() {
 
       <${Secao} titulo="Este mês">
         <div class="stat-grid">
-          <div class="stat-box"><div class="stat-num">${formatarMoeda(d.faturamentoMes)}</div><div class="stat-lbl">Faturamento</div></div>
-          <div class="stat-box"><div class="stat-num">${formatarMoeda(d.comprasMes)}</div><div class="stat-lbl">Compras</div></div>
+          <div class="stat-box"><div class="stat-num">${formatarMoeda(d.faturamentoMes)}<${Variacao} atual=${d.faturamentoMes} anterior=${d.faturamentoMesPassado} /></div><div class="stat-lbl">Faturamento vs mês passado</div></div>
+          <div class="stat-box"><div class="stat-num">${formatarMoeda(d.comprasMes)}<${Variacao} atual=${d.comprasMes} anterior=${d.comprasMesPassado} /></div><div class="stat-lbl">Compras vs mês passado</div></div>
           <div class="stat-box"><div class="stat-num">${formatarMoeda(d.despesasPagasMes)}</div><div class="stat-lbl">Despesas pagas</div></div>
           <div class="stat-box ${d.resultadoEstimadoMes < 0 ? "stat-erro" : "stat-ok"}"><div class="stat-num">${formatarMoeda(d.resultadoEstimadoMes)}</div><div class="stat-lbl">Resultado estimado</div></div>
         </div>
@@ -431,6 +450,20 @@ function PainelRelatorios() {
     } catch (e) {}
   }
 
+  function baixarPdf() {
+    const doc = new jsPDF();
+    doc.setFontSize(14);
+    doc.text("Serra Dourada", 14, 18);
+    doc.setFontSize(10);
+    doc.setTextColor(120);
+    doc.text(`Gerado em ${new Date().toLocaleString("pt-BR")}`, 14, 24);
+    doc.setTextColor(0);
+    doc.setFontSize(11);
+    const linhas = doc.splitTextToSize(texto, 180);
+    doc.text(linhas, 14, 34);
+    doc.save(`relatorio-serra-dourada-${periodo}.pdf`);
+  }
+
   return html`
     <div class="card">
       <h3>Relatório automático</h3>
@@ -443,7 +476,10 @@ function PainelRelatorios() {
         ? html`<p class="vazio">Gerando…</p>`
         : html`
           <pre style="white-space: pre-wrap; font-family: inherit; background: var(--fundo-input); border: 1px solid var(--borda); border-radius: 9px; padding: 14px; font-size: 0.86rem; line-height: 1.5;">${texto}</pre>
-          <button class="botao-secundario" onClick=${copiar}>${copiado ? "Copiado!" : "Copiar texto"}</button>
+          <div style="display:flex; gap:8px;">
+            <button class="botao-secundario" onClick=${copiar}>${copiado ? "Copiado!" : "Copiar texto"}</button>
+            <button class="botao-secundario" onClick=${baixarPdf}>Baixar PDF</button>
+          </div>
         `}
     </div>
   `;
