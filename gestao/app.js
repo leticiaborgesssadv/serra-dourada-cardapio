@@ -1,11 +1,11 @@
 import { h, render } from "https://esm.sh/preact@10.19.6";
 import { useState, useEffect } from "https://esm.sh/preact@10.19.6/hooks";
 import htm from "https://esm.sh/htm@3.1.1";
-import { sb } from "./lib/supabase.js";
+import { sb, coletarAlertas } from "./lib/supabase.js";
 
 const html = htm.bind(h);
 
-const VERSAO_CACHE = "24";
+const VERSAO_CACHE = "25";
 
 const MODULOS = [
   { rota: "financeiro", rotulo: "Financeiro", pronto: true },
@@ -28,11 +28,15 @@ function EmConstrucao({ rotulo }) {
   return html`<div class="em-construcao"><h2>${rotulo}</h2><p>Este módulo ainda não foi construído. Fale com o Claude para priorizá-lo.</p></div>`;
 }
 
-function Nav({ rotaAtual, nomeUsuario, onSair }) {
+function Nav({ rotaAtual, nomeUsuario, onSair, contagemAlertas }) {
   return html`
     <nav class="gestao-nav">
       <div class="gestao-nav-topo">
         <div class="gestao-nav-titulo">Serra Dourada<span>gestão</span></div>
+        <a href="#/dashboard" class="nav-sino" title="Alertas pendentes">
+          🔔
+          ${contagemAlertas > 0 && html`<span class="nav-sino-contagem">${contagemAlertas > 9 ? "9+" : contagemAlertas}</span>`}
+        </a>
       </div>
       <div class="gestao-nav-links">
         ${MODULOS.map((m) => html`
@@ -59,6 +63,7 @@ function App() {
   const [senha, setSenha] = useState("");
   const [erroLogin, setErroLogin] = useState("");
   const [entrando, setEntrando] = useState(false);
+  const [contagemAlertas, setContagemAlertas] = useState(0);
 
   useEffect(() => {
     sb.auth.getSession().then((r) => setSessao(r.data.session || null));
@@ -75,6 +80,11 @@ function App() {
       .then((r) => setFuncionario(r.data || false))
       .finally(() => setChecandoAcesso(false));
   }, [sessao]);
+
+  useEffect(() => {
+    if (!funcionario || funcionario.papel !== "gerencia" || !funcionario.ativo) return;
+    coletarAlertas().then((alertas) => setContagemAlertas(alertas.length));
+  }, [funcionario]);
 
   useEffect(() => {
     const def = MODULOS.find((m) => m.rota === rota);
@@ -139,7 +149,7 @@ function App() {
 
   return html`
     <div class="gestao-shell">
-      <${Nav} rotaAtual=${rota} nomeUsuario=${funcionario.nome} onSair=${sair} />
+      <${Nav} rotaAtual=${rota} nomeUsuario=${funcionario.nome} onSair=${sair} contagemAlertas=${contagemAlertas} />
       <main class="gestao-main">
         ${def.pronto && modulo ? h(modulo, {}) : html`<${EmConstrucao} rotulo=${def.rotulo} />`}
       </main>
