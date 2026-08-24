@@ -1,9 +1,58 @@
 import { h } from "https://esm.sh/preact@10.19.6";
 import { useState, useEffect, useMemo } from "https://esm.sh/preact@10.19.6/hooks";
 import htm from "https://esm.sh/htm@3.1.1";
-import { sb, getEstabelecimentoId, formatarMoeda, formatarData, diasAte, hojeISO } from "../lib/supabase.js";
+import { sb, getEstabelecimentoId, formatarMoeda, formatarData, diasAte, hojeISO, enviarAnexo, urlAssinadaAnexo, ehCaminhoArmazenado } from "../lib/supabase.js";
 
 const html = htm.bind(h);
+
+function CampoAnexo({ valor, onMudar }) {
+  const [enviando, setEnviando] = useState(false);
+  const [erro, setErro] = useState("");
+
+  async function aoSelecionar(ev) {
+    const arquivo = ev.target.files[0];
+    ev.target.value = "";
+    if (!arquivo) return;
+    setErro("");
+    setEnviando(true);
+    try {
+      const caminho = await enviarAnexo(arquivo);
+      onMudar(caminho);
+    } catch (e) {
+      setErro("Não foi possível enviar o arquivo.");
+    } finally {
+      setEnviando(false);
+    }
+  }
+
+  return html`
+    <div>
+      <label>Link ou anexo (opcional)</label>
+      <div style="display:flex; gap:8px; align-items:flex-start;">
+        <input type="text" style="flex:1;" value=${valor} onInput=${(e) => onMudar(e.target.value)} placeholder="Cole um link…" />
+        <label class="botao-secundario-pequeno" style="cursor:pointer; white-space:nowrap; padding:9px 12px;">
+          ${enviando ? "Enviando…" : "📷 Anexar"}
+          <input type="file" accept="image/*,.pdf" capture="environment" style="display:none;" onChange=${aoSelecionar} disabled=${enviando} />
+        </label>
+      </div>
+      ${valor && ehCaminhoArmazenado(valor) && html`<p class="desc-form" style="margin-top:4px;">Arquivo anexado ✓</p>`}
+      ${erro && html`<div class="msg-erro">${erro}</div>`}
+    </div>
+  `;
+}
+
+function LinkArquivo({ caminho }) {
+  const [abrindo, setAbrindo] = useState(false);
+  async function abrir(ev) {
+    ev.preventDefault();
+    setAbrindo(true);
+    try {
+      const url = ehCaminhoArmazenado(caminho) ? await urlAssinadaAnexo(caminho) : caminho;
+      window.open(url, "_blank", "noopener");
+    } catch (e) {} finally { setAbrindo(false); }
+  }
+  return html`<a href="#" onClick=${abrir} style="color:var(--dourado-claro)">${abrindo ? "abrindo…" : "ver arquivo"}</a>`;
+}
 
 const TIPOS_DOCUMENTO = ["cnpj", "contrato_social", "alvara", "licenca_sanitaria", "licenca_bombeiros", "certidao_federal", "certidao_estadual", "simples_nacional", "seguro", "procuracao", "outro"];
 const TIPOS_CONTRATO = ["aluguel", "fornecedor", "software", "contabilidade", "marketing", "seguranca", "manutencao", "maquina_cartao", "delivery", "internet", "outro"];
@@ -94,9 +143,8 @@ function FormaDocumento({ onSalvo }) {
         <div><label>Emissão</label><input type="date" value=${emissao} onInput=${(e) => setEmissao(e.target.value)} /></div>
         <div><label>Validade</label><input type="date" value=${validade} onInput=${(e) => setValidade(e.target.value)} /></div>
       </div>
-      <label>Link do arquivo (opcional)</label>
-      <input type="text" value=${arquivoUrl} onInput=${(e) => setArquivoUrl(e.target.value)} placeholder="https://..." />
-      <button class="botao" type="submit" disabled=${salvando}>${salvando ? "Salvando…" : "Adicionar documento"}</button>
+      <${CampoAnexo} valor=${arquivoUrl} onMudar=${setArquivoUrl} />
+      <button class="botao" type="submit" disabled=${salvando} style="margin-top:10px;">${salvando ? "Salvando…" : "Adicionar documento"}</button>
       ${erro && html`<div class="msg-erro">${erro}</div>`}
     </form>
   `;
@@ -118,7 +166,7 @@ function PainelDocumentos({ documentos, onMudou }) {
               </div>
               <div class="item-conta-meta">
                 ${d.tipo.replace(/_/g, " ")}${d.numero ? ` · nº ${d.numero}` : ""}${d.responsavel ? ` · ${d.responsavel}` : ""}
-                ${d.arquivo_url ? html` · <a href=${d.arquivo_url} target="_blank" rel="noopener" style="color:var(--dourado-claro)">ver arquivo</a>` : ""}
+                ${d.arquivo_url ? html` · <${LinkArquivo} caminho=${d.arquivo_url} />` : ""}
               </div>
             </div>
           `)}
