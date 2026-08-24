@@ -62,6 +62,16 @@
   .registro-linha.correcao { border-color: var(--dourado); }
   .registro-linha .motivo { display: block; font-size: 0.74rem; color: var(--texto-suave); margin-top: 3px; }
   .vazio { font-size: 0.83rem; color: var(--texto-suave); }
+
+  .item-checklist { display: flex; justify-content: space-between; align-items: center; gap: 10px; background: #1a1006; border: 1px solid var(--borda); border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; }
+  .item-checklist .nome { font-size: 0.86rem; }
+  .item-checklist .acoes { display: flex; gap: 6px; flex-shrink: 0; }
+  .btn-conforme { border: 1.5px solid var(--sucesso); color: var(--sucesso); background: transparent; padding: 6px 10px; border-radius: 7px; font-size: 0.78rem; cursor: pointer; }
+  .btn-nao-conforme { border: 1.5px solid var(--erro); color: var(--erro); background: transparent; padding: 6px 10px; border-radius: 7px; font-size: 0.78rem; cursor: pointer; }
+  .item-checklist.feito .btn-conforme, .item-checklist.feito .btn-nao-conforme { opacity: 0.35; cursor: default; }
+  .selo-feito { font-size: 0.76rem; font-weight: 700; flex-shrink: 0; }
+  .selo-feito.ok { color: var(--sucesso); }
+  .selo-feito.nao { color: var(--erro); }
 </style>
 </head>
 <body>
@@ -118,6 +128,12 @@
       <h2>Meus registros do mês</h2>
       <p class="desc">Somente leitura. Se algum horário estiver errado, avise a gerência — a correção aparece aqui com o motivo, sem apagar o registro original.</p>
       <div id="lista-registros"><p class="vazio">Carregando…</p></div>
+    </div>
+
+    <div class="card" id="card-checklist" style="display:none">
+      <h2>Checklist de hoje</h2>
+      <p class="desc">Marque cada item conforme for verificando.</p>
+      <div id="lista-checklist"><p class="vazio">Carregando…</p></div>
     </div>
   </main>
 </div>
@@ -227,7 +243,68 @@
     funcionario = r.data;
     document.getElementById("nome-funcionario").textContent = funcionario.nome;
 
-    await Promise.all([carregarBatidasHoje(), carregarRegistrosDoMes()]);
+    await Promise.all([carregarBatidasHoje(), carregarRegistrosDoMes(), carregarChecklist()]);
+  }
+
+  // ---------- CHECKLIST ----------
+  function hojeISO() {
+    var d = new Date();
+    var pad = function (n) { return String(n).padStart(2, "0"); };
+    return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+  }
+
+  async function carregarChecklist() {
+    var cardChecklist = document.getElementById("card-checklist");
+    var hoje = hojeISO();
+    var itensRes = await sb.from("checklist_item").select("*").eq("ativo", true).order("ordem");
+    var itens = itensRes.data || [];
+    if (!itens.length) { cardChecklist.style.display = "none"; return; }
+    cardChecklist.style.display = "";
+
+    var execRes = await sb.from("checklist_execucao").select("*").eq("data", hoje);
+    var execucoes = execRes.data || [];
+    var execucaoPorItem = {};
+    execucoes.forEach(function (e) { execucaoPorItem[e.checklist_item_id] = e; });
+
+    var lista = document.getElementById("lista-checklist");
+    lista.innerHTML = "";
+    itens.forEach(function (item) {
+      var exec = execucaoPorItem[item.id];
+      var div = document.createElement("div");
+      div.className = "item-checklist" + (exec ? " feito" : "");
+      var nomeSpan = document.createElement("span");
+      nomeSpan.className = "nome";
+      nomeSpan.textContent = item.nome;
+      div.appendChild(nomeSpan);
+      if (exec) {
+        var selo = document.createElement("span");
+        selo.className = "selo-feito " + (exec.conforme ? "ok" : "nao");
+        selo.textContent = exec.conforme ? "✓ Conforme" : "✗ Não conforme";
+        div.appendChild(selo);
+      } else {
+        var acoes = document.createElement("div");
+        acoes.className = "acoes";
+        var btnOk = document.createElement("button");
+        btnOk.className = "btn-conforme";
+        btnOk.textContent = "Conforme";
+        btnOk.addEventListener("click", function () { marcarChecklist(item.id, true); });
+        var btnNao = document.createElement("button");
+        btnNao.className = "btn-nao-conforme";
+        btnNao.textContent = "Não conforme";
+        btnNao.addEventListener("click", function () { marcarChecklist(item.id, false); });
+        acoes.appendChild(btnOk);
+        acoes.appendChild(btnNao);
+        div.appendChild(acoes);
+      }
+      lista.appendChild(div);
+    });
+  }
+
+  async function marcarChecklist(itemId, conforme) {
+    await sb.from("checklist_execucao").insert({
+      checklist_item_id: itemId, data: hojeISO(), conforme: conforme, funcionario_id: funcionario.id,
+    });
+    await carregarChecklist();
   }
 
   async function carregarBatidasHoje() {
