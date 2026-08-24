@@ -34,3 +34,23 @@ export function diasAte(dataISO) {
   const alvo = new Date(dataISO + "T00:00:00");
   return Math.round((alvo - hoje) / 86400000);
 }
+
+const BUCKET_ANEXOS = "documentos-privados";
+
+export function ehCaminhoArmazenado(valor) {
+  return !!valor && !/^https?:\/\//i.test(valor);
+}
+
+export async function enviarAnexo(arquivo) {
+  const ext = arquivo.name.includes(".") ? arquivo.name.split(".").pop() : "bin";
+  const caminho = `${crypto.randomUUID()}.${ext}`;
+  const r = await sb.storage.from(BUCKET_ANEXOS).upload(caminho, arquivo);
+  if (r.error) throw new Error(r.error.message);
+  return caminho;
+}
+
+export async function urlAssinadaAnexo(caminho, segundos = 120) {
+  const r = await sb.storage.from(BUCKET_ANEXOS).createSignedUrl(caminho, segundos);
+  if (r.error) throw new Error(r.error.message);
+  return r.data.signedUrl;
+}
