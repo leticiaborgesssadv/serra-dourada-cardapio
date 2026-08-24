@@ -285,6 +285,12 @@ function FormaCliente({ onSalvo }) {
   `;
 }
 
+function linkWhatsapp(telefone, mensagem) {
+  const digitos = (telefone || "").replace(/\D/g, "");
+  const numero = digitos.startsWith("55") ? digitos : `55${digitos}`;
+  return `https://wa.me/${numero}?text=${encodeURIComponent(mensagem)}`;
+}
+
 function PainelCRM() {
   const [clientes, setClientes] = useState([]);
   const [carregando, setCarregando] = useState(true);
@@ -298,14 +304,30 @@ function PainelCRM() {
 
   if (carregando) return html`<p class="vazio">Carregando…</p>`;
 
-  const hoje = hojeISO().slice(5);
-  const aniversariantesMes = clientes.filter((c) => c.aniversario && c.aniversario.slice(5, 7) === hoje.slice(0, 2));
+  const mesDiaHoje = hojeISO().slice(5);
+  const aniversariantesHoje = clientes.filter((c) => c.aniversario && c.aniversario.slice(5) === mesDiaHoje);
+  const aniversariantesMes = clientes.filter((c) => c.aniversario && c.aniversario.slice(5, 7) === mesDiaHoje.slice(0, 2) && c.aniversario.slice(5) !== mesDiaHoje);
 
   return html`
     <div class="colunas-financeiro">
       <div><${FormaCliente} onSalvo=${carregar} /></div>
       <div>
-        ${aniversariantesMes.length > 0 && html`<div class="alerta-banner">${aniversariantesMes.length} cliente(s) fazem aniversário este mês: ${aniversariantesMes.map((c) => c.nome).join(", ")}</div>`}
+        ${aniversariantesHoje.length > 0 && html`
+          <div class="card" style="border-color: var(--dourado); margin-bottom: 16px;">
+            <h3>🎂 Aniversário hoje</h3>
+            <div class="lista-contas">
+              ${aniversariantesHoje.map((c) => html`
+                <div class="item-conta" key=${c.id}>
+                  <div class="item-conta-topo"><span class="item-conta-desc">${c.nome}</span></div>
+                  ${c.telefone
+                    ? html`<a href=${linkWhatsapp(c.telefone, `Olá ${c.nome}! A equipe do Serra Dourada deseja um feliz aniversário! 🎉`)} target="_blank" rel="noopener" class="botao-pequeno" style="display:inline-block; margin-top:6px; text-decoration:none;">Enviar parabéns no WhatsApp</a>`
+                    : html`<p class="desc-form" style="margin:6px 0 0;">Sem telefone cadastrado.</p>`}
+                </div>
+              `)}
+            </div>
+          </div>
+        `}
+        ${aniversariantesMes.length > 0 && html`<div class="alerta-banner">${aniversariantesMes.length} cliente(s) também fazem aniversário este mês: ${aniversariantesMes.map((c) => c.nome).join(", ")}</div>`}
         <h3 class="titulo-lista">Clientes cadastrados</h3>
         ${!clientes.length && html`<p class="vazio">Nenhum cliente cadastrado ainda.</p>`}
         <div class="lista-contas">
