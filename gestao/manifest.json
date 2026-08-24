@@ -1,0 +1,13 @@
+{
+  "name": "Serra Dourada — Gestão",
+  "short_name": "SD Gestão",
+  "start_url": "/gestao/",
+  "scope": "/gestao/",
+  "display": "standalone",
+  "background_color": "#1b1e21",
+  "theme_color": "#1b1e21",
+  "icons": [
+    { "src": "../img/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "../img/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
