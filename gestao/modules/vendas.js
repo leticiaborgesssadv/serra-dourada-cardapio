@@ -143,6 +143,25 @@ function ImportadorCSV({ onImportado }) {
   const validas = linhasProcessadas.filter((l) => l.valida);
   const invalidas = linhasProcessadas.filter((l) => !l.valida);
 
+  const resumo = useMemo(() => {
+    if (!validas.length) return null;
+    const total = validas.reduce((acc, l) => acc + (l.valor_bruto || 0), 0);
+    const datas = validas.map((l) => l.data_hora).filter(Boolean).sort((a, b) => a - b);
+    const inicio = datas[0], fim = datas[datas.length - 1];
+    const periodo = inicio && fim
+      ? (inicio.toLocaleDateString("pt-BR") === fim.toLocaleDateString("pt-BR")
+          ? inicio.toLocaleDateString("pt-BR")
+          : `${inicio.toLocaleDateString("pt-BR")} a ${fim.toLocaleDateString("pt-BR")}`)
+      : "período não identificado";
+    return { total, periodo };
+  }, [validas]);
+
+  function aoClicarImportar() {
+    if (!resumo) return;
+    const texto = `Vamos importar ${validas.length} venda(s), totalizando ${formatarMoeda(resumo.total)}, no período de ${resumo.periodo}.\n\nConfirma a importação?`;
+    if (confirm(texto)) confirmarImportacao();
+  }
+
   async function confirmarImportacao() {
     setValidando(true);
     setErro("");
@@ -257,7 +276,14 @@ function ImportadorCSV({ onImportado }) {
           </div>
           ${linhasProcessadas.length > 8 && html`<p class="desc-form">Mostrando as 8 primeiras de ${linhasProcessadas.length} linhas.</p>`}
 
-          <button class="botao" style="margin-top: 12px;" disabled=${validando || !validas.length} onClick=${confirmarImportacao}>
+          ${resumo && html`
+            <div class="alerta-banner" style="margin-top: 12px;">
+              Prévia: ${validas.length} venda(s) válida(s), totalizando ${formatarMoeda(resumo.total)}, no período de ${resumo.periodo}.
+              ${invalidas.length > 0 ? ` ${invalidas.length} linha(s) inválida(s) serão ignoradas.` : ""}
+            </div>
+          `}
+
+          <button class="botao" style="margin-top: 12px;" disabled=${validando || !validas.length} onClick=${aoClicarImportar}>
             ${validando ? "Importando…" : `Confirmar importação de ${validas.length} venda(s)`}
           </button>
         </div>
@@ -338,6 +364,34 @@ function HistoricoSincronizacao() {
   `;
 }
 
+function PainelSaudeIntegracao() {
+  const [log, setLog] = useState(undefined);
+
+  useEffect(() => {
+    sb.from("collibri_sync_log").select("*").order("iniciado_em", { ascending: false }).limit(1)
+      .then((r) => setLog((r.data && r.data[0]) || null));
+  }, []);
+
+  if (log === undefined) return null;
+  if (!log) {
+    return html`<div class="alerta-banner">Nenhuma importação do Colibri foi feita ainda.</div>`;
+  }
+
+  const dias = Math.floor((Date.now() - new Date(log.iniciado_em).getTime()) / 86400000);
+  const atrasada = dias >= 3;
+
+  return html`
+    <div class="card" style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; padding: 12px 16px;">
+      <div style="font-size: 0.86rem;">
+        <strong>Última importação do Colibri:</strong> ${new Date(log.iniciado_em).toLocaleString("pt-BR")}
+        <span class="chip ${log.status === "concluido" ? "chip-ok" : log.status === "erro" ? "chip-erro" : "chip-alerta"}" style="margin-left: 6px;">${log.status}</span>
+        ${log.registros_com_erro > 0 ? html`<span class="chip chip-alerta" style="margin-left: 6px;">${log.registros_com_erro} com erro</span>` : ""}
+      </div>
+      ${atrasada && html`<span class="chip chip-alerta">Sem importação há ${dias} dia(s)</span>`}
+    </div>
+  `;
+}
+
 export default function Vendas() {
   const [aba, setAba] = useState("importar");
   const [chaveLista, setChaveLista] = useState(0);
@@ -345,6 +399,7 @@ export default function Vendas() {
   return html`
     <div>
       <h2>Vendas e Colibri</h2>
+      <${PainelSaudeIntegracao} />
       <div class="sub-tabs">
         <button class=${"sub-tab" + (aba === "importar" ? " ativo" : "")} onClick=${() => setAba("importar")}>Importar planilha</button>
         <button class=${"sub-tab" + (aba === "vendas" ? " ativo" : "")} onClick=${() => setAba("vendas")}>Vendas registradas</button>

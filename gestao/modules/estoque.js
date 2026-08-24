@@ -234,6 +234,7 @@ function FichaTecnica({ produto, insumos, itens, onMudou }) {
   }
 
   async function removerItem(id) {
+    if (!confirm("Remover este item da ficha técnica?")) return;
     await sb.from("ficha_tecnica_item").delete().eq("id", id);
     onMudou();
   }

@@ -246,6 +246,7 @@ function PainelEscala() {
   }
 
   async function remover(id) {
+    if (!confirm("Remover este turno da escala?")) return;
     await sb.from("escala").delete().eq("id", id);
     carregar();
   }
@@ -694,6 +695,7 @@ function PainelUniformes() {
   useEffect(() => { carregar(); }, []);
 
   async function remover(id) {
+    if (!confirm("Remover este registro de uniforme?")) return;
     await sb.from("funcionario_uniforme").delete().eq("id", id);
     carregar();
   }
@@ -789,6 +791,7 @@ function PainelDocumentosFuncionario() {
   useEffect(() => { carregar(); }, []);
 
   async function remover(id) {
+    if (!confirm("Remover este documento? O arquivo anexado também deixará de ser acessível por aqui.")) return;
     await sb.from("funcionario_documento").delete().eq("id", id);
     carregar();
   }
