@@ -1,9 +1,58 @@
 import { h } from "https://esm.sh/preact@10.19.6";
 import { useState, useEffect, useMemo } from "https://esm.sh/preact@10.19.6/hooks";
 import htm from "https://esm.sh/htm@3.1.1";
-import { sb, formatarMoeda, formatarData, getEstabelecimentoId, hojeISO, diasAte } from "../lib/supabase.js";
+import { sb, formatarMoeda, formatarData, getEstabelecimentoId, hojeISO, diasAte, enviarAnexo, urlAssinadaAnexo, ehCaminhoArmazenado } from "../lib/supabase.js";
 
 const html = htm.bind(h);
+
+function CampoAnexo({ valor, onMudar }) {
+  const [enviando, setEnviando] = useState(false);
+  const [erro, setErro] = useState("");
+
+  async function aoSelecionar(ev) {
+    const arquivo = ev.target.files[0];
+    ev.target.value = "";
+    if (!arquivo) return;
+    setErro("");
+    setEnviando(true);
+    try {
+      const caminho = await enviarAnexo(arquivo);
+      onMudar(caminho);
+    } catch (e) {
+      setErro("Não foi possível enviar o arquivo.");
+    } finally {
+      setEnviando(false);
+    }
+  }
+
+  return html`
+    <div>
+      <label>Link ou anexo (opcional)</label>
+      <div style="display:flex; gap:8px; align-items:flex-start;">
+        <input type="text" style="flex:1;" value=${valor} onInput=${(e) => onMudar(e.target.value)} placeholder="Cole um link…" />
+        <label class="botao-secundario-pequeno" style="cursor:pointer; white-space:nowrap; padding:9px 12px;">
+          ${enviando ? "Enviando…" : "📷 Anexar"}
+          <input type="file" accept="image/*,.pdf" capture="environment" style="display:none;" onChange=${aoSelecionar} disabled=${enviando} />
+        </label>
+      </div>
+      ${valor && ehCaminhoArmazenado(valor) && html`<p class="desc-form" style="margin-top:4px;">Arquivo anexado ✓</p>`}
+      ${erro && html`<div class="msg-erro">${erro}</div>`}
+    </div>
+  `;
+}
+
+function LinkArquivo({ caminho }) {
+  const [abrindo, setAbrindo] = useState(false);
+  async function abrir(ev) {
+    ev.preventDefault();
+    setAbrindo(true);
+    try {
+      const url = ehCaminhoArmazenado(caminho) ? await urlAssinadaAnexo(caminho) : caminho;
+      window.open(url, "_blank", "noopener");
+    } catch (e) {} finally { setAbrindo(false); }
+  }
+  return html`<a href="#" onClick=${abrir} style="color:var(--dourado-claro)">${abrindo ? "abrindo…" : "ver arquivo"}</a>`;
+}
 
 const DIAS = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 
@@ -495,6 +544,7 @@ function FormaOcorrencia({ funcionarios, onSalvo }) {
   const [tipo, setTipo] = useState(TIPOS_OCORRENCIA[0].valor);
   const [descricao, setDescricao] = useState("");
   const [data, setData] = useState(hojeISO());
+  const [anexoUrl, setAnexoUrl] = useState("");
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState("");
 
@@ -503,10 +553,12 @@ function FormaOcorrencia({ funcionarios, onSalvo }) {
     setErro("");
     if (!funcionarioId || !descricao.trim()) { setErro("Selecione o funcionário e descreva a ocorrência."); return; }
     setSalvando(true);
-    const r = await sb.from("funcionario_ocorrencia").insert({ funcionario_id: funcionarioId, tipo, descricao: descricao.trim(), data });
+    const r = await sb.from("funcionario_ocorrencia").insert({
+      funcionario_id: funcionarioId, tipo, descricao: descricao.trim(), data, anexo_url: anexoUrl.trim() || null,
+    });
     setSalvando(false);
     if (r.error) { setErro("Não foi possível salvar: " + r.error.message); return; }
-    setDescricao("");
+    setDescricao(""); setAnexoUrl("");
     onSalvo();
   }
 
@@ -525,6 +577,7 @@ function FormaOcorrencia({ funcionarios, onSalvo }) {
       </div>
       <label>Descrição</label>
       <textarea rows="3" style="width:100%;padding:9px 11px;border-radius:8px;border:1px solid var(--borda);background:var(--fundo-input);color:var(--texto);font-family:inherit;font-size:0.88rem;" value=${descricao} onInput=${(e) => setDescricao(e.target.value)}></textarea>
+      <div style="margin-top:11px;"><${CampoAnexo} valor=${anexoUrl} onMudar=${setAnexoUrl} /></div>
       <button class="botao" type="submit" disabled=${salvando} style="margin-top:10px;">${salvando ? "Salvando…" : "Registrar ocorrência"}</button>
       ${erro && html`<div class="msg-erro">${erro}</div>`}
     </form>
@@ -566,6 +619,7 @@ function PainelOcorrencias() {
               </div>
               <div class="item-conta-meta">${formatarData(o.data)}</div>
               <p style="font-size:0.82rem; margin: 4px 0 0;">${o.descricao}</p>
+              ${o.anexo_url && html`<p style="margin: 4px 0 0;"><${LinkArquivo} caminho=${o.anexo_url} /></p>`}
             </div>
           `)}
         </div>
@@ -711,8 +765,7 @@ function FormaDocumentoFuncionario({ funcionarios, onSalvo }) {
       </div>
       <label>Validade (se houver)</label>
       <input type="date" value=${validade} onInput=${(e) => setValidade(e.target.value)} />
-      <label>Link do arquivo (opcional)</label>
-      <input type="text" value=${arquivoUrl} onInput=${(e) => setArquivoUrl(e.target.value)} placeholder="https://..." />
+      <${CampoAnexo} valor=${arquivoUrl} onMudar=${setArquivoUrl} />
       <button class="botao" type="submit" disabled=${salvando} style="margin-top:10px;">${salvando ? "Salvando…" : "Adicionar documento"}</button>
       ${erro && html`<div class="msg-erro">${erro}</div>`}
     </form>
@@ -765,7 +818,7 @@ function PainelDocumentosFuncionario() {
                 </div>
                 <div class="item-conta-meta">
                   ${TIPOS_DOCUMENTO_FUNCIONARIO.find((t) => t.valor === d.tipo)?.rotulo || d.tipo}
-                  ${d.arquivo_url ? html` · <a href=${d.arquivo_url} target="_blank" rel="noopener" style="color:var(--dourado-claro)">ver arquivo</a>` : ""}
+                  ${d.arquivo_url ? html` · <${LinkArquivo} caminho=${d.arquivo_url} />` : ""}
                 </div>
                 <div class="item-conta-rodape" style="margin-top:6px;">
                   <span></span>
