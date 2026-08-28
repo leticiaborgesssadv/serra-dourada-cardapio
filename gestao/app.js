@@ -6,7 +6,7 @@ import Cozinha from "./cozinha.js";
 
 const html = htm.bind(h);
 
-const VERSAO_CACHE = "30";
+const VERSAO_CACHE = "31";
 
 const MODULOS = [
   { rota: "financeiro", rotulo: "Financeiro", pronto: true },
