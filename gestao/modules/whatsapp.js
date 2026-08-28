@@ -10,9 +10,20 @@ const INTERVALO_ATUALIZACAO_MS = 20000;
 const ROTULO_INTENCAO = {
   cardapio: "Cardápio",
   horario: "Horário",
+  horario_almoco: "Horário do almoço",
   endereco: "Endereço",
   happy_hour: "Happy hour",
   reserva: "Reserva",
+  atendente: "Pediu atendente",
+  elogio: "Elogio",
+  avaliacao: "Avaliação",
+  prato: "Consulta de prato",
+  reclamacao: "Reclamação",
+  gerente: "Pediu gerente",
+  vagas: "Vaga de emprego",
+  fornecedor: "Fornecedor",
+  parceria: "Parceria/divulgação",
+  nota_fiscal: "Nota fiscal",
   fallback: "Não identificado",
 };
 
