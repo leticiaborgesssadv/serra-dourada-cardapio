@@ -2,14 +2,16 @@ import { h, render } from "https://esm.sh/preact@10.19.6";
 import { useState, useEffect } from "https://esm.sh/preact@10.19.6/hooks";
 import htm from "https://esm.sh/htm@3.1.1";
 import { sb, coletarAlertas } from "./lib/supabase.js";
+import Cozinha from "./cozinha.js";
 
 const html = htm.bind(h);
 
-const VERSAO_CACHE = "25";
+const VERSAO_CACHE = "30";
 
 const MODULOS = [
   { rota: "financeiro", rotulo: "Financeiro", pronto: true },
   { rota: "estoque", rotulo: "Estoque e CMV", pronto: true },
+  { rota: "etiquetas", rotulo: "Etiquetas", pronto: true },
   { rota: "compras", rotulo: "Compras e fornecedores", pronto: true },
   { rota: "vendas", rotulo: "Vendas e Colibri", pronto: true },
   { rota: "dashboard", rotulo: "Dashboard", pronto: true },
@@ -17,6 +19,7 @@ const MODULOS = [
   { rota: "documentos", rotulo: "Documentos e fiscal", pronto: true },
   { rota: "marketing", rotulo: "Marketing e CRM", pronto: true },
   { rota: "metas", rotulo: "Metas e orçamento", pronto: true },
+  { rota: "whatsapp", rotulo: "WhatsApp", pronto: true },
 ];
 
 function lerRota() {
@@ -117,7 +120,7 @@ function App() {
       <div class="tela-centro">
         <form class="card card-login" onSubmit=${entrar}>
           <h2>Serra Dourada · Gestão</h2>
-          <p class="desc">Acesso restrito à gerência.</p>
+          <p class="desc">Acesso da equipe.</p>
           <label>E-mail</label>
           <input type="email" value=${email} onInput=${(e) => setEmail(e.target.value)} autocomplete="username" />
           <label>Senha</label>
@@ -133,16 +136,20 @@ function App() {
     return html`<div class="tela-centro"><p>Verificando acesso…</p></div>`;
   }
 
-  if (!funcionario || funcionario.papel !== "gerencia" || !funcionario.ativo) {
+  if (!funcionario || !funcionario.ativo || (funcionario.papel !== "gerencia" && funcionario.papel !== "cozinha")) {
     return html`
       <div class="tela-centro">
         <div class="card">
           <h2>Acesso restrito</h2>
-          <p class="desc">Este painel é de uso exclusivo da gerência. Se você acredita que deveria ter acesso, fale com a administradora.</p>
+          <p class="desc">Seu usuário ainda não tem acesso a este painel. Se você acredita que deveria ter acesso, fale com a administradora.</p>
           <button class="botao-secundario" onClick=${sair}>Sair</button>
         </div>
       </div>
     `;
+  }
+
+  if (funcionario.papel === "cozinha") {
+    return h(Cozinha, { funcionario, onSair: sair });
   }
 
   const def = MODULOS.find((m) => m.rota === rota) || MODULOS[0];
