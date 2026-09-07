@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Avalie o atendimento · Serra Dourada Bar e Restaurante</title>
+<meta name="theme-color" content="#241608" />
+<meta name="description" content="Avalie o atendimento do Serra Dourada Bar e Restaurante e deixe sua sugestão." />
+<meta name="robots" content="noindex" />
+
+<link rel="icon" type="image/png" sizes="32x32" href="img/favicon-32.png" />
+<link rel="apple-touch-icon" href="img/apple-touch-icon.png" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playball&family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Manrope:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" defer></script>
+<style>
+  :root {
+    --dourado: #c9a227;
+    --dourado-claro: #e8c766;
+    --marrom: #1c1108;
+    --marrom-2: #241608;
+    --marrom-claro: #3a2712;
+    --marrom-card: #2e1c0e;
+    --texto: #f6ead0;
+    --texto-suave: #cdbb99;
+    --borda: #4a3520;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    font-family: 'Manrope', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--marrom);
+    color: var(--texto);
+    min-height: 100vh;
+  }
+  .topo {
+    text-align: center;
+    padding: 22px 16px 8px calc(16px + env(safe-area-inset-left, 0px));
+    padding-top: calc(22px + env(safe-area-inset-top, 0px));
+  }
+  .logo-script { font-family: 'Playball', cursive; font-size: 2.2rem; color: var(--dourado-claro); line-height: 1; margin: 0; }
+  .logo-label { font-size: 0.65rem; letter-spacing: 0.32em; color: var(--texto-suave); margin-top: 4px; font-weight: 700; }
+
+  main { max-width: 480px; margin: 0 auto; padding: 8px 16px calc(40px + env(safe-area-inset-bottom, 0px)); }
+  h1 { font-family: 'Playfair Display', serif; font-weight: 600; font-size: 1.4rem; color: var(--dourado-claro); text-align: center; margin: 10px 0 6px; }
+  .intro { text-align: center; color: var(--texto-suave); font-size: 0.9rem; margin: 0 0 22px; line-height: 1.5; }
+
+  label { display: block; font-size: 0.82rem; color: var(--texto-suave); margin-bottom: 6px; font-weight: 600; }
+  select, input[type=text], textarea {
+    width: 100%;
+    padding: 12px 13px;
+    border-radius: 10px;
+    border: 1px solid var(--borda);
+    background: var(--marrom-card);
+    color: var(--texto);
+    font-size: 0.95rem;
+    margin-bottom: 18px;
+    font-family: inherit;
+    appearance: none;
+  }
+  textarea { resize: vertical; min-height: 90px; }
+  select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23cdbb99' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; background-size: 18px; padding-right: 38px; }
+
+  .campo { margin-bottom: 4px; }
+  .estrelas { display: flex; gap: 8px; justify-content: center; margin-bottom: 22px; }
+  .estrela { background: none; border: none; padding: 0; font-size: 2.6rem; line-height: 1; cursor: pointer; color: var(--marrom-claro); transition: color 0.1s ease, transform 0.08s ease; }
+  .estrela.ativa { color: var(--dourado); }
+  .estrela:active { transform: scale(0.92); }
+
+  .botao {
+    display: flex; align-items: center; justify-content: center;
+    width: 100%; padding: 15px 18px; border-radius: 10px;
+    background: var(--dourado); color: #241608; border: none;
+    font-family: inherit; font-size: 0.96rem; font-weight: 700;
+    letter-spacing: 0.015em; cursor: pointer; min-height: 52px;
+  }
+  .botao:disabled { opacity: 0.6; }
+  .botao:active:not(:disabled) { transform: scale(0.98); }
+
+  .erro { color: #f2a8a8; font-size: 0.85rem; text-align: center; margin: -8px 0 16px; }
+
+  .confirmacao { text-align: center; padding: 60px 16px; }
+  .confirmacao .icone { font-size: 3rem; margin-bottom: 12px; }
+  .confirmacao h1 { margin-bottom: 8px; }
+  .confirmacao p { color: var(--texto-suave); font-size: 0.92rem; line-height: 1.5; }
+  .voltar { display: inline-block; margin-top: 22px; color: var(--dourado-claro); text-decoration: none; font-size: 0.88rem; font-weight: 600; }
+
+  .escondido { display: none !important; }
+</style>
+</head>
+<body>
+  <div class="topo">
+    <p class="logo-script">Serra Dourada</p>
+    <p class="logo-label">BAR E RESTAURANTE</p>
+  </div>
+
+  <main>
+    <div id="tela-form">
+      <h1>Avalie o atendimento</h1>
+      <p class="intro">Como foi sua experiência hoje? Sua nota ajuda a reconhecer o trabalho de quem te atendeu.</p>
+
+      <form id="form-avaliacao">
+        <div class="estrelas" id="estrelas" role="radiogroup" aria-label="Nota do atendimento">
+          <button type="button" class="estrela" data-nota="1">★</button>
+          <button type="button" class="estrela" data-nota="2">★</button>
+          <button type="button" class="estrela" data-nota="3">★</button>
+          <button type="button" class="estrela" data-nota="4">★</button>
+          <button type="button" class="estrela" data-nota="5">★</button>
+        </div>
+
+        <div class="campo">
+          <label for="garcom">Quem te atendeu? (opcional)</label>
+          <select id="garcom">
+            <option value="">Não sei / prefiro não dizer</option>
+          </select>
+        </div>
+
+        <div class="campo">
+          <label for="nome">Seu nome (opcional)</label>
+          <input type="text" id="nome" autocomplete="name" />
+        </div>
+
+        <div class="campo">
+          <label for="sugestao">Alguma sugestão pra gente melhorar? (opcional)</label>
+          <textarea id="sugestao"></textarea>
+        </div>
+
+        <p class="erro escondido" id="msg-erro"></p>
+        <button type="submit" class="botao" id="btn-enviar">Enviar avaliação</button>
+      </form>
+    </div>
+
+    <div id="tela-obrigado" class="confirmacao escondido">
+      <div class="icone">🍽️</div>
+      <h1>Obrigado pela avaliação!</h1>
+      <p>Seu retorno ajuda a gente a melhorar o atendimento a cada visita.</p>
+      <a class="voltar" href="index.html">← Voltar para o início</a>
+    </div>
+  </main>
+
+<script>
+window.addEventListener("DOMContentLoaded", function () {
+  "use strict";
+  var SUPABASE_URL = "https://bhxnhiggogosootbtwpb.supabase.co";
+  var ANON_KEY = "sb_publishable_Zsg8lPJjUHK5-okGOuYc9g_VbKilzQG";
+  var sb = window.supabase.createClient(SUPABASE_URL, ANON_KEY);
+
+  var estabelecimentoId = null;
+  var notaEscolhida = 0;
+
+  var estrelasEls = Array.prototype.slice.call(document.querySelectorAll(".estrela"));
+  function pintarEstrelas(n) {
+    estrelasEls.forEach(function (el) {
+      el.classList.toggle("ativa", Number(el.dataset.nota) <= n);
+    });
+  }
+  estrelasEls.forEach(function (el) {
+    el.addEventListener("click", function () {
+      notaEscolhida = Number(el.dataset.nota);
+      pintarEstrelas(notaEscolhida);
+    });
+  });
+
+  async function carregar() {
+    var estRes = await sb.from("estabelecimento").select("id").limit(1).maybeSingle();
+    if (estRes.data) estabelecimentoId = estRes.data.id;
+
+    var garRes = await sb.from("garcom_publico").select("id,nome").order("nome");
+    var select = document.getElementById("garcom");
+    (garRes.data || []).forEach(function (g) {
+      var opt = document.createElement("option");
+      opt.value = g.id;
+      opt.textContent = g.nome;
+      select.appendChild(opt);
+    });
+  }
+
+  document.getElementById("form-avaliacao").addEventListener("submit", async function (ev) {
+    ev.preventDefault();
+    var msgErro = document.getElementById("msg-erro");
+    msgErro.classList.add("escondido");
+
+    if (notaEscolhida === 0) {
+      msgErro.textContent = "Escolha de 1 a 5 estrelas antes de enviar.";
+      msgErro.classList.remove("escondido");
+      return;
+    }
+    if (!estabelecimentoId) {
+      msgErro.textContent = "Não foi possível enviar agora. Tente novamente em instantes.";
+      msgErro.classList.remove("escondido");
+      return;
+    }
+
+    var btn = document.getElementById("btn-enviar");
+    btn.disabled = true;
+    btn.textContent = "Enviando…";
+
+    var funcionarioId = document.getElementById("garcom").value || null;
+    var nome = document.getElementById("nome").value.trim() || null;
+    var sugestao = document.getElementById("sugestao").value.trim() || null;
+
+    var res = await sb.from("avaliacao_atendimento").insert({
+      estabelecimento_id: estabelecimentoId,
+      funcionario_id: funcionarioId,
+      nota: notaEscolhida,
+      nome_cliente: nome,
+      sugestao: sugestao,
+    });
+
+    if (res.error) {
+      btn.disabled = false;
+      btn.textContent = "Enviar avaliação";
+      msgErro.textContent = "Não foi possível enviar agora. Tente novamente em instantes.";
+      msgErro.classList.remove("escondido");
+      return;
+    }
+
+    document.getElementById("tela-form").classList.add("escondido");
+    document.getElementById("tela-obrigado").classList.remove("escondido");
+  });
+
+  carregar();
+});
+</script>
+</body>
+</html>
