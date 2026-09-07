@@ -139,6 +139,13 @@
       <p>Seu retorno ajuda a gente a melhorar o atendimento a cada visita.</p>
       <a class="voltar" href="index.html">← Voltar para o início</a>
     </div>
+
+    <div id="tela-ja-avaliou" class="confirmacao escondido">
+      <div class="icone">🙏</div>
+      <h1>Você já avaliou hoje</h1>
+      <p>Obrigado! Pra manter as notas justas com a equipe, só aceitamos uma avaliação por pessoa a cada 20 horas.</p>
+      <a class="voltar" href="index.html">← Voltar para o início</a>
+    </div>
   </main>
 
 <script>
@@ -150,6 +157,28 @@ window.addEventListener("DOMContentLoaded", function () {
 
   var estabelecimentoId = null;
   var notaEscolhida = 0;
+  var COOLDOWN_MS = 20 * 60 * 60 * 1000; // 20h — evita avaliação repetida do mesmo aparelho
+  var CHAVE_COOLDOWN = "sd_avaliacao_ultima";
+
+  function jaAvaliouRecentemente() {
+    try {
+      var ultima = Number(localStorage.getItem(CHAVE_COOLDOWN) || 0);
+      return ultima > 0 && Date.now() - ultima < COOLDOWN_MS;
+    } catch (e) {
+      return false; // localStorage indisponível (modo privado etc.) — não bloqueia
+    }
+  }
+  function marcarAvaliado() {
+    try {
+      localStorage.setItem(CHAVE_COOLDOWN, String(Date.now()));
+    } catch (e) { /* segue sem bloquear futuras avaliações se não puder salvar */ }
+  }
+
+  if (jaAvaliouRecentemente()) {
+    document.getElementById("tela-form").classList.add("escondido");
+    document.getElementById("tela-ja-avaliou").classList.remove("escondido");
+    return;
+  }
 
   var estrelasEls = Array.prototype.slice.call(document.querySelectorAll(".estrela"));
   function pintarEstrelas(n) {
@@ -218,6 +247,7 @@ window.addEventListener("DOMContentLoaded", function () {
       return;
     }
 
+    marcarAvaliado();
     document.getElementById("tela-form").classList.add("escondido");
     document.getElementById("tela-obrigado").classList.remove("escondido");
   });
