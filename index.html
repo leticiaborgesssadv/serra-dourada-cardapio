@@ -580,7 +580,7 @@ window.addEventListener("DOMContentLoaded", function () {
   async function mostrarAlmoco() {
     var [diaRes, precosRes] = await Promise.all([
       sb.from("almoco_dia").select("descricao,imagem_url").eq("ativo", true).limit(1).maybeSingle(),
-      sb.from("cardapio_publico").select("nome,preco,foto_url").eq("grupo", "Feijoada de Sábado").eq("ativo", true).order("ordem", { ascending: true }),
+      sb.from("cardapio_publico").select("nome,preco,foto_url").eq("grupo", "Almoço (Segunda a Sábado)").eq("ativo", true).order("ordem", { ascending: true }),
     ]);
     var prato = diaRes.data;
     var formatos = precosRes.data || [];
