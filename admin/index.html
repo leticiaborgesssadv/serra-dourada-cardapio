@@ -210,6 +210,7 @@
       <div class="card">
         <h2>Promoção do dia</h2>
         <p class="desc">Uma promoção fixa para cada dia da semana. Deixe em branco e desmarque "Ativa" nos dias sem promoção especial.</p>
+        <p class="msg erro escondido" id="promodia-desatualizado"></p>
         <div id="promodia-dias"></div>
         <button class="botao" id="btn-salvar-promodia"><span id="spin-promodia" class="spinner escondido"></span>Salvar promoções da semana</button>
         <div class="msg" id="msg-promodia"></div>
@@ -619,35 +620,89 @@
 
   // ---------- PROMOÇÃO DO DIA ----------
   var promoDiaIds = {};
+  var promoDiaHojeIdx = new Date().getDay();
+
   function montarPromoDiaForm() {
     var el = document.getElementById("promodia-dias");
     el.innerHTML = "";
-    ["Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"].forEach(function (nome, i) {
+    DIAS_LONGO.forEach(function (nome, i) {
       var div = document.createElement("div");
       div.style.marginBottom = "16px";
       div.style.paddingBottom = "12px";
       div.style.borderBottom = "1px solid var(--borda)";
+      if (i === promoDiaHojeIdx) {
+        div.style.border = "1.5px solid var(--dourado)";
+        div.style.borderRadius = "10px";
+        div.style.padding = "10px 10px 12px";
+      }
       div.innerHTML =
-        '<div class="toggle-linha"><label style="margin:0;font-weight:600;color:var(--texto)">' + nome + '</label>' +
+        '<div class="toggle-linha"><label style="margin:0;font-weight:600;color:var(--texto)">' + nome + (i === promoDiaHojeIdx ? ' <span class="meta">(hoje)</span>' : "") + '</label>' +
         '<input type="checkbox" class="promodia-ativo" data-dia="' + i + '" /></div>' +
         '<input type="text" class="promodia-titulo" data-dia="' + i + '" placeholder="Título (ex.: Tome 3, pague 4 no Spaten)" style="margin-top:8px" />' +
-        '<textarea class="promodia-descricao" data-dia="' + i + '" placeholder="Detalhes (opcional)"></textarea>';
+        '<textarea class="promodia-descricao" data-dia="' + i + '" placeholder="Detalhes (opcional)"></textarea>' +
+        '<img class="preview-img promodia-preview escondido" data-dia="' + i + '" alt="" style="max-height:120px" />' +
+        '<input type="file" class="promodia-foto-input" data-dia="' + i + '" accept="image/jpeg,image/png,image/webp" />' +
+        '<button type="button" class="botao botao-secundario botao-pequeno promodia-foto-btn" data-dia="' + i + '">Enviar foto</button>' +
+        '<span class="msg" data-role="foto-msg" data-dia="' + i + '" style="display:block;margin-top:6px"></span>';
       el.appendChild(div);
     });
   }
+
   async function carregarPromoDia() {
     montarPromoDiaForm();
-    var r = await sb.from("promocao").select("id,titulo,descricao,ativo,dia_semana").not("dia_semana", "is", null);
-    (r.data || []).forEach(function (p) {
+    var r = await sb.from("promocao").select("id,titulo,descricao,ativo,dia_semana,imagem_url").not("dia_semana", "is", null);
+    var linhas = r.data || [];
+    linhas.forEach(function (p) {
       promoDiaIds[p.dia_semana] = p.id;
       var tituloEl = document.querySelector('.promodia-titulo[data-dia="' + p.dia_semana + '"]');
       var descEl = document.querySelector('.promodia-descricao[data-dia="' + p.dia_semana + '"]');
       var ativoEl = document.querySelector('.promodia-ativo[data-dia="' + p.dia_semana + '"]');
+      var previewEl = document.querySelector('.promodia-preview[data-dia="' + p.dia_semana + '"]');
       if (tituloEl) tituloEl.value = p.titulo || "";
       if (descEl) descEl.value = p.descricao || "";
       if (ativoEl) ativoEl.checked = !!p.ativo;
+      if (previewEl && p.imagem_url) { previewEl.src = p.imagem_url; previewEl.classList.remove("escondido"); }
     });
+    var hoje = linhas.find(function (p) { return p.dia_semana === promoDiaHojeIdx; });
+    var aviso = document.getElementById("promodia-desatualizado");
+    var semPromoHoje = !hoje || !hoje.ativo || !hoje.titulo || !hoje.titulo.trim();
+    if (semPromoHoje) {
+      aviso.textContent = "⚠ Hoje é " + DIAS_LONGO[promoDiaHojeIdx] + " e não há promoção ativa configurada para hoje.";
+      aviso.classList.remove("escondido");
+    } else {
+      aviso.classList.add("escondido");
+    }
   }
+
+  document.getElementById("promodia-dias").addEventListener("click", async function (ev) {
+    var btn = ev.target.closest(".promodia-foto-btn");
+    if (!btn) return;
+    var dia = btn.dataset.dia;
+    var id = promoDiaIds[dia];
+    var msgEl = document.querySelector('[data-role="foto-msg"][data-dia="' + dia + '"]');
+    if (!id) { setMsg(msgEl, "Salve as promoções da semana antes de enviar a foto.", "erro"); return; }
+    var fileInput = document.querySelector('.promodia-foto-input[data-dia="' + dia + '"]');
+    var file = fileInput.files[0];
+    if (!file) { setMsg(msgEl, "Selecione uma imagem.", "erro"); return; }
+    if (TIPOS_IMG.indexOf(file.type) === -1) { setMsg(msgEl, "Formato não permitido. Envie JPG, PNG ou WEBP.", "erro"); return; }
+    if (file.size > MAX_IMG_BYTES) { setMsg(msgEl, "Imagem muito grande (" + formatarBytes(file.size) + "). Limite: 8 MB.", "erro"); return; }
+    btn.disabled = true;
+    setMsg(msgEl, "Enviando…", "");
+    try {
+      var ext = extensaoDoArquivo(file, { "image/jpeg":"jpg","image/png":"png","image/webp":"webp" });
+      var caminho = estabelecimentoId + "/promo-dia-" + dia + "-" + Date.now() + "." + ext;
+      var up = await sb.storage.from(ASSETS_BUCKET).upload(caminho, file, { contentType: file.type, upsert: false });
+      if (up.error) { setMsg(msgEl, "Falha ao enviar: " + up.error.message, "erro"); return; }
+      var url = sb.storage.from(ASSETS_BUCKET).getPublicUrl(caminho).data.publicUrl;
+      var r2 = await sb.from("promocao").update({ imagem_url: url }).eq("id", id);
+      if (r2.error) { setMsg(msgEl, "Enviado, mas houve erro ao salvar: " + r2.error.message, "erro"); return; }
+      setMsg(msgEl, "Foto enviada!", "sucesso");
+      var previewEl = document.querySelector('.promodia-preview[data-dia="' + dia + '"]');
+      if (previewEl) { previewEl.src = url; previewEl.classList.remove("escondido"); }
+    } catch (e) { setMsg(msgEl, "Erro inesperado. Tente novamente.", "erro"); }
+    finally { btn.disabled = false; }
+  });
+
   document.getElementById("btn-salvar-promodia").addEventListener("click", async function () {
     var msg = document.getElementById("msg-promodia"), btn = this, spin = document.getElementById("spin-promodia");
     btn.disabled = true; spin.classList.remove("escondido");
@@ -668,6 +723,7 @@
         if (r.error) erros++;
       }
       setMsg(msg, erros ? "Salvo, mas " + erros + " dia(s) deram erro." : "Promoções da semana salvas!", erros ? "erro" : "sucesso");
+      await carregarPromoDia();
     } finally {
       btn.disabled = false; spin.classList.add("escondido");
     }
