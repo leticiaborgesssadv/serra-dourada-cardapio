@@ -35,6 +35,26 @@ export function diasAte(dataISO) {
   return Math.round((alvo - hoje) / 86400000);
 }
 
+export function formatarDataHora(iso) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+}
+
+export function horasAte(dataISO) {
+  if (!dataISO) return null;
+  const alvo = new Date(dataISO);
+  if (Number.isNaN(alvo.getTime())) return null;
+  return (alvo.getTime() - Date.now()) / 3600000;
+}
+
+export function agoraDatetimeLocal() {
+  const d = new Date();
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 const BUCKET_ANEXOS = "documentos-privados";
 
 export function ehCaminhoArmazenado(valor) {
