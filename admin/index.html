@@ -118,6 +118,7 @@
     <button data-aba="almoco">Almoço</button>
     <button data-aba="happyhour">Happy Hour</button>
     <button data-aba="promocoes">Promoções</button>
+    <button data-aba="promodia">Promoção do dia</button>
     <button data-aba="eventos">Eventos</button>
     <button data-aba="horario">Horário</button>
     <button data-aba="contato">Contato</button>
@@ -201,6 +202,17 @@
       <div class="card">
         <h2>Promoções cadastradas</h2>
         <div id="lista-promocoes"><p class="msg">Carregando…</p></div>
+      </div>
+    </section>
+
+    <!-- PROMOÇÃO DO DIA -->
+    <section class="aba" id="aba-promodia">
+      <div class="card">
+        <h2>Promoção do dia</h2>
+        <p class="desc">Uma promoção fixa para cada dia da semana. Deixe em branco e desmarque "Ativa" nos dias sem promoção especial.</p>
+        <div id="promodia-dias"></div>
+        <button class="botao" id="btn-salvar-promodia"><span id="spin-promodia" class="spinner escondido"></span>Salvar promoções da semana</button>
+        <div class="msg" id="msg-promodia"></div>
       </div>
     </section>
 
@@ -442,6 +454,7 @@
     estabelecimentoId = est.data.id;
     await Promise.all([
       carregarArquivoAtual(), carregarAlmoco(), carregarHappyHour(), carregarPromocoes(),
+      carregarPromoDia(),
       carregarEventos(), carregarHorario(), carregarContato(), carregarBotoes(), carregarEstatisticas(),
       carregarPonto(),
     ]);
@@ -602,6 +615,62 @@
     setMsg(msg, "Promoção adicionada!", "sucesso");
     ["promo-titulo","promo-descricao","promo-de","promo-ate"].forEach(function (id) { document.getElementById(id).value = ""; });
     carregarPromocoes();
+  });
+
+  // ---------- PROMOÇÃO DO DIA ----------
+  var promoDiaIds = {};
+  function montarPromoDiaForm() {
+    var el = document.getElementById("promodia-dias");
+    el.innerHTML = "";
+    ["Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"].forEach(function (nome, i) {
+      var div = document.createElement("div");
+      div.style.marginBottom = "16px";
+      div.style.paddingBottom = "12px";
+      div.style.borderBottom = "1px solid var(--borda)";
+      div.innerHTML =
+        '<div class="toggle-linha"><label style="margin:0;font-weight:600;color:var(--texto)">' + nome + '</label>' +
+        '<input type="checkbox" class="promodia-ativo" data-dia="' + i + '" /></div>' +
+        '<input type="text" class="promodia-titulo" data-dia="' + i + '" placeholder="Título (ex.: Tome 3, pague 4 no Spaten)" style="margin-top:8px" />' +
+        '<textarea class="promodia-descricao" data-dia="' + i + '" placeholder="Detalhes (opcional)"></textarea>';
+      el.appendChild(div);
+    });
+  }
+  async function carregarPromoDia() {
+    montarPromoDiaForm();
+    var r = await sb.from("promocao").select("id,titulo,descricao,ativo,dia_semana").not("dia_semana", "is", null);
+    (r.data || []).forEach(function (p) {
+      promoDiaIds[p.dia_semana] = p.id;
+      var tituloEl = document.querySelector('.promodia-titulo[data-dia="' + p.dia_semana + '"]');
+      var descEl = document.querySelector('.promodia-descricao[data-dia="' + p.dia_semana + '"]');
+      var ativoEl = document.querySelector('.promodia-ativo[data-dia="' + p.dia_semana + '"]');
+      if (tituloEl) tituloEl.value = p.titulo || "";
+      if (descEl) descEl.value = p.descricao || "";
+      if (ativoEl) ativoEl.checked = !!p.ativo;
+    });
+  }
+  document.getElementById("btn-salvar-promodia").addEventListener("click", async function () {
+    var msg = document.getElementById("msg-promodia"), btn = this, spin = document.getElementById("spin-promodia");
+    btn.disabled = true; spin.classList.remove("escondido");
+    try {
+      var erros = 0;
+      for (var dia = 0; dia < 7; dia++) {
+        var id = promoDiaIds[dia];
+        if (!id) { erros++; continue; }
+        var tituloEl = document.querySelector('.promodia-titulo[data-dia="' + dia + '"]');
+        var descEl = document.querySelector('.promodia-descricao[data-dia="' + dia + '"]');
+        var ativoEl = document.querySelector('.promodia-ativo[data-dia="' + dia + '"]');
+        var titulo = tituloEl.value.trim() || DIAS_LONGO[dia];
+        var r = await sb.from("promocao").update({
+          titulo: titulo,
+          descricao: descEl.value.trim() || null,
+          ativo: ativoEl.checked,
+        }).eq("id", id);
+        if (r.error) erros++;
+      }
+      setMsg(msg, erros ? "Salvo, mas " + erros + " dia(s) deram erro." : "Promoções da semana salvas!", erros ? "erro" : "sucesso");
+    } finally {
+      btn.disabled = false; spin.classList.add("escondido");
+    }
   });
 
   // ---------- EVENTOS ----------
