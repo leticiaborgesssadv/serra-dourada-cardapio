@@ -231,6 +231,16 @@
     background: #7cf7a3;
     box-shadow: 0 0 4px #7cf7a3;
   }
+.botao-texto { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.botao-subtitulo { font-size: 0.76rem; font-weight: 600; opacity: 0.85; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.botao.destaque .botao-subtitulo { opacity: 0.75; }
+.promo-dia-destaque { padding: 4px 16px 2px; max-width: 480px; margin: 0 auto; }
+.promo-dia-card { display: flex; align-items: center; gap: 14px; border-radius: 16px; background: linear-gradient(135deg, var(--dourado), #a9791c); color: #241608; padding: 16px 18px; cursor: pointer; border: none; width: 100%; text-align: left; font-family: inherit; }
+.promo-dia-card img { width: 56px; height: 56px; border-radius: 12px; object-fit: cover; flex-shrink: 0; }
+.promo-dia-textos { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.promo-dia-label { font-size: 0.68rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.75; }
+.promo-dia-titulo { font-family: 'Playfair Display', serif; font-weight: 700; font-size: 1.05rem; line-height: 1.25; }
+.promo-dia-desc { font-size: 0.8rem; opacity: 0.85; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   body { padding-bottom: 74px; }
   .barra-fixa {
     position: fixed;
@@ -437,6 +447,9 @@
   </div>
 
   <p class="boas-vindas" id="boas-vindas">Bem-vindo!</p>
+  <section class="promo-dia-destaque escondido" id="promo-dia-destaque">
+  <button type="button" class="promo-dia-card" id="promo-dia-card"></button>
+  </section>
 
   <section class="destaques">
     <h2>Destaques da casa</h2>
@@ -514,6 +527,7 @@ window.addEventListener("DOMContentLoaded", function () {
   var almocoBadgeAtivo = false;
   var promocoesSemana = [];
   var promocaoDiaBadgeAtiva = false;
+  var promocaoDiaHoje = null;
 
   function escapeHtml(v) {
     return String(v == null ? "" : v)
@@ -666,6 +680,9 @@ async function mostrarPromocaoDia() {
 
   var corpo = "";
   if (promoHoje && promoHoje.ativo) {
+  if (promoHoje.imagem_url) {
+    corpo += '<img class="modal-foto" src="' + escapeHtml(promoHoje.imagem_url) + '" alt="" />';
+  }
     corpo += '<div class="modal-item"><h3>' + escapeHtml(DIAS[hoje]) + '</h3><p>' + escapeHtml(promoHoje.titulo) +
       (promoHoje.descricao ? ' — ' + escapeHtml(promoHoje.descricao).replace(/\n/g, "<br>") : "") + '</p></div>';
     var mensagem = "Olá! Vi a promoção de hoje (" + promoHoje.titulo + ") no site e quero aproveitar.";
@@ -687,6 +704,18 @@ async function mostrarPromocaoDia() {
   }
 
   abrirModal("Promoção de hoje", corpo);
+}
+
+function renderPromoDiaDestaque() {
+  var secao = document.getElementById("promo-dia-destaque");
+  if (!promocaoDiaHoje) { secao.classList.add("escondido"); return; }
+  document.getElementById("promo-dia-card").innerHTML =
+    (promocaoDiaHoje.imagem_url ? '<img src="' + escapeHtml(promocaoDiaHoje.imagem_url) + '" alt="" />' : "") +
+    '<span class="promo-dia-textos"><span class="promo-dia-label">Promoção de hoje</span>' +
+    '<span class="promo-dia-titulo">' + escapeHtml(promocaoDiaHoje.titulo) + '</span>' +
+    (promocaoDiaHoje.descricao ? '<span class="promo-dia-desc">' + escapeHtml(promocaoDiaHoje.descricao) + '</span>' : "") +
+    '</span>';
+  secao.classList.remove("escondido");
 }
 
   function mostrarComoChegar() {
@@ -781,6 +810,7 @@ async function mostrarPromocaoDia() {
 
   document.getElementById("barra-cardapio").addEventListener("click", function () { ACOES.cardapio(); });
   document.getElementById("barra-whatsapp").addEventListener("click", function () { ACOES.reserva_whatsapp(); });
+  document.getElementById("promo-dia-card").addEventListener("click", function () { ACOES.promocao_dia(); });
 
   var SW = 'fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"';
   var ICONES = {
@@ -834,10 +864,11 @@ async function mostrarPromocaoDia() {
       }
       el.className = "botao" + (i === 0 ? " destaque" : "");
       var badge = ((b.tipo === "happy_hour" && happyHourBadgeAtivo) || (b.tipo === "almoco" && almocoBadgeAtivo) || (b.tipo === "promocao_dia" && promocaoDiaBadgeAtiva)) ? '<span class="badge-ativo">Ativo agora</span>' : "";
+      var subtitulo = (b.tipo === "promocao_dia" && promocaoDiaHoje) ? '<span class="botao-subtitulo">' + escapeHtml(promocaoDiaHoje.titulo) + '</span>' : "";
       el.innerHTML =
-        '<span class="icone">' + (ICONES[b.tipo] || "") + '</span>' +
-        '<span>' + escapeHtml(b.label) + badge + '</span>' +
-        '<span class="seta">' + SETA + '</span>';
+      '<span class="icone">' + (ICONES[b.tipo] || "") + '</span>' +
+      '<span class="botao-texto"><span>' + escapeHtml(b.label) + badge + '</span>' + subtitulo + '</span>' +
+      '<span class="seta">' + SETA + '</span>';
       nav.appendChild(el);
     });
   }
@@ -921,7 +952,9 @@ async function mostrarPromocaoDia() {
       ]);
       happyHourBadgeAtivo = happyHourAtivoAgora(hhRes.data);
       promocoesSemana = promoSemanaRes.data || [];
-      promocaoDiaBadgeAtiva = promocoesSemana.some(function (p) { return p.dia_semana === new Date().getDay() && p.ativo; });
+      promocaoDiaHoje = promocoesSemana.find(function (p) { return p.dia_semana === new Date().getDay() && p.ativo; }) || null;
+      promocaoDiaBadgeAtiva = !!promocaoDiaHoje;
+      renderPromoDiaDestaque();
       renderAvaliacoes(avalRes.data);
 
       config = cfgRes.data;
