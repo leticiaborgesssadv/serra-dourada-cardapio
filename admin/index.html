@@ -115,7 +115,7 @@
 
   <nav class="tabs" id="tabs">
     <button data-aba="cardapio" class="ativa">Cardápio</button>
-    <button data-aba="almoco">Almoço</button>
+    <button data-aba="reservas">Reservas</button>
     <button data-aba="happyhour">Happy Hour</button>
     <button data-aba="promocoes">Promoções</button>
     <button data-aba="promodia">Promoção do dia</button>
@@ -150,16 +150,12 @@
       </div>
     </section>
 
-    <!-- ALMOÇO -->
-    <section class="aba" id="aba-almoco">
+    <!-- RESERVAS -->
+    <section class="aba" id="aba-reservas">
       <div class="card">
-        <h2>Almoço de hoje</h2>
-        <p class="desc">O que aparece quando o cliente toca em "Almoço de hoje".</p>
-        <p class="msg erro escondido" id="almoco-desatualizado">⚠ Este prato foi publicado antes de hoje — clientes ainda estão vendo o almoço de outro dia. Atualize a descrição e publique novamente.</p>
-        <label for="almoco-descricao">Descrição</label>
-        <textarea id="almoco-descricao" placeholder="Ex.: Feijoada completa, arroz, couve e torresmo — R$ 32,90"></textarea>
-        <button class="botao" id="btn-publicar-almoco"><span id="spin-almoco" class="spinner escondido"></span>Publicar almoço de hoje</button>
-        <div class="msg" id="msg-almoco"></div>
+        <h2>Reservas</h2>
+        <p class="desc">Pedidos feitos pelo botão "Fazer reserva" do site. A confirmação acontece pelo WhatsApp; esta lista é só para consulta.</p>
+        <div id="reservas-lista"><p class="meta">Carregando…</p></div>
       </div>
     </section>
 
@@ -454,7 +450,7 @@
     if (!est.data) return;
     estabelecimentoId = est.data.id;
     await Promise.all([
-      carregarArquivoAtual(), carregarAlmoco(), carregarHappyHour(), carregarPromocoes(),
+      carregarArquivoAtual(), carregarReservas(), carregarHappyHour(), carregarPromocoes(),
       carregarPromoDia(),
       carregarEventos(), carregarHorario(), carregarContato(), carregarBotoes(), carregarEstatisticas(),
       carregarPonto(),
@@ -508,24 +504,41 @@
     finally { btn.disabled = false; spin.classList.add("escondido"); }
   });
 
-  // ---------- ALMOÇO ----------
-  async function carregarAlmoco() {
-    var r = await sb.from("almoco_dia").select("descricao,data").eq("ativo", true).limit(1).maybeSingle();
-    document.getElementById("almoco-descricao").value = r.data ? r.data.descricao : "";
-    var hoje = new Date().toISOString().slice(0, 10);
-    var aviso = document.getElementById("almoco-desatualizado");
-    aviso.classList.toggle("escondido", !r.data || r.data.data === hoje);
+  // ---------- RESERVAS ----------
+  async function carregarReservas() {
+    var el = document.getElementById("reservas-lista");
+    var d = new Date();
+    var hoje = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+    var limite = new Date(Date.now() - 30 * 86400000).toISOString();
+    var r = await sb.from("contato_publico")
+      .select("nome,telefone,data_desejada,horario_desejado,pessoas,aceita_novidades,created_at")
+      .or('data_desejada.gte.' + hoje + ',created_at.gte."' + limite + '"')
+      .order("created_at", { ascending: false })
+      .limit(200);
+    if (r.error) { el.innerHTML = '<p class="msg erro">Erro ao carregar reservas: ' + escapeHtml(r.error.message) + '</p>'; return; }
+    var lista = r.data || [];
+    var proximas = lista.filter(function (x) { return x.data_desejada && x.data_desejada >= hoje; })
+      .sort(function (a, b) { return (a.data_desejada + (a.horario_desejado || "")).localeCompare(b.data_desejada + (b.horario_desejado || "")); });
+    var anteriores = lista.filter(function (x) { return !x.data_desejada || x.data_desejada < hoje; });
+
+    function dataBr(iso) { return iso ? iso.split("-").reverse().join("/") : ""; }
+    function card(x) {
+      var tel = (x.telefone || "").replace(/\D/g, "");
+      var telLink = tel ? '<a href="https://wa.me/' + escapeHtml(tel.length >= 12 ? tel : "55" + tel) + '" target="_blank" rel="noopener" style="color:var(--dourado-claro)">' + escapeHtml(x.telefone) + '</a>' : "sem telefone";
+      var quando = x.data_desejada
+        ? dataBr(x.data_desejada) + (x.horario_desejado ? " às " + x.horario_desejado.slice(0, 5) : "") + (x.pessoas ? " · " + x.pessoas + (x.pessoas === 1 ? " pessoa" : " pessoas") : "")
+        : "sem data (formulário antigo)";
+      return '<div class="item-lista"><div class="item-lista-topo"><div><h3>' + escapeHtml(x.nome) + '</h3>' +
+        '<div class="meta">' + escapeHtml(quando) + '</div></div></div>' +
+        '<div class="meta">' + telLink + (x.aceita_novidades ? ' · aceita novidades' : '') +
+        ' · pedido em ' + new Date(x.created_at).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) + '</div></div>';
+    }
+    el.innerHTML =
+      '<h3 style="font-size:0.9rem;margin:4px 0 10px">Próximas (' + proximas.length + ')</h3>' +
+      (proximas.length ? proximas.map(card).join("") : '<p class="meta" style="margin-bottom:14px">Nenhuma reserva futura.</p>') +
+      '<h3 style="font-size:0.9rem;margin:18px 0 10px">Anteriores · últimos 30 dias (' + anteriores.length + ')</h3>' +
+      (anteriores.length ? anteriores.map(card).join("") : '<p class="meta">Nada nos últimos 30 dias.</p>');
   }
-  document.getElementById("btn-publicar-almoco").addEventListener("click", async function () {
-    var msg = document.getElementById("msg-almoco"), btn = this, spin = document.getElementById("spin-almoco");
-    var texto = document.getElementById("almoco-descricao").value.trim();
-    if (!texto) return setMsg(msg, "Escreva a descrição do almoço.", "erro");
-    btn.disabled = true; spin.classList.remove("escondido");
-    var r = await sb.rpc("publicar_almoco_dia", { p_estabelecimento_id: estabelecimentoId, p_descricao: texto, p_imagem_url: null });
-    btn.disabled = false; spin.classList.add("escondido");
-    if (r.error) return setMsg(msg, "Erro ao publicar: " + r.error.message, "erro");
-    setMsg(msg, "Almoço do dia publicado!", "sucesso");
-  });
 
   // ---------- HAPPY HOUR ----------
   function montarDiasHH() {
