@@ -378,6 +378,8 @@
     color: var(--texto-suave);
     margin-bottom: 6px;
   }
+  .reserva-linha { display: grid; grid-template-columns: 1.4fr 1fr 0.8fr; gap: 8px; }
+  #form-reserva input[type=date], #form-reserva input[type=time], #form-reserva input[type=number],
   #form-reserva input[type=text] {
     width: 100%;
     padding: 11px 13px;
@@ -502,10 +504,28 @@
         <label for="reserva-nome">Seu nome</label>
         <input type="text" id="reserva-nome" required autocomplete="name" />
         <label for="reserva-telefone">Seu WhatsApp</label>
-        <input type="text" id="reserva-telefone" required autocomplete="tel" placeholder="Ex.: 62999998888" />
+        <input type="text" id="reserva-telefone" required autocomplete="tel" inputmode="tel" placeholder="Ex.: 62999998888" />
+        <div class="reserva-linha">
+          <div>
+            <label for="reserva-data">Data</label>
+            <input type="date" id="reserva-data" required />
+          </div>
+          <div>
+            <label for="reserva-hora">Horário</label>
+            <input type="time" id="reserva-hora" required />
+          </div>
+          <div>
+            <label for="reserva-pessoas">Pessoas</label>
+            <input type="number" id="reserva-pessoas" required min="1" max="100" inputmode="numeric" />
+          </div>
+        </div>
         <label class="consentimento">
           <input type="checkbox" id="reserva-consentimento" required />
-          <span>Aceito ser contatado pelo Serra Dourada por WhatsApp sobre esta reserva e futuras novidades.</span>
+          <span>Autorizo o Serra Dourada a usar meu nome e WhatsApp para tratar desta reserva.</span>
+        </label>
+        <label class="consentimento">
+          <input type="checkbox" id="reserva-novidades" />
+          <span>Quero receber novidades e promoções pelo WhatsApp (opcional).</span>
         </label>
         <button type="submit" class="botao destaque" id="btn-continuar-whatsapp" style="width:100%">Continuar para o WhatsApp</button>
         <p class="modal-vazio" id="msg-reserva" style="padding:8px 0 0"></p>
@@ -548,8 +568,9 @@ window.addEventListener("DOMContentLoaded", function () {
   function abrirReserva() {
     document.getElementById("modal-titulo").textContent = "Fazer reserva";
     document.getElementById("modal-corpo").innerHTML =
-      '<p class="modal-vazio" style="padding:0 0 4px;text-align:left">Deixe seu contato para confirmarmos e você será direcionado ao WhatsApp.</p>';
+      '<p class="modal-vazio" style="padding:0 0 4px;text-align:left">Preencha os dados e você será direcionado ao WhatsApp. A reserva é confirmada pela nossa equipe.</p>';
     document.getElementById("msg-reserva").textContent = "";
+    document.getElementById("reserva-data").min = dataLocalHoje();
     document.getElementById("form-reserva").classList.remove("escondido");
     document.getElementById("overlay").classList.add("aberto");
   }
@@ -594,41 +615,31 @@ window.addEventListener("DOMContentLoaded", function () {
   }
 
   async function mostrarAlmoco() {
-    var [diaRes, precosRes] = await Promise.all([
-      sb.from("almoco_dia").select("descricao,imagem_url").eq("ativo", true).limit(1).maybeSingle(),
-      sb.from("cardapio_publico").select("nome,preco,foto_url").eq("grupo", "Almoço (Segunda a Sábado)").eq("ativo", true).order("ordem", { ascending: true }),
-    ]);
-    var prato = diaRes.data;
+    var precosRes = await sb.from("cardapio_publico").select("nome,preco,foto_url").eq("grupo", "Almoço (Segunda a Sábado)").eq("ativo", true).order("ordem", { ascending: true });
     var formatos = precosRes.data || [];
 
-    var imagemHtml = (prato && prato.imagem_url)
-      ? '<img class="modal-foto" src="' + escapeHtml(prato.imagem_url) + '" alt="Almoço de hoje" />'
-      : ((formatos[0] && formatos[0].foto_url) ? '<img class="modal-foto" src="' + escapeHtml(formatos[0].foto_url) + '" alt="Almoço de hoje" />' : "");
-
-    var descHtml = (prato && prato.descricao)
-      ? '<p>' + escapeHtml(prato.descricao).replace(/\n/g, "<br>") + '</p>'
-      : '<p class="modal-vazio" style="padding:0">Prato do dia ainda não foi definido, mas o almoço está de pé nos formatos abaixo.</p>';
-
-    var turnoHoje = ((config && config.horario_funcionamento) || {})[String(new Date().getDay())];
-    turnoHoje = turnoHoje && turnoHoje.almoco;
-    var horarioHtml = (turnoHoje && turnoHoje.abre && turnoHoje.fecha)
-      ? '<p style="font-size:0.8rem;color:var(--texto-suave);margin:6px 0 0">Servido das ' + formatarHora(turnoHoje.abre) + ' às ' + formatarHora(turnoHoje.fecha) + '</p>'
+    var imagemHtml = (formatos[0] && formatos[0].foto_url)
+      ? '<img class="modal-foto" src="' + escapeHtml(formatos[0].foto_url) + '" alt="Almoço do Serra Dourada" />'
       : "";
+
+    var hojeDomingo = new Date().getDay() === 0;
+    var infoHtml = '<div class="modal-item"><p>Servido de segunda a sábado, das 11h às 14h30.</p>' +
+      (hojeDomingo ? '<p style="font-size:0.8rem;color:var(--texto-suave);margin:6px 0 0">Hoje (domingo) não servimos almoço.</p>' : '') +
+      '</div>';
 
     var listaHtml = formatos.length
       ? '<div class="hh-itens">' + formatos.map(function (it) {
           return '<div class="hh-item"><span class="hh-item-nome">' + escapeHtml(it.nome) + '</span>' +
             '<span class="hh-item-preco-por">' + formatarPreco(it.preco) + '</span></div>';
         }).join("") + '</div>'
-      : "";
+      : '<p class="modal-vazio">Valores indisponíveis no momento.</p>';
 
-    var mensagem = "Olá! Vi o almoço de hoje no site" + (prato && prato.descricao ? " (" + prato.descricao + ")" : "") + " e quero fazer um pedido.";
-    var linkPedido = linkWhatsapp(mensagem);
+    var linkPedido = hojeDomingo ? null : linkWhatsapp("Olá! Vi o almoço no site e quero fazer um pedido.");
     var botaoHtml = linkPedido
       ? '<a class="botao destaque" style="display:block;text-align:center;text-decoration:none;margin-top:12px" href="' + escapeHtml(linkPedido) + '" target="_blank" rel="noopener">Pedir pelo WhatsApp</a>'
       : "";
 
-    abrirModal("Almoço de hoje", imagemHtml + '<div class="modal-item">' + descHtml + horarioHtml + '</div>' + listaHtml + botaoHtml);
+    abrirModal("Almoço", imagemHtml + infoHtml + listaHtml + botaoHtml);
   }
 
   async function mostrarHappyHour() {
@@ -779,34 +790,50 @@ function renderPromoDiaDestaque() {
     promocao_dia: function () { registrar("click", "promocao_dia"); mostrarPromocaoDia(); },
   };
 
-  document.getElementById("form-reserva").addEventListener("submit", async function (ev) {
+  document.getElementById("form-reserva").addEventListener("submit", function (ev) {
     ev.preventDefault();
     var msgEl = document.getElementById("msg-reserva");
     var nome = document.getElementById("reserva-nome").value.trim();
     var telefone = document.getElementById("reserva-telefone").value.replace(/\D/g, "");
+    var data = document.getElementById("reserva-data").value;
+    var hora = document.getElementById("reserva-hora").value;
+    var pessoas = parseInt(document.getElementById("reserva-pessoas").value, 10);
+    var novidades = document.getElementById("reserva-novidades").checked;
     msgEl.textContent = "";
-    if (!nome || !telefone) {
-      msgEl.textContent = "Preencha seu nome e WhatsApp.";
-      return;
-    }
-    var link = linkWhatsapp("Olá! Meu nome é " + nome + ", gostaria de fazer uma reserva no Serra Dourada.");
-    if (!link) {
-      msgEl.textContent = "Reservas por WhatsApp indisponíveis no momento. Tente outro contato.";
-      return;
-    }
-    try {
-      await sb.from("contato_publico").insert({
-        estabelecimento_id: estabelecimentoId,
-        nome: nome,
-        telefone: telefone,
-        mensagem: "Reserva solicitada pelo botão do site (WhatsApp)",
-        status: "novo",
-      });
-    } catch (e) { /* não bloqueia o cliente se o registro falhar */ }
-    window.open(link, "_blank", "noopener");
+    if (!nome || telefone.length < 10) { msgEl.textContent = "Preencha seu nome e um WhatsApp com DDD."; return; }
+    if (!data || !hora || !(pessoas >= 1 && pessoas <= 100)) { msgEl.textContent = "Informe data, horário e número de pessoas."; return; }
+    if (data < dataLocalHoje()) { msgEl.textContent = "Escolha uma data a partir de hoje."; return; }
+
+    var dataBr = data.split("-").reverse().join("/");
+    var diaSemana = DIAS[new Date(data + "T12:00:00").getDay()];
+    var link = linkWhatsapp("Olá! Gostaria de reservar para " + pessoas + (pessoas === 1 ? " pessoa" : " pessoas") +
+      (diaSemana === "Sábado" || diaSemana === "Domingo" ? " no " : " na ") + diaSemana.toLowerCase() + ", " + dataBr + ", às " + hora + ". Nome: " + nome + ".");
+    if (!link) { msgEl.textContent = "Reservas por WhatsApp indisponíveis no momento. Tente outro contato."; return; }
+
+    // Abre o WhatsApp imediatamente, ainda dentro do toque do cliente (senão o Safari bloqueia).
+    var janela = window.open(link, "_blank");
+    if (janela) { try { janela.opener = null; } catch (e) {} } else { location.href = link; }
+
+    sb.from("contato_publico").insert({
+      estabelecimento_id: estabelecimentoId,
+      nome: nome,
+      telefone: telefone,
+      data_desejada: data,
+      horario_desejado: hora,
+      pessoas: pessoas,
+      aceita_novidades: novidades,
+      mensagem: "Reserva pelo site",
+      status: "novo",
+    }).then(function () {}, function () {});
+
     fecharModal();
     document.getElementById("form-reserva").reset();
   });
+
+  function dataLocalHoje() {
+    var d = new Date();
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  }
 
   document.getElementById("barra-cardapio").addEventListener("click", function () { ACOES.cardapio(); });
   document.getElementById("barra-whatsapp").addEventListener("click", function () { ACOES.reserva_whatsapp(); });
