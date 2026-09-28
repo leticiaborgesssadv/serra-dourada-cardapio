@@ -841,10 +841,18 @@ function renderAtiva(p) {
       '<div class="pd-titulo" style="margin-bottom:4px">' + escapeHtml(p.titulo) + '</div>' +
       '<p class="pd-cond" style="margin-bottom:14px">Mostre esta tela ao garçom e peça a sua cortesia.</p>' +
       '<div class="pd-relogio" style="margin-bottom:14px"><div class="d" id="pd-data">' + dataTxt() + '</div><div class="h" id="pd-hora"></div></div>' +
-      '<button type="button" class="botao destaque" id="pd-story" style="justify-content:center">Postar no story</button>' +
+      '<p class="pd-cap" style="margin:4px 0 8px">Sticker para o seu story</p>' +
+      '<img id="pd-sticker-img" alt="Sticker da promoção" style="width:100%;max-width:320px;display:block;margin:0 auto 10px;background:repeating-conic-gradient(#3a2712 0 25%, #2e1c0e 0 50%) 0 0/16px 16px;border-radius:12px" />' +
+      '<button type="button" class="botao destaque" id="pd-copiar" style="justify-content:center">Copiar sticker</button>' +
+      '<p class="pd-cond" id="pd-sticker-msg" style="margin:8px 0 0">Cole por cima da sua foto no story.</p>' +
+      '<a class="pd-insta escondido" id="pd-abrir-insta" href="instagram://story-camera">' + SVG_INSTA + 'Abrir o story no Instagram</a>' +
+      '<button type="button" class="pd-sec" id="pd-salvar">Salvar sticker</button>' +
       '<button type="button" class="pd-sec" id="pd-nova">Começar nova cartela</button>' +
       RODAPE_ALCOOL + '</div>';
-    document.getElementById("pd-story").addEventListener("click", function () { registrar("click", "promo_story"); compartilharStory(p); });
+    document.getElementById("pd-copiar").addEventListener("click", function () { copiarSticker(p); });
+    document.getElementById("pd-salvar").addEventListener("click", function () { salvarSticker(p); });
+    document.getElementById("pd-abrir-insta").addEventListener("click", function () { registrar("click", "promo_abrir_insta"); });
+    gerarSticker(p).then(function (b) { var im = document.getElementById("pd-sticker-img"); if (b && im) im.src = URL.createObjectURL(b); });
     document.getElementById("pd-nova").addEventListener("click", function () { gravarCartela(0); renderAtiva(p); });
   } else {
     var garrafas = "";
@@ -902,42 +910,76 @@ function baixarAgenda(p) {
   setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
 }
 
-async function compartilharStory(p) {
-  var btn = document.getElementById("pd-story");
-  if (btn) btn.textContent = "Gerando arte…";
-  try { if (document.fonts && document.fonts.ready) await document.fonts.ready; } catch (e) {}
-  var c = document.createElement("canvas"); c.width = 1080; c.height = 1920;
-  var x = c.getContext("2d");
-  var g = x.createLinearGradient(0, 0, 0, 1920); g.addColorStop(0, "#2e1c0e"); g.addColorStop(1, "#140b04");
-  x.fillStyle = g; x.fillRect(0, 0, 1080, 1920);
-  x.strokeStyle = "#c9a227"; x.lineWidth = 6; x.strokeRect(60, 60, 960, 1800);
-  x.textAlign = "center";
-  x.fillStyle = "#c9a227"; x.font = "800 44px Manrope, sans-serif";
-  x.fillText((DIAS[agora().getDay()] + " no Serra").toUpperCase(), 540, 360);
-  x.beginPath(); x.arc(540, 700, 190, 0, Math.PI * 2); x.fillStyle = "#c9a227"; x.fill();
-  x.strokeStyle = "#241608"; x.lineWidth = 16; x.lineJoin = "round"; x.lineCap = "round";
-  x.beginPath(); x.moveTo(460, 590); x.lineTo(460, 780); x.quadraticCurveTo(460, 810, 490, 810); x.lineTo(590, 810); x.quadraticCurveTo(620, 810, 620, 780); x.lineTo(620, 590); x.closePath(); x.stroke();
-  x.beginPath(); x.moveTo(620, 640); x.quadraticCurveTo(680, 640, 680, 690); x.quadraticCurveTo(680, 740, 620, 740); x.stroke();
-  x.beginPath(); x.moveTo(460, 640); x.lineTo(620, 640); x.stroke();
-  x.fillStyle = "#e8c766"; x.font = "700 118px 'Playfair Display', serif";
-  x.fillText(p.titulo, 540, 1080);
-  x.fillStyle = "#f6ead0"; x.font = "600 46px Manrope, sans-serif";
-  x.fillText("Serra Dourada Bar e Restaurante", 540, 1180);
-  x.fillStyle = "#c9a227"; x.font = "800 52px Manrope, sans-serif";
-  x.fillText("@serradouradabar", 540, 1500);
-  x.fillStyle = "#8f7d5f"; x.font = "500 30px Manrope, sans-serif";
-  x.fillText("Beba com moderação. Venda proibida para menores de 18 anos.", 540, 1780);
-  c.toBlob(async function (blob) {
-    if (btn) btn.textContent = "Postar no story";
-    if (!blob) return;
-    var arquivo = new File([blob], "serra-dourada-story.png", { type: "image/png" });
-    if (navigator.canShare && navigator.canShare({ files: [arquivo] })) {
-      try { await navigator.share({ files: [arquivo], title: p.titulo }); return; } catch (e) { if (e && e.name === "AbortError") return; }
-    }
-    var url = URL.createObjectURL(blob), a = document.createElement("a");
-    a.href = url; a.download = "serra-dourada-story.png"; document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
-  }, "image/png");
+function desenharSticker(x, p, dia) {
+  var W = 1000, H = 600;
+  x.clearRect(0, 0, W, H);
+  function rr(px, py, w, h, r) { x.beginPath(); x.moveTo(px + r, py); x.arcTo(px + w, py, px + w, py + h, r); x.arcTo(px + w, py + h, px, py + h, r); x.arcTo(px, py + h, px, py, r); x.arcTo(px, py, px + w, py, r); x.closePath(); }
+  rr(12, 12, W - 24, H - 24, 56);
+  var g = x.createLinearGradient(0, 0, W, H); g.addColorStop(0, "#e3b93e"); g.addColorStop(1, "#a9791c");
+  x.fillStyle = g; x.fill();
+  x.lineWidth = 10; x.strokeStyle = "#241608"; x.stroke();
+  x.beginPath(); x.arc(200, 300, 140, 0, Math.PI * 2); x.fillStyle = "#241608"; x.fill();
+  x.strokeStyle = "#e8c766"; x.lineWidth = 12; x.lineJoin = "round"; x.lineCap = "round";
+  x.beginPath(); x.moveTo(145, 215); x.lineTo(145, 365); x.quadraticCurveTo(145, 390, 170, 390); x.lineTo(230, 390); x.quadraticCurveTo(255, 390, 255, 365); x.lineTo(255, 215); x.closePath(); x.stroke();
+  x.beginPath(); x.moveTo(255, 255); x.quadraticCurveTo(305, 255, 305, 295); x.quadraticCurveTo(305, 335, 255, 335); x.stroke();
+  x.beginPath(); x.moveTo(145, 255); x.lineTo(255, 255); x.stroke();
+  x.fillStyle = "#241608"; x.textAlign = "left"; x.textBaseline = "alphabetic";
+  x.globalAlpha = 0.72; x.font = "800 34px Manrope, sans-serif";
+  x.fillText((dia + " no Serra Dourada").toUpperCase(), 380, 175);
+  x.globalAlpha = 1;
+  var tam = 92; x.font = "700 " + tam + "px 'Playfair Display', serif";
+  while (x.measureText(p.titulo).width > 570 && tam > 50) { tam -= 4; x.font = "700 " + tam + "px 'Playfair Display', serif"; }
+  x.fillText(p.titulo, 380, 285);
+  var desc = (p.descricao || "").replace(/\.$/, ""), td = 32; x.font = "600 " + td + "px Manrope, sans-serif";
+  while (x.measureText(desc).width > 560 && td > 20) { td -= 2; x.font = "600 " + td + "px Manrope, sans-serif"; }
+  if (desc) x.fillText(desc, 380, 345);
+  x.font = "800 42px Manrope, sans-serif";
+  x.fillText("@serradouradabar", 380, 440);
+  x.globalAlpha = 0.7; x.font = "600 22px Manrope, sans-serif";
+  x.fillText("Beba com moderação. Proibido para menores de 18 anos.", 380, 500);
+  x.globalAlpha = 1;
+}
+
+var stickerCache = null;
+function gerarSticker(p) {
+  if (stickerCache) return stickerCache;
+  stickerCache = (async function () {
+    try { if (document.fonts && document.fonts.load) { await document.fonts.load("700 92px 'Playfair Display'"); await document.fonts.load("800 42px Manrope"); } } catch (e) {}
+    var c = document.createElement("canvas"); c.width = 1000; c.height = 600;
+    var ctx = c.getContext("2d"); if (!ctx) return null;
+    desenharSticker(ctx, p, DIAS[agora().getDay()]);
+    return await new Promise(function (ok) { c.toBlob(function (b) { ok(b); }, "image/png"); });
+  })();
+  return stickerCache;
+}
+
+function copiarSticker(p) {
+  var msg = document.getElementById("pd-sticker-msg");
+  registrar("click", "promo_sticker_copiar");
+  if (navigator.clipboard && window.ClipboardItem) {
+    var item = new ClipboardItem({ "image/png": gerarSticker(p) });
+    navigator.clipboard.write([item]).then(function () {
+      msg.innerHTML = "Copiado! Abra o story, escolha a sua foto e toque em <b>Colar</b>. Depois é só arrastar o sticker para onde quiser.";
+      document.getElementById("pd-abrir-insta").classList.remove("escondido");
+    }, function () {
+      msg.textContent = "Seu celular não deixou copiar. Use \"Salvar sticker\" e adicione pelo sticker de foto do Instagram.";
+    });
+  } else {
+    msg.textContent = "Seu celular não permite copiar imagens pelo navegador. Use \"Salvar sticker\" e adicione pelo sticker de foto do Instagram.";
+  }
+}
+
+async function salvarSticker(p) {
+  registrar("click", "promo_sticker_salvar");
+  var blob = await gerarSticker(p);
+  if (!blob) return;
+  var arquivo = new File([blob], "sticker-serra-dourada.png", { type: "image/png" });
+  if (navigator.canShare && navigator.canShare({ files: [arquivo] })) {
+    try { await navigator.share({ files: [arquivo] }); return; } catch (e) { if (e && e.name === "AbortError") return; }
+  }
+  var url = URL.createObjectURL(blob), a = document.createElement("a");
+  a.href = url; a.download = "sticker-serra-dourada.png"; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
 }
 
 function renderPromoDiaDestaque() {
