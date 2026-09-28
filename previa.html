@@ -1,0 +1,1535 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta name="robots" content="noindex">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Serra Dourada Bar e Restaurante</title>
+<meta name="theme-color" content="#241608" />
+<meta name="description" content="Cardápio, promoções, happy hour, eventos e contato do Serra Dourada Bar e Restaurante." />
+
+<meta property="og:type" content="website" />
+<meta property="og:title" content="Serra Dourada Bar e Restaurante" />
+<meta property="og:description" content="Cardápio, almoço, happy hour, promoções e reservas do Serra Dourada Bar e Restaurante." />
+<meta property="og:image" content="https://serradouradabar.com.br/img/hero.jpg" />
+<meta property="og:url" content="https://serradouradabar.com.br/" />
+<meta name="twitter:card" content="summary_large_image" />
+
+<link rel="icon" type="image/png" sizes="32x32" href="img/favicon-32.png" />
+<link rel="apple-touch-icon" href="img/apple-touch-icon.png" />
+<link rel="manifest" href="manifest.json" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playball&family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Manrope:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" defer></script>
+<style>
+  :root {
+    --dourado: #c9a227;
+    --dourado-claro: #e8c766;
+    --marrom: #1c1108;
+    --marrom-2: #241608;
+    --marrom-claro: #3a2712;
+    --marrom-card: #2e1c0e;
+    --texto: #f6ead0;
+    --texto-suave: #cdbb99;
+    --borda: #4a3520;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    font-family: 'Manrope', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--marrom);
+    color: var(--texto);
+    min-height: 100vh;
+  }
+  .topo {
+    text-align: center;
+    padding: 22px 16px 8px calc(16px + env(safe-area-inset-left, 0px));
+    padding-top: calc(22px + env(safe-area-inset-top, 0px));
+  }
+  .logo-script {
+    font-family: 'Playball', cursive;
+    font-size: 2.6rem;
+    color: var(--dourado-claro);
+    line-height: 1;
+    margin: 0;
+  }
+  .logo-label {
+    font-size: 0.7rem;
+    letter-spacing: 0.32em;
+    color: var(--texto-suave);
+    margin-top: 4px;
+    font-weight: 700;
+  }
+  .logo-imagem {
+    max-width: 190px;
+    max-height: 130px;
+    width: auto;
+    height: auto;
+    margin: 0 auto;
+    display: block;
+  }
+  .hero {
+    margin: 18px 16px 0;
+    border-radius: 18px;
+    overflow: hidden;
+    position: relative;
+    aspect-ratio: 2 / 3;
+    max-height: 68vh;
+    background: radial-gradient(circle at 30% 20%, #4a3010, #1c1108 70%);
+    display: flex;
+    align-items: flex-end;
+  }
+  .hero img { width: 100%; height: 100%; object-fit: cover; object-position: center center; display: block; }
+  .hero .placeholder-icone {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 4rem;
+    opacity: 0.35;
+  }
+  .hero-legenda {
+    position: relative;
+    z-index: 1;
+    padding: 22px 20px;
+    background: linear-gradient(0deg, rgba(0,0,0,0.7), rgba(0,0,0,0.15) 65%, transparent);
+    width: 100%;
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-weight: 500;
+    font-size: 1.15rem;
+    line-height: 1.4;
+    color: #fdf6e8;
+  }
+  .boas-vindas {
+    text-align: center;
+    padding: 18px 24px 4px;
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-weight: 500;
+    font-size: 1.05rem;
+    color: var(--texto-suave);
+    line-height: 1.5;
+  }
+  .destaques {
+    padding: 22px 16px 6px;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+  .destaques h2 {
+    margin: 0 0 14px;
+    font-family: 'Playfair Display', serif;
+    font-weight: 600;
+    font-size: 1.2rem;
+    letter-spacing: 0.01em;
+    color: var(--dourado-claro);
+    text-align: center;
+  }
+  .destaques-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .destaques-grid figure {
+    margin: 0;
+    border-radius: 14px;
+    overflow: hidden;
+    background: var(--marrom-card);
+    aspect-ratio: 4 / 3;
+  }
+  .destaques-grid figure:first-child {
+    grid-column: span 2;
+    aspect-ratio: 16 / 10;
+  }
+  .destaques-grid img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .botoes {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 18px 16px calc(28px + env(safe-area-inset-bottom, 0px));
+    max-width: 480px;
+    margin: 0 auto;
+  }
+  .botao {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    text-align: left;
+    padding: 15px 18px;
+    border-radius: 10px;
+    background: var(--marrom-card);
+    border: 1px solid var(--borda);
+    color: var(--texto);
+    font-family: inherit;
+    font-size: 0.96rem;
+    font-weight: 600;
+    letter-spacing: 0.015em;
+    text-decoration: none;
+    cursor: pointer;
+    min-height: 56px;
+    transition: transform 0.08s ease, border-color 0.15s ease, background 0.15s ease;
+  }
+  .botao:active { transform: scale(0.98); }
+  .botao.destaque {
+    background: var(--dourado);
+    color: #241608;
+    border-color: transparent;
+    font-weight: 700;
+  }
+  .botao .icone {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--dourado-claro);
+  }
+  .botao.destaque .icone { color: #241608; }
+  .botao .icone svg { width: 100%; height: 100%; }
+  .botao .seta {
+    margin-left: auto;
+    flex-shrink: 0;
+    width: 15px;
+    height: 15px;
+    opacity: 0.5;
+  }
+  .carregando-botoes {
+    text-align: center;
+    color: var(--texto-suave);
+    padding: 20px;
+    font-size: 0.9rem;
+  }
+  .badge-ativo {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: 8px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    background: #3a8f52;
+    color: #eafff0;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    vertical-align: middle;
+  }
+  .badge-ativo::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #7cf7a3;
+    box-shadow: 0 0 4px #7cf7a3;
+  }
+.botao-texto { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.botao-subtitulo { font-size: 0.76rem; font-weight: 600; opacity: 0.85; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.botao.destaque .botao-subtitulo { opacity: 0.75; }
+.promo-dia-destaque { padding: 4px 16px 2px; max-width: 480px; margin: 0 auto; }
+.promo-dia-card { display: flex; align-items: center; gap: 14px; border-radius: 16px; background: linear-gradient(135deg, var(--dourado), #a9791c); color: #241608; padding: 16px 18px; cursor: pointer; border: none; width: 100%; text-align: left; font-family: inherit; }
+.promo-dia-card img { width: 56px; height: 56px; border-radius: 12px; object-fit: cover; flex-shrink: 0; }
+.promo-dia-textos { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.promo-dia-label { font-size: 0.68rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.75; }
+.promo-dia-titulo { font-family: 'Playfair Display', serif; font-weight: 700; font-size: 1.05rem; line-height: 1.25; }
+.pd-cap { font-size: 0.68rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--dourado); }
+.pd-titulo { font-family: 'Playfair Display', serif; font-weight: 700; font-size: 1.5rem; color: var(--dourado-claro); margin: 2px 0 10px; line-height: 1.15; }
+.pd-caixa { background: var(--marrom); border: 1px solid var(--borda); border-radius: 14px; padding: 16px; text-align: center; }
+.pd-caixa-rot { font-size: 0.75rem; color: var(--texto-suave); }
+.pd-caixa-num { font-size: 2rem; font-weight: 800; color: var(--dourado-claro); letter-spacing: 0.02em; line-height: 1.2; }
+.pd-texto { font-size: 0.88rem; color: var(--texto); line-height: 1.45; margin: 12px 0 0; }
+.pd-cond { font-size: 0.78rem; color: var(--texto-suave); line-height: 1.45; margin: 10px 0 0; }
+.pd-rodape { font-size: 0.72rem; color: #8f7d5f; text-align: center; margin: 14px 0 0; }
+.pd-bilhete { background: linear-gradient(135deg, var(--dourado), #a9791c); color: #241608; border-radius: 16px; padding: 16px; }
+.pd-bilhete .pd-cap { color: #241608; opacity: 0.7; }
+.pd-bilhete .pd-titulo { color: #241608; margin-bottom: 12px; }
+.pd-cartela { display: flex; gap: 8px; justify-content: center; background: var(--marrom-2); border-radius: 12px; padding: 12px 8px; }
+.pd-garrafa { width: 48px; height: 66px; border-radius: 10px; border: 1.5px dashed #6b4a1f; background: var(--marrom); display: flex; align-items: center; justify-content: center; cursor: pointer; color: #6b4a1f; padding: 0; font-family: inherit; }
+.pd-garrafa svg { width: 28px; height: 28px; }
+.pd-garrafa.on { border-style: solid; border-color: var(--dourado); background: var(--marrom-claro); color: var(--dourado-claro); }
+.pd-garrafa.brinde { border-color: var(--dourado); }
+.pd-garrafa.brinde.on { background: var(--dourado); color: #241608; }
+.pd-status { text-align: center; font-size: 0.85rem; font-weight: 800; margin: 10px 0 12px; }
+.pd-relogio { background: var(--marrom-2); color: var(--dourado-claro); border-radius: 12px; padding: 10px; text-align: center; }
+.pd-relogio .d { font-size: 1.25rem; font-weight: 800; }
+.pd-relogio .h { font-size: 1rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.pd-bilhete .pd-cond { color: #241608; opacity: 0.85; }
+.pd-selo { width: 96px; height: 96px; border-radius: 50%; background: var(--dourado); color: #241608; display: flex; align-items: center; justify-content: center; margin: 8px auto 12px; }
+.pd-selo svg { width: 50px; height: 50px; }
+.pd-sec { display: block; width: 100%; text-align: center; margin-top: 10px; padding: 12px; border-radius: 10px; border: 1px solid var(--borda); background: transparent; color: var(--texto-suave); font-family: inherit; font-weight: 700; font-size: 0.9rem; cursor: pointer; }
+.pd-insta { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; margin-top: 12px; padding: 12px; border-radius: 10px; background: var(--marrom-2); color: var(--dourado-claro); font-family: inherit; font-weight: 700; font-size: 0.9rem; text-decoration: none; }
+.pd-insta svg { width: 18px; height: 18px; }
+.pd-cond a { color: inherit; font-weight: 800; text-decoration: underline; }
+.pd-sub { font-size: 0.85rem; margin: -6px 0 12px; opacity: 0.85; }
+.pd-perg { font-size: 0.78rem; font-weight: 800; margin: 0 0 8px; }
+.pd-chips { display: flex; gap: 8px; margin-bottom: 12px; }
+.pd-chip { flex: 1; padding: 10px 0; border-radius: 10px; border: 1.5px solid #241608; background: transparent; color: #241608; font-family: inherit; font-weight: 800; font-size: 1.05rem; cursor: pointer; }
+.pd-chip.on { background: #241608; color: var(--dourado-claro); }
+.pd-trilha { background: var(--marrom-2); border-radius: 12px; padding: 6px 12px; margin-bottom: 10px; }
+.pd-nivel { display: flex; gap: 10px; align-items: flex-start; padding: 9px 0; border-top: 1px solid var(--borda); color: #8f7d5f; }
+.pd-nivel:first-child { border-top: none; }
+.pd-nivel svg { width: 20px; height: 20px; flex-shrink: 0; margin-top: 2px; }
+.pd-nivel .n1 { font-size: 0.7rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; }
+.pd-nivel .n2 { font-size: 0.95rem; font-weight: 800; }
+.pd-nivel .n3 { font-size: 0.75rem; }
+.pd-nivel.on { color: var(--texto); }
+.pd-nivel.on svg, .pd-nivel.on .n2 { color: var(--dourado-claro); }
+.pd-cofre { margin-top: 14px; background: var(--marrom); border: 1px dashed var(--dourado); border-radius: 14px; padding: 16px; text-align: center; }
+.pd-cofre svg { width: 30px; height: 30px; color: var(--dourado); }
+.pd-cofre input { width: 100%; margin: 10px 0 8px; padding: 12px; border-radius: 10px; border: 1px solid var(--borda); background: var(--marrom-2); color: var(--texto); font-family: inherit; font-size: 1rem; text-align: center; letter-spacing: 0.08em; text-transform: uppercase; }
+.pd-erro { font-size: 0.78rem; color: #f0997b; min-height: 1em; margin: 6px 0 0; }
+.pd-menu { margin-top: 14px; }
+.pd-menu-topo { text-align: center; margin-bottom: 6px; }
+.pd-combo { border-top: 1px solid var(--borda); padding: 14px 0; }
+.pd-combo-nome { font-family: 'Playfair Display', serif; font-weight: 700; font-size: 1.3rem; color: var(--dourado-claro); line-height: 1.15; }
+.pd-combo-comp { font-size: 0.85rem; color: var(--texto); margin: 3px 0 6px; }
+.pd-combo-precos { display: flex; align-items: baseline; gap: 10px; }
+.pd-combo-sep { font-size: 0.78rem; color: var(--texto-suave); }
+.pd-combo-sep s { opacity: 0.85; }
+.pd-combo-preco { font-size: 1.35rem; font-weight: 800; color: var(--dourado-claro); }
+.pd-combo-frase { font-size: 0.78rem; font-style: italic; color: var(--texto-suave); margin-top: 4px; }
+.pd-extra { margin-top: 14px; border: 1px solid var(--borda); border-radius: 14px; padding: 14px; text-align: center; }
+.pd-regras { margin-top: 12px; font-size: 0.78rem; color: var(--texto-suave); }
+.pd-regras summary { cursor: pointer; font-weight: 700; color: var(--dourado-claro); }
+.pd-regras p { margin: 8px 0 0; line-height: 1.5; white-space: pre-line; }
+@keyframes pdAbre { 0% { transform: scale(0.92); opacity: 0; } 60% { transform: scale(1.03); opacity: 1; } 100% { transform: scale(1); } }
+.pd-anim { animation: pdAbre 0.6s ease-out; }
+.previa-barra { position: sticky; top: 0; z-index: 60; background: #7a1f1f; color: #fff; font-size: 0.78rem; padding: 8px 10px; display: flex; gap: 6px; align-items: center; justify-content: center; flex-wrap: wrap; }
+.previa-barra button { font-family: inherit; font-size: 0.75rem; font-weight: 700; border: 1px solid #fff; background: transparent; color: #fff; border-radius: 20px; padding: 4px 10px; cursor: pointer; }
+.previa-barra button.sel { background: #fff; color: #7a1f1f; }
+.promo-dia-desc { font-size: 0.8rem; opacity: 0.85; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  body { padding-bottom: 74px; }
+  .barra-fixa {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    z-index: 40;
+    display: flex;
+    gap: 10px;
+    padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px));
+    background: rgba(28, 17, 8, 0.97);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    border-top: 1px solid var(--borda);
+  }
+  .barra-fixa button {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 12px;
+    border-radius: 10px;
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 0.86rem;
+    border: none;
+    cursor: pointer;
+    min-height: 46px;
+  }
+  .barra-fixa .icone { width: 18px; height: 18px; flex-shrink: 0; }
+  .barra-fixa .icone svg { width: 100%; height: 100%; }
+  .barra-fixa .principal { background: var(--dourado); color: #241608; }
+  .barra-fixa .secundaria { background: var(--marrom-card); color: var(--texto); border: 1px solid var(--borda); }
+  footer {
+    text-align: center;
+    padding: 10px 16px calc(24px + env(safe-area-inset-bottom, 0px));
+    color: #7a6448;
+    font-size: 0.72rem;
+  }
+
+  /* Modal genérico para almoço / happy hour / horário / eventos */
+  .overlay {
+    position: fixed; inset: 0;
+    background: rgba(10, 6, 2, 0.72);
+    display: none;
+    align-items: flex-end;
+    justify-content: center;
+    z-index: 50;
+  }
+  .overlay.aberto { display: flex; }
+  .modal {
+    background: var(--marrom-2);
+    border: 1px solid var(--borda);
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
+    width: 100%;
+    max-width: 480px;
+    max-height: 82vh;
+    overflow-y: auto;
+    padding: 20px 20px calc(24px + env(safe-area-inset-bottom, 0px));
+  }
+  .modal-topo {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+  .modal-topo h2 {
+    margin: 0;
+    font-family: 'Playfair Display', serif;
+    font-weight: 600;
+    font-size: 1.2rem;
+    color: var(--dourado-claro);
+  }
+  .modal-fechar {
+    background: var(--marrom-card);
+    border: 1px solid var(--borda);
+    color: var(--texto);
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    flex-shrink: 0;
+  }
+  .modal-fechar svg { width: 16px; height: 16px; }
+  .modal-item {
+    background: var(--marrom-card);
+    border: 1px solid var(--borda);
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 10px;
+  }
+  .modal-foto {
+    width: 100%;
+    max-height: 260px;
+    object-fit: cover;
+    border-radius: 12px;
+    margin-bottom: 10px;
+    display: block;
+  }
+  .modal-fotos {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .modal-fotos img {
+    flex: 1;
+    height: 140px;
+    object-fit: cover;
+    border-radius: 12px;
+  }
+  .modal-item h3 { margin: 0 0 4px; font-size: 0.95rem; color: var(--dourado-claro); }
+  .modal-item p { margin: 0; font-size: 0.85rem; color: var(--texto-suave); line-height: 1.4; }
+  .hh-itens { margin-top: 10px; display: flex; flex-direction: column; gap: 0; }
+  .hh-item { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 9px 0; border-top: 1px solid var(--borda); }
+  .hh-item-esquerda { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .hh-item-foto { width: 44px; height: 44px; border-radius: 8px; object-fit: cover; flex-shrink: 0; }
+  .hh-item-nome { font-size: 0.88rem; color: var(--texto); }
+  .hh-item-precos { white-space: nowrap; text-align: right; }
+  .hh-item-preco-de { text-decoration: line-through; color: var(--texto-suave); font-size: 0.78rem; margin-right: 6px; }
+  .hh-item-preco-por { color: var(--dourado-claro); font-weight: 700; font-size: 0.92rem; }
+  .modal-vazio { text-align: center; color: var(--texto-suave); padding: 24px 0; font-size: 0.88rem; }
+  .horario-linha {
+    display: flex; justify-content: space-between;
+    padding: 8px 4px;
+    border-bottom: 1px solid var(--borda);
+    font-size: 0.88rem;
+  }
+  .horario-linha:last-child { border-bottom: none; }
+  #form-reserva label {
+    display: block;
+    font-size: 0.82rem;
+    color: var(--texto-suave);
+    margin-bottom: 6px;
+  }
+  .reserva-linha { display: grid; grid-template-columns: 1.4fr 1fr 0.8fr; gap: 8px; }
+  #form-reserva input[type=date], #form-reserva input[type=time], #form-reserva input[type=number],
+  #form-reserva input[type=text] {
+    width: 100%;
+    padding: 11px 13px;
+    border-radius: 8px;
+    border: 1px solid var(--borda);
+    background: #1a1006;
+    color: var(--texto);
+    font-size: 0.92rem;
+    margin-bottom: 12px;
+    font-family: inherit;
+  }
+  .consentimento {
+    display: flex !important;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 0.78rem !important;
+    color: var(--texto-suave);
+    margin-bottom: 14px;
+    cursor: pointer;
+  }
+  .consentimento input { margin-top: 3px; width: 16px; height: 16px; flex-shrink: 0; accent-color: var(--dourado); }
+
+  .escondido { display: none !important; }
+
+  @keyframes surgir { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .topo, .hero, .boas-vindas, .destaques, .avaliacoes, .botoes {
+    animation: surgir 0.5s ease both;
+  }
+  .hero { animation-delay: 0.05s; }
+  .boas-vindas { animation-delay: 0.1s; }
+  .destaques { animation-delay: 0.15s; }
+  .avaliacoes { animation-delay: 0.18s; }
+  .botoes { animation-delay: 0.2s; }
+  .botao { transition: transform 0.08s ease, border-color 0.15s ease, background 0.15s ease, opacity 0.2s ease; }
+
+  .skeleton { background: linear-gradient(100deg, var(--marrom-card) 30%, #3a2712 45%, var(--marrom-card) 60%); background-size: 200% 100%; animation: brilho 1.4s ease-in-out infinite; border-radius: 10px; }
+  @keyframes brilho { 0% { background-position: 180% 0; } 100% { background-position: -20% 0; } }
+  .skeleton-botoes { display: flex; flex-direction: column; gap: 12px; padding: 18px 16px; max-width: 480px; margin: 0 auto; }
+  .skeleton-botao { height: 56px; }
+
+  .avaliacoes { padding: 6px 16px 6px; max-width: 480px; margin: 0 auto; }
+  .avaliacoes h2 { margin: 0 0 4px; font-family: 'Playfair Display', serif; font-weight: 600; font-size: 1.2rem; color: var(--dourado-claro); text-align: center; }
+  .avaliacoes-resumo { text-align: center; color: var(--texto-suave); font-size: 0.85rem; margin-bottom: 14px; }
+  .avaliacoes-resumo strong { color: var(--dourado-claro); }
+  .avaliacoes-lista { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
+  .avaliacoes-lista::-webkit-scrollbar { display: none; }
+  .avaliacao-card { flex: 0 0 240px; background: var(--marrom-card); border: 1px solid var(--borda); border-radius: 12px; padding: 14px; }
+  .avaliacao-estrelas { color: var(--dourado); font-size: 0.8rem; letter-spacing: 1px; margin-bottom: 6px; }
+  .avaliacao-texto { font-size: 0.83rem; color: var(--texto); line-height: 1.45; margin: 0 0 8px; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+  .avaliacao-autor { font-size: 0.76rem; color: var(--texto-suave); font-weight: 600; }
+
+  .mapa-embed { width: 100%; height: 220px; border: 0; border-radius: 12px; margin-bottom: 12px; display: block; }
+</style>
+</head>
+<body>
+  <div class="topo">
+    <img id="logo-img" class="logo-imagem escondido" alt="Serra Dourada Bar e Restaurante" />
+    <div id="logo-texto">
+      <p class="logo-script" id="logo-nome">Serra Dourada</p>
+      <p class="logo-label">BAR E RESTAURANTE</p>
+    </div>
+  </div>
+
+  <div class="hero" id="hero">
+    <div class="placeholder-icone">🍺</div>
+    <div class="hero-legenda" id="hero-legenda"></div>
+  </div>
+
+  <p class="boas-vindas" id="boas-vindas">Bem-vindo!</p>
+  <section class="promo-dia-destaque escondido" id="promo-dia-destaque">
+  <button type="button" class="promo-dia-card" id="promo-dia-card"></button>
+  </section>
+
+  <section class="destaques">
+    <h2>Destaques da casa</h2>
+    <div class="destaques-grid">
+      <figure><img src="img/destaque-5.jpg" alt="Prato do Serra Dourada" loading="lazy" /></figure>
+      <figure><img src="img/destaque-1.jpg" alt="Prato do Serra Dourada" loading="lazy" /></figure>
+      <figure><img src="img/destaque-2.jpg" alt="Prato do Serra Dourada" loading="lazy" /></figure>
+      <figure><img src="img/destaque-3.jpg" alt="Prato do Serra Dourada" loading="lazy" /></figure>
+      <figure><img src="img/destaque-4.jpg" alt="Prato do Serra Dourada" loading="lazy" /></figure>
+    </div>
+  </section>
+
+  <section class="avaliacoes escondido" id="avaliacoes">
+    <h2>O que dizem sobre nós</h2>
+    <p class="avaliacoes-resumo" id="avaliacoes-resumo"></p>
+    <div class="avaliacoes-lista" id="avaliacoes-lista"></div>
+  </section>
+
+  <nav class="botoes escondido" id="botoes">
+    <div class="carregando-botoes">Carregando…</div>
+  </nav>
+  <div class="skeleton-botoes" id="skeleton-botoes">
+    <div class="skeleton skeleton-botao"></div>
+    <div class="skeleton skeleton-botao"></div>
+    <div class="skeleton skeleton-botao"></div>
+    <div class="skeleton skeleton-botao"></div>
+  </div>
+
+  <footer>Serra Dourada Bar e Restaurante · Goiânia/GO</footer>
+
+  <div class="barra-fixa">
+    <button type="button" id="barra-cardapio" class="principal">
+      <span class="icone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5C4 4.7 4.7 4 5.5 4H12v16H5.5A1.5 1.5 0 0 1 4 18.5z"/><path d="M20 5.5c0-.8-.7-1.5-1.5-1.5H12v16h6.5a1.5 1.5 0 0 0 1.5-1.5z"/></svg></span>
+      Cardápio
+    </button>
+    <button type="button" id="barra-whatsapp" class="secundaria">
+      <span class="icone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l1.3-3.9A8 8 0 1 1 8.9 19z"/><path d="M8.5 9.5c0 3.5 2.5 6 6 6"/></svg></span>
+      WhatsApp
+    </button>
+  </div>
+
+  <div class="overlay" id="overlay">
+    <div class="modal">
+      <div class="modal-topo">
+        <h2 id="modal-titulo">—</h2>
+        <button class="modal-fechar" id="modal-fechar" aria-label="Fechar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      </div>
+      <div id="modal-corpo"></div>
+      <form id="form-reserva" class="escondido">
+        <label for="reserva-nome">Seu nome</label>
+        <input type="text" id="reserva-nome" required autocomplete="name" />
+        <label for="reserva-telefone">Seu WhatsApp</label>
+        <input type="text" id="reserva-telefone" required autocomplete="tel" inputmode="tel" placeholder="Ex.: 62999998888" />
+        <div class="reserva-linha">
+          <div>
+            <label for="reserva-data">Data</label>
+            <input type="date" id="reserva-data" required />
+          </div>
+          <div>
+            <label for="reserva-hora">Horário</label>
+            <input type="time" id="reserva-hora" required />
+          </div>
+          <div>
+            <label for="reserva-pessoas">Pessoas</label>
+            <input type="number" id="reserva-pessoas" required min="1" max="100" inputmode="numeric" />
+          </div>
+        </div>
+        <label class="consentimento">
+          <input type="checkbox" id="reserva-consentimento" required />
+          <span>Autorizo o Serra Dourada a usar meu nome e WhatsApp para tratar desta reserva.</span>
+        </label>
+        <label class="consentimento">
+          <input type="checkbox" id="reserva-novidades" />
+          <span>Quero receber novidades e promoções pelo WhatsApp (opcional).</span>
+        </label>
+        <button type="submit" class="botao destaque" id="btn-continuar-whatsapp" style="width:100%">Continuar para o WhatsApp</button>
+        <p class="modal-vazio" id="msg-reserva" style="padding:8px 0 0"></p>
+      </form>
+    </div>
+  </div>
+
+<script>
+window.addEventListener("DOMContentLoaded", function () {
+  "use strict";
+  var SUPABASE_URL = "https://bhxnhiggogosootbtwpb.supabase.co";
+  var ANON_KEY = "sb_publishable_Zsg8lPJjUHK5-okGOuYc9g_VbKilzQG";
+  var sb = window.supabase.createClient(SUPABASE_URL, ANON_KEY);
+
+  var DIAS = ["Domingo","Segunda","Terça","Quarta","Quinta","Sexta","Sábado"];
+  var estabelecimentoId = null;
+  var config = null;
+  var happyHourBadgeAtivo = false;
+  var almocoBadgeAtivo = false;
+  var promocoesSemana = [];
+  var PREVIA = /previa/.test(location.pathname);
+  var previaModo = PREVIA ? (sessionStorage.getItem("previaModo") || "ativa") : null;
+  var PREVIA_DIA = 2;
+  var PREVIA_PROMO = { dia_semana: 2, ativo: true, titulo: "Terça Delas", subtitulo: "Tem coisa no Serra que só aparece na terça.",
+    descricao: "A partir de 2 mulheres na mesa, o Cardápio Delas é desbloqueado.",
+    condicoes: "Às terças, das 16h ao encerramento.\nA presença de pelo menos 2 mulheres na mesa libera o Cardápio Delas para toda a mesa.\nNíveis: 4 mulheres maiores de 18 anos liberam a Rodada Delas; 6 ou mais liberam também o Não Espalha. Cada benefício é concedido uma vez por mesa, por noite, quando a mesa atingir a quantidade.\nBebidas alcoólicas apenas para maiores de 18 anos.\nDas 16h às 20h, itens do Happy Hour podem ser pedidos na mesma mesa, cada um pelo seu preço. Os preços do Cardápio Delas não se alteram.\nO Código Delas, divulgado nos stories do @serradouradabar, libera o benefício informado no próprio story.\nNão cumulativo com outras promoções, salvo indicação expressa.",
+    hora_inicio: "16:00:00", hora_fim: null, cartela_qtd: null, cartela_item: null, imagem_url: null, senha_cardapio: "TERÇADELAS",
+    niveis: [{ qtd: 2, nome: "Chegamos", beneficio: "Cardápio Delas", detalhe: "Combos exclusivos da terça para a mesa toda" },
+      { qtd: 4, nome: "Chama mais duas", beneficio: "Rodada Delas", detalhe: "4 Cozumel com Chopp para elas (valor normal R$ 55,60)" },
+      { qtd: 6, nome: "Fechou o bonde", beneficio: "Não Espalha", detalhe: "Um mimo especial da casa" }],
+    itens: [{ nome: "Nem Te Conto", composicao: "2 Caipirinhas + Delícia Dourada", preco_separado: 74.70, preco: 62.90, frase: "Porque uma conversa dessas pede acompanhamento." },
+      { nome: "Abre o Grupo", composicao: "2 Gin Tradicional + Pastelzinho (12 un.)", preco_separado: 93.70, preco: 79.90, frase: "Essa aqui não dá pra contar só pra uma." },
+      { nome: "Passa o Endereço", composicao: "Isca de Frango + 2 Cozumel com Chopp", preco_separado: 77.70, preco: 65.90, frase: "\"Onde vocês estão?\" Aqui." },
+      { nome: "Só Nós Sabemos", composicao: "2 Sucos Naturais + Batata Frita", preco_separado: 62.70, preco: 52.90, frase: "Sem álcool, com todo o resto." }] };
+  function agora() {
+    var d = new Date();
+    if (!PREVIA) return d;
+    var alvo = previaModo === "domingo" ? 0 : PREVIA_DIA, diff = (alvo - d.getDay() + 7) % 7;
+    d.setDate(d.getDate() + diff);
+    if (previaModo === "antes") { d.setHours(13, 46, d.getSeconds(), 0); }
+    else if (previaModo === "ativa") { d.setHours(19, 12, d.getSeconds(), 0); }
+    else if (previaModo === "domingo") { d.setHours(18, 30, d.getSeconds(), 0); }
+    return d;
+  }
+  var promoTimer = null;
+  var botoesAtuais = [], hhDados = null, assinaturaHome = "";
+  function assinaturaEstado() {
+    var pv = promoValidaHoje(), pa = promoAmanha();
+    return [agora().getDay(), pv ? estadoPromo(pv) : "-", pa ? pa.dia_semana : "-", happyHourAtivoAgora(hhDados), almocoBadgeAtivo].join("|");
+  }
+  function atualizarHome() {
+    promocaoDiaHoje = promocoesSemana.find(function (p) { return p.dia_semana === agora().getDay() && p.ativo; }) || null;
+    happyHourBadgeAtivo = happyHourAtivoAgora(hhDados);
+    var turno = ((config && config.horario_funcionamento) || {})[String(agora().getDay())];
+    almocoBadgeAtivo = almocoAtivoAgora(turno && turno.almoco);
+    promocaoDiaBadgeAtiva = estadoPromo(promocaoDiaHoje) === "ativa";
+    var nova = assinaturaEstado();
+    if (nova === assinaturaHome) return;
+    assinaturaHome = nova;
+    renderPromoDiaDestaque();
+    renderBotoes(botoesAtuais);
+  }
+  var promocaoDiaBadgeAtiva = false;
+  var promocaoDiaHoje = null;
+
+  function escapeHtml(v) {
+    return String(v == null ? "" : v)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+
+  function abrirModal(titulo, corpoHtml) {
+    document.getElementById("modal-titulo").textContent = titulo;
+    document.getElementById("modal-corpo").innerHTML = corpoHtml;
+    document.getElementById("form-reserva").classList.add("escondido");
+    document.getElementById("overlay").classList.add("aberto");
+  }
+  function fecharModal() {
+    pararTimerPromo();
+    document.getElementById("overlay").classList.remove("aberto");
+    document.getElementById("form-reserva").classList.add("escondido");
+  }
+  function abrirReserva() {
+    document.getElementById("modal-titulo").textContent = "Fazer reserva";
+    document.getElementById("modal-corpo").innerHTML =
+      '<p class="modal-vazio" style="padding:0 0 4px;text-align:left">Preencha os dados e você será direcionado ao WhatsApp. A reserva é confirmada pela nossa equipe.</p>';
+    document.getElementById("msg-reserva").textContent = "";
+    document.getElementById("reserva-data").min = dataLocalHoje();
+    document.getElementById("form-reserva").classList.remove("escondido");
+    document.getElementById("overlay").classList.add("aberto");
+  }
+  document.getElementById("modal-fechar").addEventListener("click", fecharModal);
+  document.getElementById("overlay").addEventListener("click", function (e) {
+    if (e.target.id === "overlay") fecharModal();
+  });
+
+  function registrar(tipo, botaoTipo) {
+    if (!estabelecimentoId || PREVIA) return;
+    sb.from("pagina_acesso_log").insert({
+      estabelecimento_id: estabelecimentoId,
+      tipo: tipo,
+      botao_tipo: botaoTipo || null,
+    }).then(function () {});
+  }
+
+  function formatarHora(t) {
+    if (!t) return "";
+    return t.slice(0, 5);
+  }
+
+  function formatarPreco(p) {
+    var n = Number(p);
+    if (isNaN(n)) return "";
+    return "R$ " + n.toFixed(2).replace(".", ",");
+  }
+
+  async function mostrarHorario() {
+    var h = (config && config.horario_funcionamento) || {};
+    var algumDiaConfigurado = false;
+    var linhas = DIAS.map(function (nome, i) {
+      var v = h[String(i)] || {};
+      var turnos = [];
+      if (v.almoco && v.almoco.abre && v.almoco.fecha) turnos.push(formatarHora(v.almoco.abre) + "–" + formatarHora(v.almoco.fecha));
+      if (v.bar && v.bar.abre && v.bar.fecha) turnos.push(formatarHora(v.bar.abre) + "–" + formatarHora(v.bar.fecha));
+      if (turnos.length) algumDiaConfigurado = true;
+      var texto = turnos.length ? turnos.join(" e ") : "Fechado";
+      return '<div class="horario-linha"><span>' + nome + '</span><span>' + escapeHtml(texto) + '</span></div>';
+    }).join("");
+    abrirModal("Horário de funcionamento", algumDiaConfigurado ? linhas : '<p class="modal-vazio">Horário não configurado ainda.</p>');
+  }
+
+  async function mostrarAlmoco() {
+    var precosRes = await sb.from("cardapio_publico").select("nome,preco,foto_url").eq("grupo", "Almoço (Segunda a Sábado)").eq("ativo", true).order("ordem", { ascending: true });
+    var formatos = precosRes.data || [];
+
+    var imagemHtml = (formatos[0] && formatos[0].foto_url)
+      ? '<img class="modal-foto" src="' + escapeHtml(formatos[0].foto_url) + '" alt="Almoço do Serra Dourada" />'
+      : "";
+
+    var hojeDomingo = new Date().getDay() === 0;
+    var infoHtml = '<div class="modal-item"><p>Servido de segunda a sábado, das 11h às 14h30.</p>' +
+      (hojeDomingo ? '<p style="font-size:0.8rem;color:var(--texto-suave);margin:6px 0 0">Hoje (domingo) não servimos almoço.</p>' : '') +
+      '</div>';
+
+    var listaHtml = formatos.length
+      ? '<div class="hh-itens">' + formatos.map(function (it) {
+          return '<div class="hh-item"><span class="hh-item-nome">' + escapeHtml(it.nome) + '</span>' +
+            '<span class="hh-item-preco-por">' + formatarPreco(it.preco) + '</span></div>';
+        }).join("") + '</div>'
+      : '<p class="modal-vazio">Valores indisponíveis no momento.</p>';
+
+    var linkPedido = hojeDomingo ? null : linkWhatsapp("Olá! Vi o almoço no site e quero fazer um pedido.");
+    var botaoHtml = linkPedido
+      ? '<a class="botao destaque" style="display:block;text-align:center;text-decoration:none;margin-top:12px" href="' + escapeHtml(linkPedido) + '" target="_blank" rel="noopener">Pedir pelo WhatsApp</a>'
+      : "";
+
+    abrirModal("Almoço", imagemHtml + infoHtml + listaHtml + botaoHtml);
+  }
+
+  async function mostrarHappyHour() {
+    var [hhRes, promoRes] = await Promise.all([
+      sb.from("happy_hour").select("descricao,dias_semana,horario_inicio,horario_fim,ativo,itens").maybeSingle(),
+      sb.from("promocao").select("titulo,descricao,valido_ate").is("dia_semana", null).order("ordem", { ascending: true }),
+    ]);
+
+    var blocos = [];
+
+    if (hhRes.data && hhRes.data.ativo) {
+      var dias = (hhRes.data.dias_semana || []).map(function (d) { return DIAS[d]; }).join(", ");
+      var periodo = formatarHora(hhRes.data.horario_inicio) + " às " + formatarHora(hhRes.data.horario_fim);
+      var itensHtml = "";
+      if (hhRes.data.itens && hhRes.data.itens.length) {
+        itensHtml = '<div class="hh-itens">' + hhRes.data.itens.map(function (it) {
+          var fotoHtml = it.foto_url ? '<img class="hh-item-foto" src="' + escapeHtml(it.foto_url) + '" alt="" loading="lazy" />' : '';
+          return '<div class="hh-item"><span class="hh-item-esquerda">' + fotoHtml + '<span class="hh-item-nome">' + escapeHtml(it.nome) + '</span></span>' +
+            '<span class="hh-item-precos"><span class="hh-item-preco-de">' + formatarPreco(it.preco_de) + '</span>' +
+            '<span class="hh-item-preco-por">' + formatarPreco(it.preco_por) + '</span></span></div>';
+        }).join("") + '</div>';
+      }
+      blocos.push(
+        '<div class="modal-fotos"><img src="img/happyhour-1.jpg" alt="Drinks do Happy Hour" /><img src="img/happyhour-3.jpg" alt="Petisco do Happy Hour" /></div>'
+      );
+      blocos.push(
+        '<div class="modal-item"><h3>Happy Hour · ' + escapeHtml(dias || "Todos os dias") + '</h3><p>' + escapeHtml(periodo) + '</p>' +
+        (hhRes.data.descricao && !hhRes.data.itens.length ? '<p>' + escapeHtml(hhRes.data.descricao).replace(/\n/g, "<br>") + '</p>' : '') +
+        itensHtml +
+        '</div>'
+      );
+    }
+
+    (promoRes.data || []).forEach(function (p) {
+      var validade = p.valido_ate ? " · válida até " + new Date(p.valido_ate + "T00:00:00").toLocaleDateString("pt-BR") : "";
+      blocos.push(
+        '<div class="modal-item"><h3>' + escapeHtml(p.titulo) + escapeHtml(validade) + '</h3>' +
+        (p.descricao ? '<p>' + escapeHtml(p.descricao).replace(/\n/g, "<br>") + '</p>' : '') +
+        '</div>'
+      );
+    });
+
+    abrirModal("Happy Hour e promoções", blocos.join("") || '<p class="modal-vazio">Nenhum Happy Hour ou promoção ativa no momento.</p>');
+  }
+
+function minutosDe(hhmm) { if (!hhmm) return null; var p = hhmm.split(":"); return Number(p[0]) * 60 + Number(p[1]); }
+
+function janelaPromo(p) {
+  var ini = minutosDe(p.hora_inicio);
+  if (ini == null) return { ini: 0, fim: 1440 };
+  var fim = minutosDe(p.hora_fim);
+  if (fim == null) {
+    var turno = ((config && config.horario_funcionamento) || {})[String(p.dia_semana)];
+    fim = turno && turno.bar ? minutosDe(turno.bar.fecha) : 1440;
+  }
+  if (fim == null || fim <= ini) fim = 1440;
+  return { ini: ini, fim: fim };
+}
+
+function estadoPromo(p) {
+  if (!p) return null;
+  if (p.dia_semana !== agora().getDay()) return "encerrada";
+  var d = agora(), m = d.getHours() * 60 + d.getMinutes(), j = janelaPromo(p);
+  if (m < j.ini) return "antes";
+  if (m < j.fim) return "ativa";
+  return "encerrada";
+}
+
+function promoValidaHoje() {
+  return (promocaoDiaHoje && estadoPromo(promocaoDiaHoje) !== "encerrada") ? promocaoDiaHoje : null;
+}
+function promoAmanha() {
+  if (promoValidaHoje()) return null;
+  var amanha = (agora().getDay() + 1) % 7;
+  return promocoesSemana.find(function (p) { return p.dia_semana === amanha && p.ativo; }) || null;
+}
+function fotoPromo(p) { return p && p.imagem_url ? '<img class="modal-foto" src="' + escapeHtml(p.imagem_url) + '" alt="" />' : ""; }
+
+function hhmm(min) { var h = Math.floor(min / 60) % 24, mm = min % 60; return h + "h" + (mm ? String(mm).padStart(2, "0") : ""); }
+
+function chaveDia(prefixo) { var d = agora(); return prefixo + "-" + d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate(); }
+function lerDia(prefixo) { try { return localStorage.getItem(chaveDia(prefixo)); } catch (e) { return null; } }
+function gravarDia(prefixo, v) { try { localStorage.setItem(chaveDia(prefixo), String(v)); } catch (e) {} }
+function normalizarSenha(s) { return String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/gi, "").toUpperCase(); }
+var SVG_CADEADO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
+var SVG_ABERTO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/></svg>';
+
+function montarNiveis(p, alvo, dataTxt, recemAberto) {
+  var niveis = p.niveis.slice().sort(function (a, b) { return a.qtd - b.qtd; });
+  var sel = Number(lerDia("niveis")) || 0;
+  var aberto = lerDia("cardapio") === "1";
+  var chips = niveis.map(function (nv, i) {
+    var rot = nv.qtd + (i === niveis.length - 1 ? "+" : "");
+    return '<button type="button" class="pd-chip' + (sel === nv.qtd ? ' on' : '') + '" data-q="' + nv.qtd + '">' + rot + '</button>';
+  }).join("");
+  var trilha = niveis.map(function (nv, i) {
+    var on = sel >= nv.qtd;
+    return '<div class="pd-nivel' + (on ? ' on' : '') + '">' + (on ? SVG_ABERTO : SVG_CADEADO) +
+      '<div><div class="n1">' + nv.qtd + (i === niveis.length - 1 ? '+' : '') + ' delas · ' + escapeHtml(nv.nome || "") + '</div>' +
+      '<div class="n2">' + escapeHtml(nv.beneficio || "") + '</div>' +
+      (nv.detalhe ? '<div class="n3">' + escapeHtml(nv.detalhe) + '</div>' : '') + '</div></div>';
+  }).join("");
+  var prox = niveis.find(function (nv) { return nv.qtd > sel; });
+  var status = sel === 0 ? "Toque no número de mulheres na mesa"
+    : prox ? "Chama mais " + (prox.qtd - sel) + " e libera " + prox.beneficio
+    : "Todos os níveis liberados!";
+
+  var menu = "";
+  if (p.itens && p.itens.length) {
+    if (aberto) {
+      menu = '<div class="pd-menu' + (recemAberto ? ' pd-anim' : '') + '"><div class="pd-menu-topo"><span class="pd-cap">Cardápio desbloqueado</span>' +
+        '<div class="pd-titulo" style="font-size:1.25rem;margin:2px 0 0">Cardápio Delas</div></div>' +
+        p.itens.map(function (it) {
+          return '<div class="pd-combo"><div class="pd-combo-nome">' + escapeHtml(it.nome) + '</div>' +
+            '<div class="pd-combo-comp">' + escapeHtml(it.composicao || "") + '</div>' +
+            '<div class="pd-combo-precos">' + (it.preco_separado ? '<span class="pd-combo-sep">Separado: <s>' + formatarPreco(it.preco_separado) + '</s></span>' : '') +
+            '<span class="pd-combo-preco">' + formatarPreco(it.preco) + '</span></div>' +
+            (it.frase ? '<div class="pd-combo-frase">' + escapeHtml(it.frase) + '</div>' : '') + '</div>';
+        }).join("") + '</div>';
+    } else {
+      menu = '<div class="pd-cofre">' + SVG_CADEADO +
+        '<div class="pd-titulo" style="font-size:1.2rem;margin:4px 0 2px">Você encontrou o Cardápio Delas</div>' +
+        '<p class="pd-cond" style="margin:0">Digite a palavra-chave. Peça ao garçom quando a mesa desbloquear.</p>' +
+        '<input type="text" id="pd-senha" autocomplete="off" autocapitalize="characters" placeholder="Palavra-chave" />' +
+        '<button type="button" class="botao destaque" id="pd-desbloquear" style="justify-content:center">Desbloquear</button>' +
+        '<p class="pd-erro" id="pd-senha-erro"></p></div>';
+    }
+  }
+
+  alvo.innerHTML = '<div class="pd-bilhete">' +
+      '<span class="pd-cap">Mostre esta tela ao garçom</span>' +
+      '<div class="pd-titulo">' + escapeHtml(p.titulo) + '</div>' +
+      (p.subtitulo ? '<p class="pd-sub">' + escapeHtml(p.subtitulo) + '</p>' : '') +
+      '<p class="pd-perg">Quantas mulheres na mesa?</p>' +
+      '<div class="pd-chips">' + chips + '</div>' +
+      '<div class="pd-trilha">' + trilha + '</div>' +
+      '<div class="pd-status" style="margin-top:0">' + escapeHtml(status) + '</div>' +
+      '<div class="pd-relogio"><div style="font-size:0.72rem;color:var(--texto-suave)">Válido agora</div><div class="d" id="pd-data">' + dataTxt() + '</div><div class="h" id="pd-hora"></div></div>' +
+    '</div>' + menu +
+    '<div class="pd-extra"><span class="pd-cap">Tem mais um cadeado</span>' +
+      '<p class="pd-cond" style="margin:6px 0 0">O Código Delas da semana aparece nos stories do @serradouradabar. Fala para o garçom e libera um bônus.</p>' +
+      botaoInsta() + '</div>' +
+    '<button type="button" class="pd-insta" id="pd-mostrar-sticker" style="background:transparent;border:1px solid var(--dourado);color:var(--dourado-claro)">' + SVG_INSTA + 'Postar sticker no story</button>' +
+    stickerHtml(false) + condicoesBloco(p.condicoes) + RODAPE_ALCOOL;
+
+  ligarInsta(alvo);
+  ligarSticker(p);
+  Array.prototype.forEach.call(alvo.querySelectorAll(".pd-chip"), function (b) {
+    b.addEventListener("click", function () {
+      var q = Number(b.getAttribute("data-q"));
+      var novo = (sel === q) ? 0 : q;
+      gravarDia("niveis", novo);
+      if (novo) registrar("click", "promo_nivel_" + novo);
+      renderAtiva(p);
+    });
+  });
+  var btn = document.getElementById("pd-desbloquear");
+  if (btn) {
+    var tentar = function () {
+      var campo = document.getElementById("pd-senha");
+      if (normalizarSenha(campo.value) && normalizarSenha(campo.value) === normalizarSenha(p.senha_cardapio)) {
+        gravarDia("cardapio", "1");
+        registrar("click", "promo_senha_ok");
+        renderAtiva(p, true);
+      } else {
+        document.getElementById("pd-senha-erro").textContent = campo.value.trim() ? "Palavra-chave incorreta. Confira com o garçom." : "Digite a palavra-chave.";
+        if (campo.value.trim()) registrar("click", "promo_senha_erro");
+      }
+    };
+    btn.addEventListener("click", tentar);
+    document.getElementById("pd-senha").addEventListener("keydown", function (ev) { if (ev.key === "Enter") tentar(); });
+    document.getElementById("pd-senha").addEventListener("input", function () { document.getElementById("pd-senha-erro").textContent = ""; });
+  }
+}
+
+function chaveCartela() { var d = agora(); return "cartela-" + d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate(); }
+function lerCartela() { try { return Number(localStorage.getItem(chaveCartela())) || 0; } catch (e) { return 0; } }
+function gravarCartela(n) { try { localStorage.setItem(chaveCartela(), String(n)); } catch (e) {} }
+
+var SVG_GARRAFA = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2h4v4l1.5 3v11a2 2 0 0 1-2 2h-3a2 2 0 0 1-2-2V9L10 6z"/><path d="M8.5 13h7"/></svg>';
+var SVG_BRINDE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5C10 3 12 8 12 8s2-5 4.5-5a2.5 2.5 0 0 1 0 5"/></svg>';
+var SVG_TACA = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h12v11a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4z"/><path d="M17 7h1.5a2.5 2.5 0 0 1 0 5H17"/><path d="M5 8h12"/></svg>';
+function urlInstagram() { return (config && config.instagram_url) || "https://instagram.com/serradouradabar"; }
+var SVG_INSTA = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="0.6" fill="currentColor" stroke="none"/></svg>';
+function botaoInsta() { return '<a class="pd-insta" href="' + escapeHtml(urlInstagram()) + '" target="_blank" rel="noopener" data-insta="1">' + SVG_INSTA + 'Seguir @serradouradabar</a>'; }
+function condicoesBloco(txt, classeExtra) {
+  if (!txt) return "";
+  if (txt.length > 220) return '<details class="pd-regras"><summary>Regras completas</summary><p>' + condicoesHtml(txt) + '</p></details>';
+  return '<p class="pd-cond' + (classeExtra || "") + '">' + condicoesHtml(txt) + '</p>';
+}
+function condicoesHtml(txt) { return escapeHtml(txt).replace(/@serradouradabar/g, '<a href="' + escapeHtml(urlInstagram()) + '" target="_blank" rel="noopener" data-insta="1">@serradouradabar</a>'); }
+function ligarInsta(raiz) { Array.prototype.forEach.call((raiz || document).querySelectorAll('[data-insta]'), function (a) { a.addEventListener("click", function () { registrar("click", "promo_instagram"); }); }); }
+var RODAPE_ALCOOL = '<p class="pd-rodape">Beba com moderação. Venda proibida para menores de 18 anos.</p>';
+
+function pararTimerPromo() { if (promoTimer) { clearInterval(promoTimer); promoTimer = null; } }
+
+function mostrarPromocaoDia() {
+  pararTimerPromo();
+  var hoje = agora().getDay();
+  var promoHoje = promocaoDiaHoje;
+  var estado = estadoPromo(promoHoje);
+  var corpo = "";
+
+  var amanha = promoAmanha();
+  if (promoHoje && estado === "antes") {
+    var j = janelaPromo(promoHoje);
+    corpo += fotoPromo(promoHoje) + '<span class="pd-cap">Promoção de hoje</span>' +
+      '<div class="pd-titulo">' + escapeHtml(promoHoje.titulo) + '</div>' +
+      '<div class="pd-caixa"><div class="pd-caixa-rot">Começa em</div><div class="pd-caixa-num" id="pd-contagem">–</div>' +
+      '<div class="pd-caixa-rot">hoje, às ' + hhmm(j.ini) + '</div></div>' +
+      (promoHoje.descricao ? '<p class="pd-texto">' + escapeHtml(promoHoje.descricao) + ' Já chama a turma.</p>' : '') +
+      condicoesBloco(promoHoje.condicoes) +
+      '<button type="button" class="botao destaque" id="pd-agenda" style="justify-content:center;margin-top:14px">Adicionar à agenda</button>' +
+      botaoInsta() +
+      RODAPE_ALCOOL;
+  } else if (promoHoje && estado === "ativa") {
+    corpo += fotoPromo(promoHoje) + '<div id="pd-ativa"></div>';
+  } else if (amanha) {
+    var ja = janelaPromo(amanha);
+    corpo += fotoPromo(amanha) + '<span class="pd-cap">Amanhã · ' + escapeHtml(DIAS[amanha.dia_semana]) + (amanha.hora_inicio ? ' · a partir das ' + hhmm(ja.ini) : '') + '</span>' +
+      '<div class="pd-titulo">' + escapeHtml(amanha.titulo) + '</div>' +
+      (amanha.descricao ? '<p class="pd-texto" style="margin-top:0">' + escapeHtml(amanha.descricao) + '</p>' : '') +
+      condicoesBloco(amanha.condicoes) +
+      '<button type="button" class="botao destaque" id="pd-agenda" style="justify-content:center;margin-top:14px">Lembrar amanhã</button>' +
+      botaoInsta() + RODAPE_ALCOOL;
+  } else if (promoHoje && estado === "encerrada") {
+    corpo += '<p class="modal-vazio">A promoção de hoje já encerrou. Volta na próxima ' + escapeHtml(DIAS[hoje].toLowerCase()) + '!</p>';
+  } else {
+    corpo += '<p class="modal-vazio">Nenhuma promoção especial hoje.</p>';
+  }
+
+  var outrosDias = promocoesSemana.filter(function (p) { return p.ativo && p.dia_semana !== hoje && p !== amanha; });
+  if (outrosDias.length) {
+    corpo += '<p style="font-size:0.8rem;color:var(--texto-suave);margin:16px 0 6px">Promoções da semana</p>' +
+      '<div class="hh-itens">' + outrosDias.map(function (p) {
+        return '<div class="hh-item"><span class="hh-item-nome">' + escapeHtml(DIAS[p.dia_semana]) + '</span>' +
+          '<span class="hh-item-preco-por" style="font-size:0.8rem">' + escapeHtml(p.titulo) + '</span></div>';
+      }).join("") + '</div>';
+  }
+
+  abrirModal("Promoção de hoje", corpo);
+
+  if (promoHoje && estado === "antes") {
+    var tick = function () {
+      var el = document.getElementById("pd-contagem");
+      if (!el) { pararTimerPromo(); return; }
+      var d = agora(), resto = janelaPromo(promoHoje).ini * 60 - (d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds());
+      if (resto <= 0) { mostrarPromocaoDia(); return; }
+      var h = Math.floor(resto / 3600), m = Math.floor((resto % 3600) / 60);
+      el.textContent = resto < 60 ? "menos de 1 min" : (h ? h + "h " : "") + m + "min";
+    };
+    tick(); promoTimer = setInterval(tick, 1000);
+    document.getElementById("pd-agenda").addEventListener("click", function () { baixarAgenda(promoHoje, 0); });
+    ligarInsta(document.getElementById("modal-corpo"));
+  } else if (promoHoje && estado === "ativa") {
+    renderAtiva(promoHoje);
+  } else if (amanha) {
+    document.getElementById("pd-agenda").addEventListener("click", function () { baixarAgenda(amanha, 1); });
+    ligarInsta(document.getElementById("modal-corpo"));
+  }
+}
+
+function renderAtiva(p, recemAberto) {
+  pararTimerPromo();
+  var alvo = document.getElementById("pd-ativa");
+  if (!alvo) return;
+  var qtd = p.cartela_qtd || 0, n = Math.min(lerCartela(), qtd);
+  var dataTxt = function () { var d = agora(); return DIAS[d.getDay()].slice(0, 3).toLowerCase() + " · " + String(d.getDate()).padStart(2, "0") + "/" + String(d.getMonth() + 1).padStart(2, "0"); };
+
+  if (p.niveis && p.niveis.length) {
+    montarNiveis(p, alvo, dataTxt, recemAberto);
+  } else if (qtd && n >= qtd) {
+    alvo.innerHTML = '<div style="text-align:center">' +
+      '<span class="pd-cap">Rodada liberada</span>' +
+      '<div class="pd-selo">' + SVG_TACA + '</div>' +
+      '<div class="pd-titulo" style="margin-bottom:4px">' + escapeHtml(p.titulo) + '</div>' +
+      '<p class="pd-cond" style="margin-bottom:14px">Mostre esta tela ao garçom e peça a sua cortesia.</p>' +
+      '<div class="pd-relogio" style="margin-bottom:14px"><div class="d" id="pd-data">' + dataTxt() + '</div><div class="h" id="pd-hora"></div></div>' +
+      stickerHtml(true) +
+      '<button type="button" class="pd-sec" id="pd-nova">Começar nova cartela</button>' +
+      RODAPE_ALCOOL + '</div>';
+    ligarSticker(p);
+    document.getElementById("pd-nova").addEventListener("click", function () { gravarCartela(0); renderAtiva(p); });
+  } else {
+    var garrafas = "";
+    for (var i = 0; i < qtd; i++) garrafas += '<button type="button" class="pd-garrafa' + (i < n ? ' on' : '') + '" data-i="' + i + '" aria-label="' + (i + 1) + 'ª ' + escapeHtml(p.cartela_item || "") + '">' + SVG_GARRAFA + '</button>';
+    if (qtd) garrafas += '<span class="pd-garrafa brinde" aria-hidden="true">' + SVG_BRINDE + '</span>';
+    var faltam = qtd - n;
+    alvo.innerHTML = '<div class="pd-bilhete">' +
+      '<span class="pd-cap">Mostre esta tela ao garçom</span>' +
+      '<div class="pd-titulo">' + escapeHtml(p.titulo) + '</div>' +
+      (qtd ? '<div class="pd-cartela">' + garrafas + '</div>' +
+        '<div class="pd-status">' + (n === 0 ? "Toque em cada " + escapeHtml(p.cartela_item || "item") + " que chegar" : "Falta" + (faltam > 1 ? "m " : " ") + faltam + " para liberar a cortesia") + '</div>'
+        : (p.descricao ? '<p class="pd-texto" style="color:#241608;margin:0 0 12px">' + escapeHtml(p.descricao) + '</p>' : '')) +
+      '<div class="pd-relogio"><div style="font-size:0.72rem;color:var(--texto-suave)">Válido agora</div><div class="d" id="pd-data">' + dataTxt() + '</div><div class="h" id="pd-hora"></div></div>' +
+      condicoesBloco(p.condicoes) +
+      botaoInsta() +
+      '</div>' +
+      '<button type="button" class="pd-insta" id="pd-mostrar-sticker" style="background:transparent;border:1px solid var(--dourado);color:var(--dourado-claro)">' + SVG_INSTA + 'Postar sticker no story</button>' +
+      stickerHtml(false) + RODAPE_ALCOOL;
+    ligarInsta(alvo);
+    ligarSticker(p);
+    Array.prototype.forEach.call(alvo.querySelectorAll(".pd-garrafa[data-i]"), function (b) {
+      b.addEventListener("click", function () {
+        var i = Number(b.getAttribute("data-i"));
+        var novo = (n === i + 1) ? i : i + 1;
+        gravarCartela(novo);
+        if (novo >= qtd) registrar("click", "promo_cartela_completa");
+        renderAtiva(p);
+      });
+    });
+  }
+
+  var tick = function () {
+    var h = document.getElementById("pd-hora");
+    if (!h) { pararTimerPromo(); return; }
+    h.textContent = agora().toLocaleTimeString("pt-BR");
+    if (estadoPromo(p) !== "ativa") mostrarPromocaoDia();
+  };
+  tick(); promoTimer = setInterval(tick, 1000);
+}
+
+function baixarAgenda(p, desloc) {
+  registrar("click", "promo_agenda");
+  var d = agora(), j = janelaPromo(p);
+  function fmt(dt) { return dt.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, ""); }
+  var ini = new Date(d.getFullYear(), d.getMonth(), d.getDate() + (desloc || 0), Math.floor(j.ini / 60), j.ini % 60);
+  var fim = new Date(ini.getTime() + 2 * 3600000);
+  var ics = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Serra Dourada//Promocao//PT", "BEGIN:VEVENT",
+    "UID:" + Date.now() + "@serradouradabar.com.br", "DTSTAMP:" + fmt(new Date()),
+    "DTSTART:" + fmt(ini), "DTEND:" + fmt(fim),
+    "SUMMARY:Promoção de " + DIAS[p.dia_semana].toLowerCase() + " no Serra Dourada", "DESCRIPTION:" + (p.titulo + ". " + (p.descricao || "")).replace(/\n/g, " "),
+    "LOCATION:Serra Dourada Bar e Restaurante", "BEGIN:VALARM", "TRIGGER:-PT15M", "ACTION:DISPLAY", "DESCRIPTION:" + p.titulo, "END:VALARM",
+    "END:VEVENT", "END:VCALENDAR"].join("\r\n");
+  var blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement("a");
+  a.href = url; a.download = "promocao-serra-dourada.ics";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+}
+
+function desenharSticker(x, p, dia) {
+  var W = 1000, H = 600;
+  x.clearRect(0, 0, W, H);
+  function rr(px, py, w, h, r) { x.beginPath(); x.moveTo(px + r, py); x.arcTo(px + w, py, px + w, py + h, r); x.arcTo(px + w, py + h, px, py + h, r); x.arcTo(px, py + h, px, py, r); x.arcTo(px, py, px + w, py, r); x.closePath(); }
+  rr(12, 12, W - 24, H - 24, 56);
+  var g = x.createLinearGradient(0, 0, W, H); g.addColorStop(0, "#e3b93e"); g.addColorStop(1, "#a9791c");
+  x.fillStyle = g; x.fill();
+  x.lineWidth = 10; x.strokeStyle = "#241608"; x.stroke();
+  x.beginPath(); x.arc(200, 300, 140, 0, Math.PI * 2); x.fillStyle = "#241608"; x.fill();
+  x.strokeStyle = "#e8c766"; x.lineWidth = 12; x.lineJoin = "round"; x.lineCap = "round";
+  x.beginPath(); x.moveTo(145, 215); x.lineTo(145, 365); x.quadraticCurveTo(145, 390, 170, 390); x.lineTo(230, 390); x.quadraticCurveTo(255, 390, 255, 365); x.lineTo(255, 215); x.closePath(); x.stroke();
+  x.beginPath(); x.moveTo(255, 255); x.quadraticCurveTo(305, 255, 305, 295); x.quadraticCurveTo(305, 335, 255, 335); x.stroke();
+  x.beginPath(); x.moveTo(145, 255); x.lineTo(255, 255); x.stroke();
+  x.fillStyle = "#241608"; x.textAlign = "left"; x.textBaseline = "alphabetic";
+  x.globalAlpha = 0.72; x.font = "800 34px Manrope, sans-serif";
+  x.fillText((dia + " no Serra Dourada").toUpperCase(), 380, 175);
+  x.globalAlpha = 1;
+  var tam = 92; x.font = "700 " + tam + "px 'Playfair Display', serif";
+  while (x.measureText(p.titulo).width > 570 && tam > 50) { tam -= 4; x.font = "700 " + tam + "px 'Playfair Display', serif"; }
+  x.fillText(p.titulo, 380, 285);
+  var desc = (p.subtitulo || p.descricao || "").replace(/\.$/, ""), td = 32; x.font = "600 " + td + "px Manrope, sans-serif";
+  while (x.measureText(desc).width > 560 && td > 20) { td -= 2; x.font = "600 " + td + "px Manrope, sans-serif"; }
+  if (desc) x.fillText(desc, 380, 345);
+  x.font = "800 42px Manrope, sans-serif";
+  x.fillText("@serradouradabar", 380, 440);
+  x.globalAlpha = 0.7; x.font = "600 22px Manrope, sans-serif";
+  x.fillText("Beba com moderação. Proibido para menores de 18 anos.", 380, 500);
+  x.globalAlpha = 1;
+}
+
+function stickerHtml(aberto) {
+  return '<div id="pd-sticker-bloco"' + (aberto ? '' : ' class="escondido"') + ' style="margin-top:14px;text-align:center">' +
+    '<p class="pd-cap" style="margin:0 0 8px">Sticker para o seu story</p>' +
+    '<img id="pd-sticker-img" alt="Sticker da promoção" style="width:100%;max-width:320px;display:block;margin:0 auto 10px;background:repeating-conic-gradient(#3a2712 0 25%, #2e1c0e 0 50%) 0 0/16px 16px;border-radius:12px" />' +
+    '<button type="button" class="botao destaque" id="pd-copiar" style="justify-content:center">Copiar sticker</button>' +
+    '<p class="pd-cond" id="pd-sticker-msg" style="margin:8px 0 0">Cole por cima da sua foto no story.</p>' +
+    '<a class="pd-insta escondido" id="pd-abrir-insta" href="instagram://story-camera">' + SVG_INSTA + 'Abrir o story no Instagram</a>' +
+    '<button type="button" class="pd-sec" id="pd-salvar">Salvar sticker</button></div>';
+}
+function ligarSticker(p) {
+  var mostrar = document.getElementById("pd-mostrar-sticker");
+  var carregado = false;
+  function carregar() {
+    if (carregado) return; carregado = true;
+    gerarSticker(p).then(function (b) { var im = document.getElementById("pd-sticker-img"); if (b && im) im.src = URL.createObjectURL(b); });
+  }
+  if (mostrar) mostrar.addEventListener("click", function () {
+    registrar("click", "promo_sticker_abrir");
+    document.getElementById("pd-sticker-bloco").classList.remove("escondido");
+    mostrar.classList.add("escondido"); carregar();
+  });
+  document.getElementById("pd-copiar").addEventListener("click", function () { copiarSticker(p); });
+  document.getElementById("pd-salvar").addEventListener("click", function () { salvarSticker(p); });
+  document.getElementById("pd-abrir-insta").addEventListener("click", function () { registrar("click", "promo_abrir_insta"); });
+  if (!mostrar) carregar();
+}
+var stickerCache = null;
+function gerarSticker(p) {
+  if (stickerCache) return stickerCache;
+  stickerCache = (async function () {
+    try { if (document.fonts && document.fonts.load) { await document.fonts.load("700 92px 'Playfair Display'"); await document.fonts.load("800 42px Manrope"); } } catch (e) {}
+    var c = document.createElement("canvas"); c.width = 1000; c.height = 600;
+    var ctx = c.getContext("2d"); if (!ctx) return null;
+    desenharSticker(ctx, p, DIAS[agora().getDay()]);
+    return await new Promise(function (ok) { c.toBlob(function (b) { ok(b); }, "image/png"); });
+  })();
+  return stickerCache;
+}
+
+function copiarSticker(p) {
+  var msg = document.getElementById("pd-sticker-msg");
+  registrar("click", "promo_sticker_copiar");
+  if (navigator.clipboard && window.ClipboardItem) {
+    var item = new ClipboardItem({ "image/png": gerarSticker(p) });
+    navigator.clipboard.write([item]).then(function () {
+      msg.innerHTML = "Copiado! Abra o story, escolha a sua foto e toque em <b>Colar</b>. Depois é só arrastar o sticker para onde quiser.";
+      document.getElementById("pd-abrir-insta").classList.remove("escondido");
+    }, function () {
+      msg.textContent = "Seu celular não deixou copiar. Use \"Salvar sticker\" e adicione pelo sticker de foto do Instagram.";
+    });
+  } else {
+    msg.textContent = "Seu celular não permite copiar imagens pelo navegador. Use \"Salvar sticker\" e adicione pelo sticker de foto do Instagram.";
+  }
+}
+
+async function salvarSticker(p) {
+  registrar("click", "promo_sticker_salvar");
+  var blob = await gerarSticker(p);
+  if (!blob) return;
+  var arquivo = new File([blob], "sticker-serra-dourada.png", { type: "image/png" });
+  if (navigator.canShare && navigator.canShare({ files: [arquivo] })) {
+    try { await navigator.share({ files: [arquivo] }); return; } catch (e) { if (e && e.name === "AbortError") return; }
+  }
+  var url = URL.createObjectURL(blob), a = document.createElement("a");
+  a.href = url; a.download = "sticker-serra-dourada.png"; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+}
+
+function renderPromoDiaDestaque() {
+  var secao = document.getElementById("promo-dia-destaque");
+  var p = promoValidaHoje(), rotulo;
+  if (p) {
+    var estado = estadoPromo(p);
+    rotulo = estado === "antes" ? "Promoção de hoje · a partir das " + hhmm(janelaPromo(p).ini) : "Promoção de hoje · valendo agora";
+  } else {
+    p = promoAmanha();
+    if (!p) { secao.classList.add("escondido"); return; }
+    rotulo = "Amanhã" + (p.hora_inicio ? " · a partir das " + hhmm(janelaPromo(p).ini) : "");
+  }
+  document.getElementById("promo-dia-card").innerHTML =
+    (p.imagem_url ? '<img src="' + escapeHtml(p.imagem_url) + '" alt="" />' : "") +
+    '<span class="promo-dia-textos"><span class="promo-dia-label">' + rotulo + '</span>' +
+    '<span class="promo-dia-titulo">' + escapeHtml(p.titulo) + '</span>' +
+    (p.descricao ? '<span class="promo-dia-desc">' + escapeHtml(p.descricao) + '</span>' : "") +
+    '</span>';
+  secao.classList.remove("escondido");
+}
+
+  function mostrarComoChegar() {
+    var endereco = config && config.endereco_embed;
+    var temCoord = config && config.mapa_lat != null && config.mapa_lng != null;
+    var consultaMapa = temCoord ? (config.mapa_lat + "," + config.mapa_lng) : endereco;
+    var mapaHtml = consultaMapa
+      ? '<iframe class="mapa-embed" src="https://www.google.com/maps?q=' + encodeURIComponent(consultaMapa) + (temCoord ? "&z=17" : "") + '&output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>'
+      : "";
+    var linkMaps = (config && config.google_maps_url) || null;
+    var botaoHtml = linkMaps
+      ? '<a class="botao destaque" style="width:100%;justify-content:center" href="' + escapeHtml(linkMaps) + '" target="_blank" rel="noopener">Abrir rota no Google Maps</a>'
+      : "";
+    abrirModal("Como chegar", mapaHtml + (endereco ? '<p class="modal-vazio" style="padding:0 0 10px">' + escapeHtml(endereco) + '</p>' : "") + botaoHtml);
+  }
+
+  function renderAvaliacoes(cache) {
+    var secao = document.getElementById("avaliacoes");
+    if (!cache || !cache.reviews || !cache.reviews.length) return;
+    var estrelasTexto = function (n) { return "★★★★★☆☆☆☆☆".slice(5 - Math.round(n), 10 - Math.round(n)); };
+    document.getElementById("avaliacoes-resumo").innerHTML =
+      "<strong>" + (cache.rating || "-") + "</strong> de 5 · " + (cache.total_avaliacoes || cache.reviews.length) + " avaliações no Google";
+    document.getElementById("avaliacoes-lista").innerHTML = cache.reviews.slice(0, 8).map(function (r) {
+      return '<div class="avaliacao-card">' +
+        '<div class="avaliacao-estrelas">' + estrelasTexto(r.nota || 5) + '</div>' +
+        '<p class="avaliacao-texto">' + escapeHtml(r.texto || "") + '</p>' +
+        '<div class="avaliacao-autor">' + escapeHtml(r.autor || "Cliente Google") + '</div>' +
+        '</div>';
+    }).join("");
+    secao.classList.remove("escondido");
+  }
+
+  async function mostrarEventos() {
+    var r = await sb.from("evento").select("titulo,descricao,data_hora").eq("ativo", true).gte("data_hora", new Date().toISOString()).order("data_hora", { ascending: true });
+    if (!r.data || r.data.length === 0) {
+      abrirModal("Próximos eventos", '<p class="modal-vazio">Nenhum evento programado no momento.</p>');
+      return;
+    }
+    var html = r.data.map(function (ev) {
+      var data = new Date(ev.data_hora).toLocaleString("pt-BR", { weekday: "long", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+      return '<div class="modal-item"><h3>' + escapeHtml(ev.titulo) + '</h3><p>' + escapeHtml(data) + '</p>' +
+        (ev.descricao ? '<p>' + escapeHtml(ev.descricao) + '</p>' : '') + '</div>';
+    }).join("");
+    abrirModal("Próximos eventos", html);
+  }
+
+  function linkWhatsapp(mensagem, numeroOverride) {
+    var numero = (numeroOverride || (config && config.whatsapp) || "").replace(/\D/g, "");
+    if (!numero) return null;
+    return "https://wa.me/" + numero + (mensagem ? "?text=" + encodeURIComponent(mensagem) : "");
+  }
+
+  var ACOES = {
+    cardapio: function () { registrar("click", "cardapio"); location.href = "cardapio.html"; },
+    almoco: function () { registrar("click", "almoco"); mostrarAlmoco(); },
+    happy_hour: function () { registrar("click", "happy_hour"); mostrarHappyHour(); },
+    horario: function () { registrar("click", "horario"); mostrarHorario(); },
+    eventos: function () { registrar("click", "eventos"); mostrarEventos(); },
+    reserva_whatsapp: function () { registrar("click", "reserva_whatsapp"); abrirReserva(); },
+    maps: function () { registrar("click", "maps"); mostrarComoChegar(); },
+    promocao_dia: function () { registrar("click", "promocao_dia"); mostrarPromocaoDia(); },
+  };
+
+  document.getElementById("form-reserva").addEventListener("submit", function (ev) {
+    ev.preventDefault();
+    var msgEl = document.getElementById("msg-reserva");
+    var nome = document.getElementById("reserva-nome").value.trim();
+    var telefone = document.getElementById("reserva-telefone").value.replace(/\D/g, "");
+    var data = document.getElementById("reserva-data").value;
+    var hora = document.getElementById("reserva-hora").value;
+    var pessoas = parseInt(document.getElementById("reserva-pessoas").value, 10);
+    var novidades = document.getElementById("reserva-novidades").checked;
+    msgEl.textContent = "";
+    if (!nome || telefone.length < 10) { msgEl.textContent = "Preencha seu nome e um WhatsApp com DDD."; return; }
+    if (!data || !hora || !(pessoas >= 1 && pessoas <= 100)) { msgEl.textContent = "Informe data, horário e número de pessoas."; return; }
+    if (data < dataLocalHoje()) { msgEl.textContent = "Escolha uma data a partir de hoje."; return; }
+
+    var dataBr = data.split("-").reverse().join("/");
+    var diaSemana = DIAS[new Date(data + "T12:00:00").getDay()];
+    var link = linkWhatsapp("Olá! Gostaria de reservar para " + pessoas + (pessoas === 1 ? " pessoa" : " pessoas") +
+      (diaSemana === "Sábado" || diaSemana === "Domingo" ? " no " : " na ") + diaSemana.toLowerCase() + ", " + dataBr + ", às " + hora + ". Nome: " + nome + ".");
+    if (!link) { msgEl.textContent = "Reservas por WhatsApp indisponíveis no momento. Tente outro contato."; return; }
+
+    // Abre o WhatsApp imediatamente, ainda dentro do toque do cliente (senão o Safari bloqueia).
+    var janela = window.open(link, "_blank");
+    if (janela) { try { janela.opener = null; } catch (e) {} } else { location.href = link; }
+
+    sb.from("contato_publico").insert({
+      estabelecimento_id: estabelecimentoId,
+      nome: nome,
+      telefone: telefone,
+      data_desejada: data,
+      horario_desejado: hora,
+      pessoas: pessoas,
+      aceita_novidades: novidades,
+      mensagem: "Reserva pelo site",
+      status: "novo",
+    }).then(function () {}, function () {});
+
+    fecharModal();
+    document.getElementById("form-reserva").reset();
+  });
+
+  function dataLocalHoje() {
+    var d = new Date();
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  }
+
+  document.getElementById("barra-cardapio").addEventListener("click", function () { ACOES.cardapio(); });
+  document.getElementById("barra-whatsapp").addEventListener("click", function () { ACOES.reserva_whatsapp(); });
+  document.getElementById("promo-dia-card").addEventListener("click", function () { ACOES.promocao_dia(); });
+
+  var SW = 'fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"';
+  var ICONES = {
+    cardapio: '<svg viewBox="0 0 24 24" ' + SW + '><path d="M4 5.5C4 4.7 4.7 4 5.5 4H12v16H5.5A1.5 1.5 0 0 1 4 18.5z"/><path d="M20 5.5c0-.8-.7-1.5-1.5-1.5H12v16h6.5a1.5 1.5 0 0 0 1.5-1.5z"/></svg>',
+    cardapio_visual: '<svg viewBox="0 0 24 24" ' + SW + '><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="M4 16l4.5-4.5a1.6 1.6 0 0 1 2.2 0L15 15.8M14 14.5l1.4-1.4a1.6 1.6 0 0 1 2.2 0L20 15.8"/></svg>',
+    almoco: '<svg viewBox="0 0 24 24" ' + SW + '><path d="M7 3v7a2 2 0 1 0 4 0V3M9 10v11M15 3c-1.5 1.5-2 3-2 5s1 3 2 3v10"/></svg>',
+    happy_hour: '<svg viewBox="0 0 24 24" ' + SW + '><path d="M6 3h6l-1 8a2 2 0 0 1-2 2 2 2 0 0 1-2-2z"/><path d="M9 13v8M6 21h6"/><path d="M15 8l1.5 1.5L20 6"/><circle cx="17" cy="15" r="4"/><path d="M17 19v2M15 21h4"/></svg>',
+    reserva_whatsapp: '<svg viewBox="0 0 24 24" ' + SW + '><path d="M4 20l1.3-3.9A8 8 0 1 1 8.9 19z"/><path d="M8.5 9.5c0 3.5 2.5 6 6 6"/></svg>',
+    maps: '<svg viewBox="0 0 24 24" ' + SW + '><path d="M12 21s7-6.6 7-11.5A7 7 0 0 0 5 9.5C5 14.4 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.2"/></svg>',
+    horario: '<svg viewBox="0 0 24 24" ' + SW + '><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>',
+    eventos: '<svg viewBox="0 0 24 24" ' + SW + '><path d="M9 18V5l10-2v13"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/></svg>',
+    avaliar_google: '<svg viewBox="0 0 24 24" ' + SW + '><path d="M12 3.5l2.7 5.6 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/></svg>',
+    avaliacao: '<svg viewBox="0 0 24 24" ' + SW + '><path d="M12 3.5l2.7 5.6 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/></svg>',
+    instagram: '<svg viewBox="0 0 24 24" ' + SW + '><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="0.6" fill="currentColor" stroke="none"/></svg>',
+    trabalhe_conosco: '<svg viewBox="0 0 24 24" ' + SW + '><rect x="3" y="8" width="18" height="12" rx="2"/><path d="M8 8V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>',
+    promocao_dia: '<svg viewBox="0 0 24 24" ' + SW + '><path d="M12 3h6a2 2 0 0 1 2 2v6a2 2 0 0 1-.6 1.4l-8 8a2 2 0 0 1-2.8 0l-6-6a2 2 0 0 1 0-2.8l8-8A2 2 0 0 1 12 3z"/><circle cx="16" cy="8" r="1.4"/></svg>',
+  };
+  var SETA = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>';
+
+  function urlPadrao(tipo) {
+    if (tipo === "trabalhe_conosco") return linkWhatsapp("Olá! Tenho interesse em trabalhar no Serra Dourada.", config && config.whatsapp_trabalhe_conosco);
+    if (tipo === "avaliar_google") return config && config.avaliacao_url;
+    if (tipo === "instagram") return config && config.instagram_url;
+    return null;
+  }
+
+  var SEMPRE_MODAL = { maps: true };
+
+  function renderBotoes(botoes) {
+    var nav = document.getElementById("botoes");
+    if (!botoes.length) {
+      nav.innerHTML = '<p class="modal-vazio">Nenhum botão configurado ainda.</p>';
+      return;
+    }
+    nav.innerHTML = "";
+    botoes.forEach(function (b, i) {
+      var url = b.url || urlPadrao(b.tipo);
+      var el;
+      if (ACOES[b.tipo] && (!url || SEMPRE_MODAL[b.tipo])) {
+        el = document.createElement("button");
+        el.type = "button";
+        el.addEventListener("click", ACOES[b.tipo]);
+      } else if (url) {
+        el = document.createElement("a");
+        el.href = url;
+        el.target = "_blank";
+        el.rel = "noopener";
+        el.addEventListener("click", function () { registrar("click", b.tipo); });
+      } else {
+        return; // sem ação nem link configurado — não mostra
+      }
+      el.className = "botao" + (i === 0 ? " destaque" : "");
+      var badge = ((b.tipo === "happy_hour" && happyHourBadgeAtivo) || (b.tipo === "almoco" && almocoBadgeAtivo) || (b.tipo === "promocao_dia" && promocaoDiaBadgeAtiva)) ? '<span class="badge-ativo">Ativo agora</span>' : "";
+      var pv = promoValidaHoje(), pa = pv ? null : promoAmanha();
+      var subtitulo = (b.tipo === "promocao_dia" && (pv || pa)) ? '<span class="botao-subtitulo">' + (pa ? "Amanhã: " : "") + escapeHtml((pv || pa).titulo) + '</span>' : "";
+      el.innerHTML =
+      '<span class="icone">' + (ICONES[b.tipo] || "") + '</span>' +
+      '<span class="botao-texto"><span>' + escapeHtml(b.label) + badge + '</span>' + subtitulo + '</span>' +
+      '<span class="seta">' + SETA + '</span>';
+      nav.appendChild(el);
+    });
+  }
+
+  function almocoAtivoAgora(turno) {
+    if (!turno || !turno.abre || !turno.fecha) return false;
+    var agora = new Date();
+    var horaAtual = agora.getHours() * 60 + agora.getMinutes();
+    var partesInicio = turno.abre.split(":");
+    var partesFim = turno.fecha.split(":");
+    var inicioMin = Number(partesInicio[0]) * 60 + Number(partesInicio[1]);
+    var fimMin = Number(partesFim[0]) * 60 + Number(partesFim[1]);
+    if (fimMin > inicioMin) return horaAtual >= inicioMin && horaAtual < fimMin;
+    return horaAtual >= inicioMin || horaAtual < fimMin;
+  }
+
+  function happyHourAtivoAgora(hh) {
+    if (!hh || !hh.ativo || !hh.horario_inicio || !hh.horario_fim) return false;
+    var agora = new Date();
+    var diasSemana = hh.dias_semana || [];
+    var horaAtual = agora.getHours() * 60 + agora.getMinutes();
+    var partesInicio = hh.horario_inicio.split(":");
+    var partesFim = hh.horario_fim.split(":");
+    var inicioMin = Number(partesInicio[0]) * 60 + Number(partesInicio[1]);
+    var fimMin = Number(partesFim[0]) * 60 + Number(partesFim[1]);
+
+    function diaPermitido(dia) { return !diasSemana.length || diasSemana.indexOf(dia) !== -1; }
+    function dentro(dia) {
+      if (!diaPermitido(dia)) return false;
+      if (fimMin > inicioMin) return horaAtual >= inicioMin && horaAtual < fimMin;
+      return horaAtual >= inicioMin || horaAtual < fimMin; // turno vira a noite
+    }
+
+    if (dentro(agora.getDay())) return true;
+    if (fimMin <= inicioMin && horaAtual < fimMin) {
+      var diaAnterior = (agora.getDay() + 6) % 7;
+      if (diaPermitido(diaAnterior)) return true;
+    }
+    return false;
+  }
+
+  var LIMIAR_QUENTE_C = 30;
+  var IMAGEM_CLIMA_QUENTE = "https://serradouradabar.com.br/img/happyhour-1.jpg";
+  var LEGENDA_CLIMA_QUENTE = "Dia de calor pede um drink gelado 🍹";
+
+  async function ajustarHeroPorClima(mensagemPadrao) {
+    try {
+      var lat = (config.mapa_lat != null) ? config.mapa_lat : -16.6799;
+      var lng = (config.mapa_lng != null) ? config.mapa_lng : -49.2550;
+      var resp = await fetch(
+        "https://api.open-meteo.com/v1/forecast?latitude=" + lat + "&longitude=" + lng + "&current=temperature_2m"
+      );
+      if (!resp.ok) return;
+      var dados = await resp.json();
+      var temp = dados && dados.current && dados.current.temperature_2m;
+      if (typeof temp !== "number" || temp < LIMIAR_QUENTE_C) return;
+
+      var heroImg = document.querySelector("#hero img");
+      var heroLegenda = document.getElementById("hero-legenda");
+      if (heroImg) heroImg.src = IMAGEM_CLIMA_QUENTE;
+      if (heroLegenda) heroLegenda.textContent = LEGENDA_CLIMA_QUENTE;
+    } catch (e) {
+      // Falha silenciosa: se o clima não carregar, mantém a imagem padrão já exibida.
+    }
+  }
+
+  async function carregar() {
+    try {
+      var estRes = await sb.from("estabelecimento").select("id,nome_fantasia,nome,endereco").limit(1).maybeSingle();
+      if (!estRes.data) return;
+      estabelecimentoId = estRes.data.id;
+      var nomeCurto = (estRes.data.nome_fantasia || estRes.data.nome || "").replace(/bar e restaurante/i, "").trim();
+      if (nomeCurto) document.getElementById("logo-nome").textContent = nomeCurto;
+
+      var [cfgRes, botoesRes, hhRes, avalRes, promoSemanaRes] = await Promise.all([
+        sb.from("pagina_config").select("*").eq("estabelecimento_id", estabelecimentoId).maybeSingle(),
+        sb.from("botao_pagina").select("*").eq("estabelecimento_id", estabelecimentoId).eq("ativo", true).order("ordem", { ascending: true }),
+        sb.from("happy_hour").select("ativo,dias_semana,horario_inicio,horario_fim").maybeSingle(),
+        sb.from("google_reviews_cache").select("rating,total_avaliacoes,reviews").eq("estabelecimento_id", estabelecimentoId).maybeSingle(),
+        sb.from("promocao").select("titulo,subtitulo,descricao,condicoes,dia_semana,ativo,hora_inicio,hora_fim,cartela_qtd,cartela_item,imagem_url,niveis,itens,senha_cardapio").not("dia_semana", "is", null).order("dia_semana", { ascending: true }),
+      ]);
+      happyHourBadgeAtivo = happyHourAtivoAgora(hhRes.data);
+      promocoesSemana = promoSemanaRes.data || [];
+      if (PREVIA) {
+        promocoesSemana = promocoesSemana.filter(function (p) { return p.dia_semana !== PREVIA_DIA; }).concat([PREVIA_PROMO]);
+        (botoesRes.data || []).forEach(function (b) { if (b.tipo === "happy_hour") b.label = "Happy Hour (16h às 20h)"; });
+      }
+      promocaoDiaHoje = promocoesSemana.find(function (p) { return p.dia_semana === agora().getDay() && p.ativo; }) || null;
+      hhDados = hhRes.data;
+      renderAvaliacoes(avalRes.data);
+
+      config = cfgRes.data;
+      promocaoDiaBadgeAtiva = estadoPromo(promocaoDiaHoje) === "ativa";
+      renderPromoDiaDestaque();
+      if (config) {
+        config.endereco_embed = estRes.data.endereco || null;
+        if (config.imagem_logo_url) {
+          var logoImg = document.getElementById("logo-img");
+          logoImg.src = config.imagem_logo_url;
+          logoImg.classList.remove("escondido");
+          document.getElementById("logo-texto").classList.add("escondido");
+        }
+        var mensagem = config.mensagem_boas_vindas || "";
+        if (config.imagem_hero_url) {
+          document.getElementById("hero").innerHTML =
+            '<img src="' + escapeHtml(config.imagem_hero_url) + '" alt="Serra Dourada" loading="eager" />' +
+            '<div class="hero-legenda" id="hero-legenda">' + escapeHtml(mensagem) + '</div>';
+          document.getElementById("boas-vindas").remove();
+          if (config.hero_por_clima) ajustarHeroPorClima(mensagem);
+        } else {
+          document.getElementById("hero").remove();
+          document.getElementById("boas-vindas").textContent = mensagem;
+        }
+      }
+
+      var turnoAlmocoHoje = ((config && config.horario_funcionamento) || {})[String(new Date().getDay())];
+      turnoAlmocoHoje = turnoAlmocoHoje && turnoAlmocoHoje.almoco;
+      almocoBadgeAtivo = almocoAtivoAgora(turnoAlmocoHoje);
+
+      botoesAtuais = botoesRes.data || [];
+      renderBotoes(botoesAtuais);
+      assinaturaHome = assinaturaEstado();
+      setInterval(atualizarHome, 30000);
+      document.getElementById("skeleton-botoes").classList.add("escondido");
+      document.getElementById("botoes").classList.remove("escondido");
+      registrar("pageview", null);
+    } catch (e) {
+      document.getElementById("skeleton-botoes").classList.add("escondido");
+      document.getElementById("botoes").classList.remove("escondido");
+      document.getElementById("botoes").innerHTML = '<p class="modal-vazio">Não foi possível carregar a página. Verifique sua conexão.</p>';
+    }
+  }
+
+  if (PREVIA) {
+    var barra = document.createElement("div");
+    barra.className = "previa-barra";
+    barra.innerHTML = '<span>PRÉVIA · simular ' + DIAS[PREVIA_DIA].toLowerCase() + ':</span>' +
+      '<button type="button" data-m="antes">Antes das 16h</button>' +
+      '<button type="button" data-m="ativa">Promoção valendo</button>' +
+      '<button type="button" data-m="zerar">Zerar</button>';
+    document.body.insertBefore(barra, document.body.firstChild);
+    Array.prototype.forEach.call(barra.querySelectorAll("button"), function (b) {
+      if (b.getAttribute("data-m") === previaModo) b.classList.add("sel");
+      b.addEventListener("click", function () {
+        var m = b.getAttribute("data-m");
+        if (m === "zerar") { gravarCartela(0); try { localStorage.removeItem(chaveDia("niveis")); localStorage.removeItem(chaveDia("cardapio")); } catch (e) {} } else { sessionStorage.setItem("previaModo", m); }
+        location.reload();
+      });
+    });
+  }
+
+  carregar();
+});
+</script>
+</body>
+</html>
