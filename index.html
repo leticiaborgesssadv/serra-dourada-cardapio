@@ -240,6 +240,37 @@
 .promo-dia-textos { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
 .promo-dia-label { font-size: 0.68rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.75; }
 .promo-dia-titulo { font-family: 'Playfair Display', serif; font-weight: 700; font-size: 1.05rem; line-height: 1.25; }
+.pd-cap { font-size: 0.68rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--dourado); }
+.pd-titulo { font-family: 'Playfair Display', serif; font-weight: 700; font-size: 1.5rem; color: var(--dourado-claro); margin: 2px 0 10px; line-height: 1.15; }
+.pd-caixa { background: var(--marrom); border: 1px solid var(--borda); border-radius: 14px; padding: 16px; text-align: center; }
+.pd-caixa-rot { font-size: 0.75rem; color: var(--texto-suave); }
+.pd-caixa-num { font-size: 2rem; font-weight: 800; color: var(--dourado-claro); letter-spacing: 0.02em; line-height: 1.2; }
+.pd-texto { font-size: 0.88rem; color: var(--texto); line-height: 1.45; margin: 12px 0 0; }
+.pd-cond { font-size: 0.78rem; color: var(--texto-suave); line-height: 1.45; margin: 10px 0 0; }
+.pd-rodape { font-size: 0.72rem; color: #8f7d5f; text-align: center; margin: 14px 0 0; }
+.pd-bilhete { background: linear-gradient(135deg, var(--dourado), #a9791c); color: #241608; border-radius: 16px; padding: 16px; }
+.pd-bilhete .pd-cap { color: #241608; opacity: 0.7; }
+.pd-bilhete .pd-titulo { color: #241608; margin-bottom: 12px; }
+.pd-cartela { display: flex; gap: 8px; justify-content: center; background: var(--marrom-2); border-radius: 12px; padding: 12px 8px; }
+.pd-garrafa { width: 48px; height: 66px; border-radius: 10px; border: 1.5px dashed #6b4a1f; background: var(--marrom); display: flex; align-items: center; justify-content: center; cursor: pointer; color: #6b4a1f; padding: 0; font-family: inherit; }
+.pd-garrafa svg { width: 28px; height: 28px; }
+.pd-garrafa.on { border-style: solid; border-color: var(--dourado); background: var(--marrom-claro); color: var(--dourado-claro); }
+.pd-garrafa.brinde { border-color: var(--dourado); }
+.pd-garrafa.brinde.on { background: var(--dourado); color: #241608; }
+.pd-status { text-align: center; font-size: 0.85rem; font-weight: 800; margin: 10px 0 12px; }
+.pd-relogio { background: var(--marrom-2); color: var(--dourado-claro); border-radius: 12px; padding: 10px; text-align: center; }
+.pd-relogio .d { font-size: 1.25rem; font-weight: 800; }
+.pd-relogio .h { font-size: 1rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.pd-bilhete .pd-cond { color: #241608; opacity: 0.85; }
+.pd-selo { width: 96px; height: 96px; border-radius: 50%; background: var(--dourado); color: #241608; display: flex; align-items: center; justify-content: center; margin: 8px auto 12px; }
+.pd-selo svg { width: 50px; height: 50px; }
+.pd-sec { display: block; width: 100%; text-align: center; margin-top: 10px; padding: 12px; border-radius: 10px; border: 1px solid var(--borda); background: transparent; color: var(--texto-suave); font-family: inherit; font-weight: 700; font-size: 0.9rem; cursor: pointer; }
+.pd-insta { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; margin-top: 12px; padding: 12px; border-radius: 10px; background: var(--marrom-2); color: var(--dourado-claro); font-family: inherit; font-weight: 700; font-size: 0.9rem; text-decoration: none; }
+.pd-insta svg { width: 18px; height: 18px; }
+.pd-cond a { color: inherit; font-weight: 800; text-decoration: underline; }
+.previa-barra { position: sticky; top: 0; z-index: 60; background: #7a1f1f; color: #fff; font-size: 0.78rem; padding: 8px 10px; display: flex; gap: 6px; align-items: center; justify-content: center; flex-wrap: wrap; }
+.previa-barra button { font-family: inherit; font-size: 0.75rem; font-weight: 700; border: 1px solid #fff; background: transparent; color: #fff; border-radius: 20px; padding: 4px 10px; cursor: pointer; }
+.previa-barra button.sel { background: #fff; color: #7a1f1f; }
 .promo-dia-desc { font-size: 0.8rem; opacity: 0.85; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   body { padding-bottom: 74px; }
   .barra-fixa {
@@ -546,6 +577,39 @@ window.addEventListener("DOMContentLoaded", function () {
   var happyHourBadgeAtivo = false;
   var almocoBadgeAtivo = false;
   var promocoesSemana = [];
+  var PREVIA = /previa/.test(location.pathname);
+  var previaModo = PREVIA ? (sessionStorage.getItem("previaModo") || "ativa") : null;
+  var PREVIA_PROMO = { dia_semana: 1, ativo: true, titulo: "A 4ª é do Serra", descricao: "3 Spaten 600 ml pagas, 1 por nossa conta.",
+    condicoes: "Pelo menos 1 pessoa da mesa seguindo o @serradouradabar. Válido para consumo no local. A cada 3 pagas, 1 cortesia. Não cumulativo com outras promoções.",
+    hora_inicio: "16:00:00", hora_fim: null, cartela_qtd: 3, cartela_item: "Spaten 600 ml", imagem_url: null };
+  function agora() {
+    var d = new Date();
+    if (!PREVIA) return d;
+    var alvo = previaModo === "domingo" ? 0 : 1, diff = (alvo - d.getDay() + 7) % 7;
+    d.setDate(d.getDate() + diff);
+    if (previaModo === "antes") { d.setHours(13, 46, d.getSeconds(), 0); }
+    else if (previaModo === "ativa") { d.setHours(19, 12, d.getSeconds(), 0); }
+    else if (previaModo === "domingo") { d.setHours(18, 30, d.getSeconds(), 0); }
+    return d;
+  }
+  var promoTimer = null;
+  var botoesAtuais = [], hhDados = null, assinaturaHome = "";
+  function assinaturaEstado() {
+    var pv = promoValidaHoje(), pa = promoAmanha();
+    return [agora().getDay(), pv ? estadoPromo(pv) : "-", pa ? pa.dia_semana : "-", happyHourAtivoAgora(hhDados), almocoBadgeAtivo].join("|");
+  }
+  function atualizarHome() {
+    promocaoDiaHoje = promocoesSemana.find(function (p) { return p.dia_semana === agora().getDay() && p.ativo; }) || null;
+    happyHourBadgeAtivo = happyHourAtivoAgora(hhDados);
+    var turno = ((config && config.horario_funcionamento) || {})[String(agora().getDay())];
+    almocoBadgeAtivo = almocoAtivoAgora(turno && turno.almoco);
+    promocaoDiaBadgeAtiva = estadoPromo(promocaoDiaHoje) === "ativa";
+    var nova = assinaturaEstado();
+    if (nova === assinaturaHome) return;
+    assinaturaHome = nova;
+    renderPromoDiaDestaque();
+    renderBotoes(botoesAtuais);
+  }
   var promocaoDiaBadgeAtiva = false;
   var promocaoDiaHoje = null;
 
@@ -562,6 +626,7 @@ window.addEventListener("DOMContentLoaded", function () {
     document.getElementById("overlay").classList.add("aberto");
   }
   function fecharModal() {
+    pararTimerPromo();
     document.getElementById("overlay").classList.remove("aberto");
     document.getElementById("form-reserva").classList.add("escondido");
   }
@@ -580,7 +645,7 @@ window.addEventListener("DOMContentLoaded", function () {
   });
 
   function registrar(tipo, botaoTipo) {
-    if (!estabelecimentoId) return;
+    if (!estabelecimentoId || PREVIA) return;
     sb.from("pagina_acesso_log").insert({
       estabelecimento_id: estabelecimentoId,
       tipo: tipo,
@@ -685,27 +750,93 @@ window.addEventListener("DOMContentLoaded", function () {
     abrirModal("Happy Hour e promoções", blocos.join("") || '<p class="modal-vazio">Nenhum Happy Hour ou promoção ativa no momento.</p>');
   }
 
-async function mostrarPromocaoDia() {
-  var hoje = new Date().getDay();
-  var promoHoje = promocoesSemana.find(function (p) { return p.dia_semana === hoje; });
+function minutosDe(hhmm) { if (!hhmm) return null; var p = hhmm.split(":"); return Number(p[0]) * 60 + Number(p[1]); }
 
-  var corpo = "";
-  if (promoHoje && promoHoje.ativo) {
-  if (promoHoje.imagem_url) {
-    corpo += '<img class="modal-foto" src="' + escapeHtml(promoHoje.imagem_url) + '" alt="" />';
+function janelaPromo(p) {
+  var ini = minutosDe(p.hora_inicio);
+  if (ini == null) return { ini: 0, fim: 1440 };
+  var fim = minutosDe(p.hora_fim);
+  if (fim == null) {
+    var turno = ((config && config.horario_funcionamento) || {})[String(p.dia_semana)];
+    fim = turno && turno.bar ? minutosDe(turno.bar.fecha) : 1440;
   }
-    corpo += '<div class="modal-item"><h3>' + escapeHtml(DIAS[hoje]) + '</h3><p>' + escapeHtml(promoHoje.titulo) +
-      (promoHoje.descricao ? ' — ' + escapeHtml(promoHoje.descricao).replace(/\n/g, "<br>") : "") + '</p></div>';
-    var mensagem = "Olá! Vi a promoção de hoje (" + promoHoje.titulo + ") no site e quero aproveitar.";
-    var linkPromo = linkWhatsapp(mensagem);
-    if (linkPromo) {
-      corpo += '<a class="botao destaque" style="display:block;text-align:center;text-decoration:none;margin-top:4px" href="' + escapeHtml(linkPromo) + '" target="_blank" rel="noopener">Chamar no WhatsApp</a>';
-    }
+  if (fim == null || fim <= ini) fim = 1440;
+  return { ini: ini, fim: fim };
+}
+
+function estadoPromo(p) {
+  if (!p) return null;
+  if (p.dia_semana !== agora().getDay()) return "encerrada";
+  var d = agora(), m = d.getHours() * 60 + d.getMinutes(), j = janelaPromo(p);
+  if (m < j.ini) return "antes";
+  if (m < j.fim) return "ativa";
+  return "encerrada";
+}
+
+function promoValidaHoje() {
+  return (promocaoDiaHoje && estadoPromo(promocaoDiaHoje) !== "encerrada") ? promocaoDiaHoje : null;
+}
+function promoAmanha() {
+  if (promoValidaHoje()) return null;
+  var amanha = (agora().getDay() + 1) % 7;
+  return promocoesSemana.find(function (p) { return p.dia_semana === amanha && p.ativo; }) || null;
+}
+function fotoPromo(p) { return p && p.imagem_url ? '<img class="modal-foto" src="' + escapeHtml(p.imagem_url) + '" alt="" />' : ""; }
+
+function hhmm(min) { var h = Math.floor(min / 60) % 24, mm = min % 60; return h + "h" + (mm ? String(mm).padStart(2, "0") : ""); }
+
+function chaveCartela() { var d = agora(); return "cartela-" + d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate(); }
+function lerCartela() { try { return Number(localStorage.getItem(chaveCartela())) || 0; } catch (e) { return 0; } }
+function gravarCartela(n) { try { localStorage.setItem(chaveCartela(), String(n)); } catch (e) {} }
+
+var SVG_GARRAFA = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2h4v4l1.5 3v11a2 2 0 0 1-2 2h-3a2 2 0 0 1-2-2V9L10 6z"/><path d="M8.5 13h7"/></svg>';
+var SVG_BRINDE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5C10 3 12 8 12 8s2-5 4.5-5a2.5 2.5 0 0 1 0 5"/></svg>';
+var SVG_TACA = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h12v11a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4z"/><path d="M17 7h1.5a2.5 2.5 0 0 1 0 5H17"/><path d="M5 8h12"/></svg>';
+function urlInstagram() { return (config && config.instagram_url) || "https://instagram.com/serradouradabar"; }
+var SVG_INSTA = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="0.6" fill="currentColor" stroke="none"/></svg>';
+function botaoInsta() { return '<a class="pd-insta" href="' + escapeHtml(urlInstagram()) + '" target="_blank" rel="noopener" data-insta="1">' + SVG_INSTA + 'Seguir @serradouradabar</a>'; }
+function condicoesHtml(txt) { return escapeHtml(txt).replace(/@serradouradabar/g, '<a href="' + escapeHtml(urlInstagram()) + '" target="_blank" rel="noopener" data-insta="1">@serradouradabar</a>'); }
+function ligarInsta(raiz) { Array.prototype.forEach.call((raiz || document).querySelectorAll('[data-insta]'), function (a) { a.addEventListener("click", function () { registrar("click", "promo_instagram"); }); }); }
+var RODAPE_ALCOOL = '<p class="pd-rodape">Beba com moderação. Venda proibida para menores de 18 anos.</p>';
+
+function pararTimerPromo() { if (promoTimer) { clearInterval(promoTimer); promoTimer = null; } }
+
+function mostrarPromocaoDia() {
+  pararTimerPromo();
+  var hoje = agora().getDay();
+  var promoHoje = promocaoDiaHoje;
+  var estado = estadoPromo(promoHoje);
+  var corpo = "";
+
+  var amanha = promoAmanha();
+  if (promoHoje && estado === "antes") {
+    var j = janelaPromo(promoHoje);
+    corpo += fotoPromo(promoHoje) + '<span class="pd-cap">' + escapeHtml(DIAS[hoje]) + '</span>' +
+      '<div class="pd-titulo">' + escapeHtml(promoHoje.titulo) + '</div>' +
+      '<div class="pd-caixa"><div class="pd-caixa-rot">Começa em</div><div class="pd-caixa-num" id="pd-contagem">–</div>' +
+      '<div class="pd-caixa-rot">hoje, às ' + hhmm(j.ini) + '</div></div>' +
+      (promoHoje.descricao ? '<p class="pd-texto">' + escapeHtml(promoHoje.descricao) + ' Já chama a turma.</p>' : '') +
+      (promoHoje.condicoes ? '<p class="pd-cond">' + condicoesHtml(promoHoje.condicoes) + '</p>' : '') +
+      '<button type="button" class="botao destaque" id="pd-agenda" style="justify-content:center;margin-top:14px">Adicionar à agenda</button>' +
+      botaoInsta() +
+      RODAPE_ALCOOL;
+  } else if (promoHoje && estado === "ativa") {
+    corpo += fotoPromo(promoHoje) + '<div id="pd-ativa"></div>';
+  } else if (amanha) {
+    var ja = janelaPromo(amanha);
+    corpo += fotoPromo(amanha) + '<span class="pd-cap">Amanhã · ' + escapeHtml(DIAS[amanha.dia_semana]) + (amanha.hora_inicio ? ' · a partir das ' + hhmm(ja.ini) : '') + '</span>' +
+      '<div class="pd-titulo">' + escapeHtml(amanha.titulo) + '</div>' +
+      (amanha.descricao ? '<p class="pd-texto" style="margin-top:0">' + escapeHtml(amanha.descricao) + '</p>' : '') +
+      (amanha.condicoes ? '<p class="pd-cond">' + condicoesHtml(amanha.condicoes) + '</p>' : '') +
+      '<button type="button" class="botao destaque" id="pd-agenda" style="justify-content:center;margin-top:14px">Lembrar amanhã</button>' +
+      botaoInsta() + RODAPE_ALCOOL;
+  } else if (promoHoje && estado === "encerrada") {
+    corpo += '<p class="modal-vazio">A promoção de hoje já encerrou. Volta na próxima ' + escapeHtml(DIAS[hoje].toLowerCase()) + '!</p>';
   } else {
     corpo += '<p class="modal-vazio">Nenhuma promoção especial hoje.</p>';
   }
 
-  var outrosDias = promocoesSemana.filter(function (p) { return p.ativo && p.dia_semana !== hoje; });
+  var outrosDias = promocoesSemana.filter(function (p) { return p.ativo && p.dia_semana !== hoje && p !== amanha; });
   if (outrosDias.length) {
     corpo += '<p style="font-size:0.8rem;color:var(--texto-suave);margin:16px 0 6px">Promoções da semana</p>' +
       '<div class="hh-itens">' + outrosDias.map(function (p) {
@@ -715,16 +846,219 @@ async function mostrarPromocaoDia() {
   }
 
   abrirModal("Promoção de hoje", corpo);
+
+  if (promoHoje && estado === "antes") {
+    var tick = function () {
+      var el = document.getElementById("pd-contagem");
+      if (!el) { pararTimerPromo(); return; }
+      var d = agora(), resto = janelaPromo(promoHoje).ini * 60 - (d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds());
+      if (resto <= 0) { mostrarPromocaoDia(); return; }
+      var h = Math.floor(resto / 3600), m = Math.floor((resto % 3600) / 60);
+      el.textContent = resto < 60 ? "menos de 1 min" : (h ? h + "h " : "") + m + "min";
+    };
+    tick(); promoTimer = setInterval(tick, 1000);
+    document.getElementById("pd-agenda").addEventListener("click", function () { baixarAgenda(promoHoje, 0); });
+    ligarInsta(document.getElementById("modal-corpo"));
+  } else if (promoHoje && estado === "ativa") {
+    renderAtiva(promoHoje);
+  } else if (amanha) {
+    document.getElementById("pd-agenda").addEventListener("click", function () { baixarAgenda(amanha, 1); });
+    ligarInsta(document.getElementById("modal-corpo"));
+  }
+}
+
+function renderAtiva(p) {
+  pararTimerPromo();
+  var alvo = document.getElementById("pd-ativa");
+  if (!alvo) return;
+  var qtd = p.cartela_qtd || 0, n = Math.min(lerCartela(), qtd);
+  var dataTxt = function () { var d = agora(); return DIAS[d.getDay()].slice(0, 3).toLowerCase() + " · " + String(d.getDate()).padStart(2, "0") + "/" + String(d.getMonth() + 1).padStart(2, "0"); };
+
+  if (qtd && n >= qtd) {
+    alvo.innerHTML = '<div style="text-align:center">' +
+      '<span class="pd-cap">Rodada liberada</span>' +
+      '<div class="pd-selo">' + SVG_TACA + '</div>' +
+      '<div class="pd-titulo" style="margin-bottom:4px">' + escapeHtml(p.titulo) + '</div>' +
+      '<p class="pd-cond" style="margin-bottom:14px">Mostre esta tela ao garçom e peça a sua cortesia.</p>' +
+      '<div class="pd-relogio" style="margin-bottom:14px"><div class="d" id="pd-data">' + dataTxt() + '</div><div class="h" id="pd-hora"></div></div>' +
+      stickerHtml(true) +
+      '<button type="button" class="pd-sec" id="pd-nova">Começar nova cartela</button>' +
+      RODAPE_ALCOOL + '</div>';
+    ligarSticker(p);
+    document.getElementById("pd-nova").addEventListener("click", function () { gravarCartela(0); renderAtiva(p); });
+  } else {
+    var garrafas = "";
+    for (var i = 0; i < qtd; i++) garrafas += '<button type="button" class="pd-garrafa' + (i < n ? ' on' : '') + '" data-i="' + i + '" aria-label="' + (i + 1) + 'ª ' + escapeHtml(p.cartela_item || "") + '">' + SVG_GARRAFA + '</button>';
+    if (qtd) garrafas += '<span class="pd-garrafa brinde" aria-hidden="true">' + SVG_BRINDE + '</span>';
+    var faltam = qtd - n;
+    alvo.innerHTML = '<div class="pd-bilhete">' +
+      '<span class="pd-cap">Mostre esta tela ao garçom</span>' +
+      '<div class="pd-titulo">' + escapeHtml(p.titulo) + '</div>' +
+      (qtd ? '<div class="pd-cartela">' + garrafas + '</div>' +
+        '<div class="pd-status">' + (n === 0 ? "Toque em cada " + escapeHtml(p.cartela_item || "item") + " que chegar" : "Falta" + (faltam > 1 ? "m " : " ") + faltam + " para liberar a cortesia") + '</div>'
+        : (p.descricao ? '<p class="pd-texto" style="color:#241608;margin:0 0 12px">' + escapeHtml(p.descricao) + '</p>' : '')) +
+      '<div class="pd-relogio"><div style="font-size:0.72rem;color:var(--texto-suave)">Válido agora</div><div class="d" id="pd-data">' + dataTxt() + '</div><div class="h" id="pd-hora"></div></div>' +
+      (p.condicoes ? '<p class="pd-cond">' + condicoesHtml(p.condicoes) + '</p>' : '') +
+      botaoInsta() +
+      '</div>' +
+      '<button type="button" class="pd-insta" id="pd-mostrar-sticker" style="background:transparent;border:1px solid var(--dourado);color:var(--dourado-claro)">' + SVG_INSTA + 'Postar sticker no story</button>' +
+      stickerHtml(false) + RODAPE_ALCOOL;
+    ligarInsta(alvo);
+    ligarSticker(p);
+    Array.prototype.forEach.call(alvo.querySelectorAll(".pd-garrafa[data-i]"), function (b) {
+      b.addEventListener("click", function () {
+        var i = Number(b.getAttribute("data-i"));
+        var novo = (n === i + 1) ? i : i + 1;
+        gravarCartela(novo);
+        if (novo >= qtd) registrar("click", "promo_cartela_completa");
+        renderAtiva(p);
+      });
+    });
+  }
+
+  var tick = function () {
+    var h = document.getElementById("pd-hora");
+    if (!h) { pararTimerPromo(); return; }
+    h.textContent = agora().toLocaleTimeString("pt-BR");
+    if (estadoPromo(p) !== "ativa") mostrarPromocaoDia();
+  };
+  tick(); promoTimer = setInterval(tick, 1000);
+}
+
+function baixarAgenda(p, desloc) {
+  registrar("click", "promo_agenda");
+  var d = agora(), j = janelaPromo(p);
+  function fmt(dt) { return dt.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, ""); }
+  var ini = new Date(d.getFullYear(), d.getMonth(), d.getDate() + (desloc || 0), Math.floor(j.ini / 60), j.ini % 60);
+  var fim = new Date(ini.getTime() + 2 * 3600000);
+  var ics = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Serra Dourada//Promocao//PT", "BEGIN:VEVENT",
+    "UID:" + Date.now() + "@serradouradabar.com.br", "DTSTAMP:" + fmt(new Date()),
+    "DTSTART:" + fmt(ini), "DTEND:" + fmt(fim),
+    "SUMMARY:Promoção de " + DIAS[p.dia_semana].toLowerCase() + " no Serra Dourada", "DESCRIPTION:" + (p.titulo + ". " + (p.descricao || "")).replace(/\n/g, " "),
+    "LOCATION:Serra Dourada Bar e Restaurante", "BEGIN:VALARM", "TRIGGER:-PT15M", "ACTION:DISPLAY", "DESCRIPTION:" + p.titulo, "END:VALARM",
+    "END:VEVENT", "END:VCALENDAR"].join("\r\n");
+  var blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement("a");
+  a.href = url; a.download = "promocao-serra-dourada.ics";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+}
+
+function desenharSticker(x, p, dia) {
+  var W = 1000, H = 600;
+  x.clearRect(0, 0, W, H);
+  function rr(px, py, w, h, r) { x.beginPath(); x.moveTo(px + r, py); x.arcTo(px + w, py, px + w, py + h, r); x.arcTo(px + w, py + h, px, py + h, r); x.arcTo(px, py + h, px, py, r); x.arcTo(px, py, px + w, py, r); x.closePath(); }
+  rr(12, 12, W - 24, H - 24, 56);
+  var g = x.createLinearGradient(0, 0, W, H); g.addColorStop(0, "#e3b93e"); g.addColorStop(1, "#a9791c");
+  x.fillStyle = g; x.fill();
+  x.lineWidth = 10; x.strokeStyle = "#241608"; x.stroke();
+  x.beginPath(); x.arc(200, 300, 140, 0, Math.PI * 2); x.fillStyle = "#241608"; x.fill();
+  x.strokeStyle = "#e8c766"; x.lineWidth = 12; x.lineJoin = "round"; x.lineCap = "round";
+  x.beginPath(); x.moveTo(145, 215); x.lineTo(145, 365); x.quadraticCurveTo(145, 390, 170, 390); x.lineTo(230, 390); x.quadraticCurveTo(255, 390, 255, 365); x.lineTo(255, 215); x.closePath(); x.stroke();
+  x.beginPath(); x.moveTo(255, 255); x.quadraticCurveTo(305, 255, 305, 295); x.quadraticCurveTo(305, 335, 255, 335); x.stroke();
+  x.beginPath(); x.moveTo(145, 255); x.lineTo(255, 255); x.stroke();
+  x.fillStyle = "#241608"; x.textAlign = "left"; x.textBaseline = "alphabetic";
+  x.globalAlpha = 0.72; x.font = "800 34px Manrope, sans-serif";
+  x.fillText((dia + " no Serra Dourada").toUpperCase(), 380, 175);
+  x.globalAlpha = 1;
+  var tam = 92; x.font = "700 " + tam + "px 'Playfair Display', serif";
+  while (x.measureText(p.titulo).width > 570 && tam > 50) { tam -= 4; x.font = "700 " + tam + "px 'Playfair Display', serif"; }
+  x.fillText(p.titulo, 380, 285);
+  var desc = (p.descricao || "").replace(/\.$/, ""), td = 32; x.font = "600 " + td + "px Manrope, sans-serif";
+  while (x.measureText(desc).width > 560 && td > 20) { td -= 2; x.font = "600 " + td + "px Manrope, sans-serif"; }
+  if (desc) x.fillText(desc, 380, 345);
+  x.font = "800 42px Manrope, sans-serif";
+  x.fillText("@serradouradabar", 380, 440);
+  x.globalAlpha = 0.7; x.font = "600 22px Manrope, sans-serif";
+  x.fillText("Beba com moderação. Proibido para menores de 18 anos.", 380, 500);
+  x.globalAlpha = 1;
+}
+
+function stickerHtml(aberto) {
+  return '<div id="pd-sticker-bloco"' + (aberto ? '' : ' class="escondido"') + ' style="margin-top:14px;text-align:center">' +
+    '<p class="pd-cap" style="margin:0 0 8px">Sticker para o seu story</p>' +
+    '<img id="pd-sticker-img" alt="Sticker da promoção" style="width:100%;max-width:320px;display:block;margin:0 auto 10px;background:repeating-conic-gradient(#3a2712 0 25%, #2e1c0e 0 50%) 0 0/16px 16px;border-radius:12px" />' +
+    '<button type="button" class="botao destaque" id="pd-copiar" style="justify-content:center">Copiar sticker</button>' +
+    '<p class="pd-cond" id="pd-sticker-msg" style="margin:8px 0 0">Cole por cima da sua foto no story.</p>' +
+    '<a class="pd-insta escondido" id="pd-abrir-insta" href="instagram://story-camera">' + SVG_INSTA + 'Abrir o story no Instagram</a>' +
+    '<button type="button" class="pd-sec" id="pd-salvar">Salvar sticker</button></div>';
+}
+function ligarSticker(p) {
+  var mostrar = document.getElementById("pd-mostrar-sticker");
+  var carregado = false;
+  function carregar() {
+    if (carregado) return; carregado = true;
+    gerarSticker(p).then(function (b) { var im = document.getElementById("pd-sticker-img"); if (b && im) im.src = URL.createObjectURL(b); });
+  }
+  if (mostrar) mostrar.addEventListener("click", function () {
+    registrar("click", "promo_sticker_abrir");
+    document.getElementById("pd-sticker-bloco").classList.remove("escondido");
+    mostrar.classList.add("escondido"); carregar();
+  });
+  document.getElementById("pd-copiar").addEventListener("click", function () { copiarSticker(p); });
+  document.getElementById("pd-salvar").addEventListener("click", function () { salvarSticker(p); });
+  document.getElementById("pd-abrir-insta").addEventListener("click", function () { registrar("click", "promo_abrir_insta"); });
+  if (!mostrar) carregar();
+}
+var stickerCache = null;
+function gerarSticker(p) {
+  if (stickerCache) return stickerCache;
+  stickerCache = (async function () {
+    try { if (document.fonts && document.fonts.load) { await document.fonts.load("700 92px 'Playfair Display'"); await document.fonts.load("800 42px Manrope"); } } catch (e) {}
+    var c = document.createElement("canvas"); c.width = 1000; c.height = 600;
+    var ctx = c.getContext("2d"); if (!ctx) return null;
+    desenharSticker(ctx, p, DIAS[agora().getDay()]);
+    return await new Promise(function (ok) { c.toBlob(function (b) { ok(b); }, "image/png"); });
+  })();
+  return stickerCache;
+}
+
+function copiarSticker(p) {
+  var msg = document.getElementById("pd-sticker-msg");
+  registrar("click", "promo_sticker_copiar");
+  if (navigator.clipboard && window.ClipboardItem) {
+    var item = new ClipboardItem({ "image/png": gerarSticker(p) });
+    navigator.clipboard.write([item]).then(function () {
+      msg.innerHTML = "Copiado! Abra o story, escolha a sua foto e toque em <b>Colar</b>. Depois é só arrastar o sticker para onde quiser.";
+      document.getElementById("pd-abrir-insta").classList.remove("escondido");
+    }, function () {
+      msg.textContent = "Seu celular não deixou copiar. Use \"Salvar sticker\" e adicione pelo sticker de foto do Instagram.";
+    });
+  } else {
+    msg.textContent = "Seu celular não permite copiar imagens pelo navegador. Use \"Salvar sticker\" e adicione pelo sticker de foto do Instagram.";
+  }
+}
+
+async function salvarSticker(p) {
+  registrar("click", "promo_sticker_salvar");
+  var blob = await gerarSticker(p);
+  if (!blob) return;
+  var arquivo = new File([blob], "sticker-serra-dourada.png", { type: "image/png" });
+  if (navigator.canShare && navigator.canShare({ files: [arquivo] })) {
+    try { await navigator.share({ files: [arquivo] }); return; } catch (e) { if (e && e.name === "AbortError") return; }
+  }
+  var url = URL.createObjectURL(blob), a = document.createElement("a");
+  a.href = url; a.download = "sticker-serra-dourada.png"; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
 }
 
 function renderPromoDiaDestaque() {
   var secao = document.getElementById("promo-dia-destaque");
-  if (!promocaoDiaHoje) { secao.classList.add("escondido"); return; }
+  var p = promoValidaHoje(), rotulo;
+  if (p) {
+    var estado = estadoPromo(p);
+    rotulo = estado === "antes" ? "Promoção de hoje · a partir das " + hhmm(janelaPromo(p).ini) : "Promoção de hoje · valendo agora";
+  } else {
+    p = promoAmanha();
+    if (!p) { secao.classList.add("escondido"); return; }
+    rotulo = "Amanhã" + (p.hora_inicio ? " · a partir das " + hhmm(janelaPromo(p).ini) : "");
+  }
   document.getElementById("promo-dia-card").innerHTML =
-    (promocaoDiaHoje.imagem_url ? '<img src="' + escapeHtml(promocaoDiaHoje.imagem_url) + '" alt="" />' : "") +
-    '<span class="promo-dia-textos"><span class="promo-dia-label">Promoção de hoje</span>' +
-    '<span class="promo-dia-titulo">' + escapeHtml(promocaoDiaHoje.titulo) + '</span>' +
-    (promocaoDiaHoje.descricao ? '<span class="promo-dia-desc">' + escapeHtml(promocaoDiaHoje.descricao) + '</span>' : "") +
+    (p.imagem_url ? '<img src="' + escapeHtml(p.imagem_url) + '" alt="" />' : "") +
+    '<span class="promo-dia-textos"><span class="promo-dia-label">' + rotulo + '</span>' +
+    '<span class="promo-dia-titulo">' + escapeHtml(p.titulo) + '</span>' +
+    (p.descricao ? '<span class="promo-dia-desc">' + escapeHtml(p.descricao) + '</span>' : "") +
     '</span>';
   secao.classList.remove("escondido");
 }
@@ -891,7 +1225,8 @@ function renderPromoDiaDestaque() {
       }
       el.className = "botao" + (i === 0 ? " destaque" : "");
       var badge = ((b.tipo === "happy_hour" && happyHourBadgeAtivo) || (b.tipo === "almoco" && almocoBadgeAtivo) || (b.tipo === "promocao_dia" && promocaoDiaBadgeAtiva)) ? '<span class="badge-ativo">Ativo agora</span>' : "";
-      var subtitulo = (b.tipo === "promocao_dia" && promocaoDiaHoje) ? '<span class="botao-subtitulo">' + escapeHtml(promocaoDiaHoje.titulo) + '</span>' : "";
+      var pv = promoValidaHoje(), pa = pv ? null : promoAmanha();
+      var subtitulo = (b.tipo === "promocao_dia" && (pv || pa)) ? '<span class="botao-subtitulo">' + (pa ? "Amanhã: " : "") + escapeHtml((pv || pa).titulo) + '</span>' : "";
       el.innerHTML =
       '<span class="icone">' + (ICONES[b.tipo] || "") + '</span>' +
       '<span class="botao-texto"><span>' + escapeHtml(b.label) + badge + '</span>' + subtitulo + '</span>' +
@@ -975,16 +1310,21 @@ function renderPromoDiaDestaque() {
         sb.from("botao_pagina").select("*").eq("estabelecimento_id", estabelecimentoId).eq("ativo", true).order("ordem", { ascending: true }),
         sb.from("happy_hour").select("ativo,dias_semana,horario_inicio,horario_fim").maybeSingle(),
         sb.from("google_reviews_cache").select("rating,total_avaliacoes,reviews").eq("estabelecimento_id", estabelecimentoId).maybeSingle(),
-        sb.from("promocao").select("titulo,descricao,dia_semana,ativo").not("dia_semana", "is", null).order("dia_semana", { ascending: true }),
+        sb.from("promocao").select("titulo,descricao,condicoes,dia_semana,ativo,hora_inicio,hora_fim,cartela_qtd,cartela_item,imagem_url").not("dia_semana", "is", null).order("dia_semana", { ascending: true }),
       ]);
       happyHourBadgeAtivo = happyHourAtivoAgora(hhRes.data);
       promocoesSemana = promoSemanaRes.data || [];
-      promocaoDiaHoje = promocoesSemana.find(function (p) { return p.dia_semana === new Date().getDay() && p.ativo; }) || null;
-      promocaoDiaBadgeAtiva = !!promocaoDiaHoje;
-      renderPromoDiaDestaque();
+      if (PREVIA) {
+        promocoesSemana = promocoesSemana.filter(function (p) { return p.dia_semana !== 1; }).concat([PREVIA_PROMO]);
+        (botoesRes.data || []).forEach(function (b) { if (b.tipo === "happy_hour") b.label = "Happy Hour (16h às 20h)"; });
+      }
+      promocaoDiaHoje = promocoesSemana.find(function (p) { return p.dia_semana === agora().getDay() && p.ativo; }) || null;
+      hhDados = hhRes.data;
       renderAvaliacoes(avalRes.data);
 
       config = cfgRes.data;
+      promocaoDiaBadgeAtiva = estadoPromo(promocaoDiaHoje) === "ativa";
+      renderPromoDiaDestaque();
       if (config) {
         config.endereco_embed = estRes.data.endereco || null;
         if (config.imagem_logo_url) {
@@ -1010,7 +1350,10 @@ function renderPromoDiaDestaque() {
       turnoAlmocoHoje = turnoAlmocoHoje && turnoAlmocoHoje.almoco;
       almocoBadgeAtivo = almocoAtivoAgora(turnoAlmocoHoje);
 
-      renderBotoes(botoesRes.data || []);
+      botoesAtuais = botoesRes.data || [];
+      renderBotoes(botoesAtuais);
+      assinaturaHome = assinaturaEstado();
+      setInterval(atualizarHome, 30000);
       document.getElementById("skeleton-botoes").classList.add("escondido");
       document.getElementById("botoes").classList.remove("escondido");
       registrar("pageview", null);
@@ -1019,6 +1362,25 @@ function renderPromoDiaDestaque() {
       document.getElementById("botoes").classList.remove("escondido");
       document.getElementById("botoes").innerHTML = '<p class="modal-vazio">Não foi possível carregar a página. Verifique sua conexão.</p>';
     }
+  }
+
+  if (PREVIA) {
+    var barra = document.createElement("div");
+    barra.className = "previa-barra";
+    barra.innerHTML = '<span>PRÉVIA · simular segunda:</span>' +
+      '<button type="button" data-m="antes">Antes das 16h</button>' +
+      '<button type="button" data-m="ativa">Promoção valendo</button>' +
+      '<button type="button" data-m="domingo">Domingo</button>' +
+      '<button type="button" data-m="zerar">Zerar cartela</button>';
+    document.body.insertBefore(barra, document.body.firstChild);
+    Array.prototype.forEach.call(barra.querySelectorAll("button"), function (b) {
+      if (b.getAttribute("data-m") === previaModo) b.classList.add("sel");
+      b.addEventListener("click", function () {
+        var m = b.getAttribute("data-m");
+        if (m === "zerar") { gravarCartela(0); } else { sessionStorage.setItem("previaModo", m); }
+        location.reload();
+      });
+    });
   }
 
   carregar();
