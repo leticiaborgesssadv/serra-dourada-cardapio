@@ -266,6 +266,9 @@
 .pd-selo { width: 96px; height: 96px; border-radius: 50%; background: var(--dourado); color: #241608; display: flex; align-items: center; justify-content: center; margin: 8px auto 12px; }
 .pd-selo svg { width: 50px; height: 50px; }
 .pd-sec { display: block; width: 100%; text-align: center; margin-top: 10px; padding: 12px; border-radius: 10px; border: 1px solid var(--borda); background: transparent; color: var(--texto-suave); font-family: inherit; font-weight: 700; font-size: 0.9rem; cursor: pointer; }
+.pd-insta { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; margin-top: 12px; padding: 12px; border-radius: 10px; background: var(--marrom-2); color: var(--dourado-claro); font-family: inherit; font-weight: 700; font-size: 0.9rem; text-decoration: none; }
+.pd-insta svg { width: 18px; height: 18px; }
+.pd-cond a { color: inherit; font-weight: 800; text-decoration: underline; }
 .previa-barra { position: sticky; top: 0; z-index: 60; background: #7a1f1f; color: #fff; font-size: 0.78rem; padding: 8px 10px; display: flex; gap: 6px; align-items: center; justify-content: center; flex-wrap: wrap; }
 .previa-barra button { font-family: inherit; font-size: 0.75rem; font-weight: 700; border: 1px solid #fff; background: transparent; color: #fff; border-radius: 20px; padding: 4px 10px; cursor: pointer; }
 .previa-barra button.sel { background: #fff; color: #7a1f1f; }
@@ -761,6 +764,11 @@ function gravarCartela(n) { try { localStorage.setItem(chaveCartela(), String(n)
 var SVG_GARRAFA = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2h4v4l1.5 3v11a2 2 0 0 1-2 2h-3a2 2 0 0 1-2-2V9L10 6z"/><path d="M8.5 13h7"/></svg>';
 var SVG_BRINDE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5C10 3 12 8 12 8s2-5 4.5-5a2.5 2.5 0 0 1 0 5"/></svg>';
 var SVG_TACA = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h12v11a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4z"/><path d="M17 7h1.5a2.5 2.5 0 0 1 0 5H17"/><path d="M5 8h12"/></svg>';
+function urlInstagram() { return (config && config.instagram_url) || "https://instagram.com/serradouradabar"; }
+var SVG_INSTA = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="0.6" fill="currentColor" stroke="none"/></svg>';
+function botaoInsta() { return '<a class="pd-insta" href="' + escapeHtml(urlInstagram()) + '" target="_blank" rel="noopener" data-insta="1">' + SVG_INSTA + 'Seguir @serradouradabar</a>'; }
+function condicoesHtml(txt) { return escapeHtml(txt).replace(/@serradouradabar/g, '<a href="' + escapeHtml(urlInstagram()) + '" target="_blank" rel="noopener" data-insta="1">@serradouradabar</a>'); }
+function ligarInsta(raiz) { Array.prototype.forEach.call((raiz || document).querySelectorAll('[data-insta]'), function (a) { a.addEventListener("click", function () { registrar("click", "promo_instagram"); }); }); }
 var RODAPE_ALCOOL = '<p class="pd-rodape">Beba com moderação. Venda proibida para menores de 18 anos.</p>';
 
 function pararTimerPromo() { if (promoTimer) { clearInterval(promoTimer); promoTimer = null; } }
@@ -779,8 +787,9 @@ function mostrarPromocaoDia() {
       '<div class="pd-caixa"><div class="pd-caixa-rot">Começa em</div><div class="pd-caixa-num" id="pd-contagem">–</div>' +
       '<div class="pd-caixa-rot">hoje, às ' + hhmm(j.ini) + '</div></div>' +
       (promoHoje.descricao ? '<p class="pd-texto">' + escapeHtml(promoHoje.descricao) + ' Já chama a turma.</p>' : '') +
-      (promoHoje.condicoes ? '<p class="pd-cond">' + escapeHtml(promoHoje.condicoes) + '</p>' : '') +
+      (promoHoje.condicoes ? '<p class="pd-cond">' + condicoesHtml(promoHoje.condicoes) + '</p>' : '') +
       '<button type="button" class="botao destaque" id="pd-agenda" style="justify-content:center;margin-top:14px">Adicionar à agenda</button>' +
+      botaoInsta() +
       RODAPE_ALCOOL;
   } else if (promoHoje && estado === "ativa") {
     corpo += '<div id="pd-ativa"></div>';
@@ -812,6 +821,7 @@ function mostrarPromocaoDia() {
     };
     tick(); promoTimer = setInterval(tick, 1000);
     document.getElementById("pd-agenda").addEventListener("click", function () { baixarAgenda(promoHoje); });
+    ligarInsta(document.getElementById("modal-corpo"));
   } else if (promoHoje && estado === "ativa") {
     renderAtiva(promoHoje);
   }
@@ -848,8 +858,10 @@ function renderAtiva(p) {
         '<div class="pd-status">' + (n === 0 ? "Toque em cada " + escapeHtml(p.cartela_item || "item") + " que chegar" : "Falta" + (faltam > 1 ? "m " : " ") + faltam + " para liberar a cortesia") + '</div>'
         : (p.descricao ? '<p class="pd-texto" style="color:#241608;margin:0 0 12px">' + escapeHtml(p.descricao) + '</p>' : '')) +
       '<div class="pd-relogio"><div style="font-size:0.72rem;color:var(--texto-suave)">Válido agora</div><div class="d" id="pd-data">' + dataTxt() + '</div><div class="h" id="pd-hora"></div></div>' +
-      (p.condicoes ? '<p class="pd-cond">' + escapeHtml(p.condicoes) + '</p>' : '') +
+      (p.condicoes ? '<p class="pd-cond">' + condicoesHtml(p.condicoes) + '</p>' : '') +
+      botaoInsta() +
       '</div>' + RODAPE_ALCOOL;
+    ligarInsta(alvo);
     Array.prototype.forEach.call(alvo.querySelectorAll(".pd-garrafa[data-i]"), function (b) {
       b.addEventListener("click", function () {
         var i = Number(b.getAttribute("data-i"));
