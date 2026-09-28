@@ -1416,6 +1416,7 @@ function renderPromoDiaDestaque() {
   function linkWhatsapp(mensagem, numeroOverride) {
     var numero = (numeroOverride || (config && config.whatsapp) || "").replace(/\D/g, "");
     if (!numero) return null;
+    if (numero.length === 10 || numero.length === 11) numero = "55" + numero; // DDD + número, sem o código do Brasil
     return "https://wa.me/" + numero + (mensagem ? "?text=" + encodeURIComponent(mensagem) : "");
   }
 
