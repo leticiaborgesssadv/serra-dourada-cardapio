@@ -301,6 +301,59 @@
 .pd-regras { margin-top: 12px; font-size: 0.78rem; color: var(--texto-suave); }
 .pd-regras summary { cursor: pointer; font-weight: 700; color: var(--dourado-claro); }
 .pd-regras p { margin: 8px 0 0; line-height: 1.5; white-space: pre-line; }
+.modal.modal-tema { background: var(--td-bg); color: var(--td-tx); border-color: var(--td-line); }
+.modal-tema .modal-topo h2, .modal-tema .pd-titulo { color: var(--td-ac2); }
+.modal-tema .modal-fechar { background: var(--td-card); border-color: var(--td-line); color: var(--td-tx); }
+.modal-tema .pd-cap { color: var(--td-ac); }
+.modal-tema .pd-cond, .modal-tema .pd-regras, .modal-tema .pd-rodape, .modal-tema .pd-caixa-rot { color: var(--td-tx2); }
+.modal-tema .pd-regras summary { color: var(--td-ac2); }
+.modal-tema .pd-texto, .modal-tema .hh-item-nome { color: var(--td-tx); }
+.modal-tema .hh-item { border-color: var(--td-line); }
+.modal-tema .hh-item-preco-por, .modal-tema .pd-caixa-num { color: var(--td-ac); }
+.modal-tema .pd-caixa { background: var(--td-card); border-color: var(--td-line); }
+.modal-tema .botao.destaque { background: var(--td-ac); color: var(--td-bg); }
+.modal-tema .pd-insta { background: var(--td-card); color: var(--td-ac2); border: 1px solid var(--td-line); }
+.modal-tema .pd-sec { border-color: var(--td-line); color: var(--td-tx2); }
+.modal-tema .pd-cond a { color: var(--td-ac2); }
+.td-topo { text-align: center; }
+.td-italico { font-family: 'Playfair Display', serif; font-style: italic; font-size: 0.9rem; color: var(--td-tx2); margin: -4px 0 14px; }
+.td-perg { font-size: 0.82rem; font-weight: 700; margin: 0 0 8px; }
+.td-amigas { display: flex; gap: 7px; justify-content: center; margin-bottom: 8px; }
+.td-amiga { width: 38px; height: 38px; border-radius: 50%; border: 1.5px dashed var(--td-ac); background: transparent; color: var(--td-ac); display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; transition: all 0.2s; }
+.td-amiga svg { width: 18px; height: 18px; }
+.td-amiga.on { background: var(--td-ac); border-style: solid; color: var(--td-bg); }
+.td-status { font-size: 0.85rem; font-weight: 800; color: var(--td-ac2); min-height: 1.2em; margin-bottom: 12px; }
+.td-nivel { display: flex; gap: 10px; align-items: center; padding: 10px 12px; border-radius: 14px; background: var(--td-card); border: 1px solid var(--td-line); margin-bottom: 8px; opacity: 0.55; transition: all 0.25s; }
+.td-nivel.on { opacity: 1; border-color: var(--td-ac); }
+.td-nivel .ic { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: var(--td-line); color: var(--td-tx2); flex-shrink: 0; }
+.td-nivel .ic svg { width: 18px; height: 18px; }
+.td-nivel.on .ic { background: var(--td-ac); color: var(--td-bg); }
+.td-nivel .a { font-size: 0.66rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--td-tx2); }
+.td-nivel .b { font-size: 0.98rem; font-weight: 800; }
+.td-nivel .c { font-size: 0.74rem; color: var(--td-tx2); }
+.td-wa { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 13px; border-radius: 14px; background: #25a35a; color: #fff; font-weight: 700; font-size: 0.92rem; text-decoration: none; margin-top: 4px; }
+.td-wa svg { width: 18px; height: 18px; }
+.td-relogio { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; padding: 10px 14px; border-radius: 14px; background: var(--td-card); border: 1px solid var(--td-line); }
+.td-relogio .d { font-size: 0.72rem; color: var(--td-tx2); }
+.td-relogio .d b { display: block; font-size: 1rem; color: var(--td-tx); }
+.td-relogio .h { font-size: 1.25rem; font-weight: 800; color: var(--td-ac2); font-variant-numeric: tabular-nums; }
+.td-cofre { margin-top: 16px; background: var(--td-card); border: 1px dashed var(--td-ac); border-radius: 16px; padding: 18px 16px; text-align: center; }
+.td-cofre > svg { width: 30px; height: 30px; color: var(--td-ac); }
+.td-cofre input { width: 100%; margin: 12px 0 8px; padding: 12px; border-radius: 12px; border: 1px solid var(--td-line); background: var(--td-bg); color: var(--td-tx); font-family: inherit; font-size: 1rem; text-align: center; letter-spacing: 0.08em; text-transform: uppercase; }
+.td-menu { margin-top: 18px; }
+.td-combo { display: flex; gap: 12px; padding: 14px 0; border-top: 1px solid var(--td-line); }
+.td-fotos { position: relative; width: 78px; height: 78px; flex-shrink: 0; }
+.td-fotos img { position: absolute; width: 56px; height: 56px; object-fit: cover; border-radius: 14px; border: 2px solid var(--td-bg); }
+.td-fotos img:first-child { left: 0; top: 0; }
+.td-fotos img:nth-child(2) { right: 0; bottom: 0; }
+.td-combo .n { font-family: 'Playfair Display', serif; font-weight: 700; font-size: 1.2rem; color: var(--td-ac2); line-height: 1.15; }
+.td-combo .x { font-size: 0.82rem; margin: 2px 0 4px; }
+.td-tag { display: inline-block; font-size: 0.66rem; font-weight: 800; padding: 2px 8px; border-radius: 20px; background: var(--td-bg); border: 1px solid var(--td-line); color: var(--td-tx2); margin: 0 4px 4px 0; }
+.td-combo .pp { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.td-combo .s { font-size: 0.74rem; color: var(--td-tx2); }
+.td-combo .v { font-size: 1.2rem; font-weight: 800; color: var(--td-ac); }
+.td-combo .f { font-family: 'Playfair Display', serif; font-style: italic; font-size: 0.8rem; color: var(--td-tx2); margin-top: 3px; }
+.td-extra { margin-top: 16px; border: 1px solid var(--td-line); border-radius: 16px; padding: 14px; text-align: center; }
 @keyframes pdAbre { 0% { transform: scale(0.92); opacity: 0; } 60% { transform: scale(1.03); opacity: 1; } 100% { transform: scale(1); } }
 .pd-anim { animation: pdAbre 0.6s ease-out; }
 .previa-barra { position: sticky; top: 0; z-index: 60; background: #7a1f1f; color: #fff; font-size: 0.78rem; padding: 8px 10px; display: flex; gap: 6px; align-items: center; justify-content: center; flex-wrap: wrap; }
@@ -622,10 +675,7 @@ window.addEventListener("DOMContentLoaded", function () {
     niveis: [{ qtd: 2, nome: "Chegamos", beneficio: "Cardápio Delas", detalhe: "Combos exclusivos da terça para a mesa toda" },
       { qtd: 4, nome: "Chama mais duas", beneficio: "Rodada Delas", detalhe: "4 Cozumel com Chopp para elas (valor normal R$ 55,60)" },
       { qtd: 6, nome: "Fechou o bonde", beneficio: "Não Espalha", detalhe: "Um mimo especial da casa" }],
-    itens: [{ nome: "Nem Te Conto", composicao: "2 Caipirinhas + Delícia Dourada", preco_separado: 74.70, preco: 62.90, frase: "Porque uma conversa dessas pede acompanhamento." },
-      { nome: "Abre o Grupo", composicao: "2 Gin Tradicional + Pastelzinho (12 un.)", preco_separado: 93.70, preco: 79.90, frase: "Essa aqui não dá pra contar só pra uma." },
-      { nome: "Passa o Endereço", composicao: "Isca de Frango + 2 Cozumel com Chopp", preco_separado: 77.70, preco: 65.90, frase: "\"Onde vocês estão?\" Aqui." },
-      { nome: "Só Nós Sabemos", composicao: "2 Sucos Naturais + Batata Frita", preco_separado: 62.70, preco: 52.90, frase: "Sem álcool, com todo o resto." }] };
+    itens: [{"nome": "Nem Te Conto", "composicao": "2 Caipirinhas + Delícia Dourada", "preco_separado": 74.7, "preco": 62.9, "frase": "Porque uma conversa dessas pede acompanhamento.", "tags": ["queijo coalho com melaço"], "fotos": ["https://bhxnhiggogosootbtwpb.supabase.co/storage/v1/object/public/pagina-assets/CAIPIRINHA.jpeg", "https://bhxnhiggogosootbtwpb.supabase.co/storage/v1/object/public/pagina-assets/delicia%20dourada.jpg"]}, {"nome": "Abre o Grupo", "composicao": "2 Gin Tradicional + Pastelzinho", "preco_separado": 93.7, "preco": 79.9, "frase": "Essa aqui não dá pra contar só pra uma.", "tags": ["12 unidades"], "fotos": ["https://bhxnhiggogosootbtwpb.supabase.co/storage/v1/object/public/pagina-assets/GIN%20TRADICIONAL.jpeg", "https://bhxnhiggogosootbtwpb.supabase.co/storage/v1/object/public/pagina-assets/pastelzinho.jpg"]}, {"nome": "Passa o Endereço", "composicao": "Isca de Frango + 2 Cozumel com Chopp", "preco_separado": 77.7, "preco": 65.9, "frase": "\"Onde vocês estão?\" Aqui.", "tags": ["500g"], "fotos": ["https://bhxnhiggogosootbtwpb.supabase.co/storage/v1/object/public/pagina-assets/COZUMEL%20C%20CHOPP.jpeg", "https://bhxnhiggogosootbtwpb.supabase.co/storage/v1/object/public/pagina-assets/isca%20de%20frango.jpg"]}, {"nome": "Só Nós Sabemos", "composicao": "2 Sucos Naturais + Batata Frita", "preco_separado": 62.7, "preco": 52.9, "frase": "Sem álcool, com todo o resto.", "tags": ["sem álcool", "600g"], "fotos": ["https://bhxnhiggogosootbtwpb.supabase.co/storage/v1/object/public/pagina-assets/suco%20polpa.jpg", "https://bhxnhiggogosootbtwpb.supabase.co/storage/v1/object/public/pagina-assets/batata.jpg"]}] };
   function agora() {
     var d = new Date();
     if (!PREVIA) return d;
@@ -664,6 +714,7 @@ window.addEventListener("DOMContentLoaded", function () {
   }
 
   function abrirModal(titulo, corpoHtml) {
+    if (typeof aplicarTema === "function") aplicarTema(null);
     document.getElementById("modal-titulo").textContent = titulo;
     document.getElementById("modal-corpo").innerHTML = corpoHtml;
     document.getElementById("form-reserva").classList.add("escondido");
@@ -836,7 +887,110 @@ function normalizarSenha(s) { return String(s || "").normalize("NFD").replace(/[
 var SVG_CADEADO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
 var SVG_ABERTO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/></svg>';
 
+var TEMAS = {"petroleo": ["#0f2a2e", "#173a3f", "#2c5358", "#d9a95b", "#f0d6a0", "#f3ece2", "#a9c1bd"], "ameixa": ["#2a1530", "#3a1f42", "#553160", "#e3a98f", "#f5d3c3", "#f7ece9", "#c9a9c7"], "champagne": ["#131313", "#1e1e1e", "#333333", "#d8c08f", "#efe0bf", "#f4f1ea", "#a8a296"], "terracota": ["#3b1b12", "#4d2518", "#6d3a28", "#ec9f78", "#f7cdb5", "#fbefe6", "#d6ae9c"], "oliva": ["#1e2318", "#2a3121", "#434d36", "#d6c28c", "#ece0b7", "#f3f0e4", "#b3b59f"], "cereja": ["#1c0a10", "#2c1119", "#4b1c29", "#ef7f7f", "#f7c0bd", "#fbeeee", "#d0a3a8"], "areia": ["#f3ebe0", "#fffaf3", "#e8dccb", "#9a5b2e", "#6e3d1d", "#2f2118", "#8a7462"], "lavanda": ["#eeebf3", "#fbfaff", "#ddd6ea", "#6b58a0", "#473a73", "#26222f", "#7a7390"], "original": ["#241608", "#2e1c0e", "#4a3520", "#c9a227", "#e8c766", "#f6ead0", "#cdbb99"]};
+function aplicarTema(nome) {
+  var m = document.querySelector(".modal");
+  if (!m) return;
+  var t = TEMAS[nome];
+  ["bg","card","line","ac","ac2","tx","tx2"].forEach(function (k, i) { if (t) m.style.setProperty("--td-" + k, t[i]); else m.style.removeProperty("--td-" + k); });
+  m.classList.toggle("modal-tema", !!t);
+}
+function temaDaPromo(p) { var q = PREVIA && sessionStorage.getItem("previaTema"); return q || p.tema || "original"; }
+var SVG_PESSOA = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>';
+var SVG_WA = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.5-.3z"/></svg>';
+
 function montarNiveis(p, alvo, dataTxt, recemAberto) {
+  aplicarTema(temaDaPromo(p));
+  var niveis = p.niveis.slice().sort(function (a, b) { return a.qtd - b.qtd; });
+  var maxQ = niveis[niveis.length - 1].qtd;
+  var n = Math.min(Number(lerDia("niveis")) || 0, maxQ);
+  var aberto = lerDia("cardapio") === "1";
+  var amigas = "";
+  for (var i = 1; i <= maxQ; i++) amigas += '<button type="button" class="td-amiga' + (i <= n ? ' on' : '') + '" data-i="' + i + '" aria-label="' + i + (i === 1 ? ' amiga' : ' amigas') + '">' + SVG_PESSOA + '</button>';
+  var prox = niveis.find(function (nv) { return nv.qtd > n; });
+  var status = n === 0 ? "Toque nas amigas que estão na mesa"
+    : prox ? "Falta" + (prox.qtd - n > 1 ? "m " : " ") + (prox.qtd - n) + " para liberar " + prox.beneficio
+    : "Mesa completa: tudo liberado!";
+  var trilha = niveis.map(function (nv, idx) {
+    var on = n >= nv.qtd;
+    return '<div class="td-nivel' + (on ? ' on' : '') + '"><div class="ic">' + (on ? SVG_ABERTO : SVG_CADEADO) + '</div>' +
+      '<div><div class="a">' + nv.qtd + (idx === niveis.length - 1 ? '+' : '') + ' delas · ' + escapeHtml(nv.nome || "") + '</div>' +
+      '<div class="b">' + escapeHtml(nv.beneficio || "") + '</div>' + (nv.detalhe ? '<div class="c">' + escapeHtml(nv.detalhe) + '</div>' : '') + '</div></div>';
+  }).join("");
+  var nivelRodada = niveis[1] || niveis[0];
+  var msgWa = "Bora pra " + p.titulo + " no Serra Dourada? Com 2 a gente desbloqueia um cardápio que só existe na terça" +
+    (nivelRodada && nivelRodada !== niveis[0] ? ", e com " + nivelRodada.qtd + " ganha a " + nivelRodada.beneficio : "") + ". https://serradouradabar.com.br";
+
+  var menu = "";
+  if (p.itens && p.itens.length) {
+    if (aberto) {
+      menu = '<div class="td-menu' + (recemAberto ? ' pd-anim' : '') + '"><div class="td-topo"><span class="pd-cap">' + SVG_ABERTO.replace('<svg ', '<svg style="width:12px;height:12px;vertical-align:-1px" ') + ' desbloqueado</span>' +
+        '<div class="pd-titulo" style="font-size:1.35rem;margin:2px 0 0">Cardápio Delas</div><p class="td-italico" style="margin:0 0 4px">só hoje, só pra essa mesa</p></div>' +
+        p.itens.map(function (it) {
+          var fotos = (it.fotos || []).slice(0, 2).map(function (u) { return '<img src="' + escapeHtml(u) + '" alt="" loading="lazy" />'; }).join("");
+          var tags = (it.tags || []).map(function (tg) { return '<span class="td-tag">' + escapeHtml(tg) + '</span>'; }).join("");
+          return '<div class="td-combo">' + (fotos ? '<div class="td-fotos">' + fotos + '</div>' : '') + '<div style="flex:1;min-width:0">' +
+            '<div class="n">' + escapeHtml(it.nome) + '</div><div class="x">' + escapeHtml(it.composicao || "") + '</div>' + (tags ? '<div>' + tags + '</div>' : '') +
+            '<div class="pp">' + (it.preco_separado ? '<span class="s">separado <s>' + formatarPreco(it.preco_separado) + '</s></span>' : '') +
+            '<span class="v">' + formatarPreco(it.preco) + '</span></div>' + (it.frase ? '<div class="f">' + escapeHtml(it.frase) + '</div>' : '') + '</div></div>';
+        }).join("") + '</div>';
+    } else {
+      menu = '<div class="td-cofre">' + SVG_CADEADO +
+        '<div class="pd-titulo" style="font-size:1.2rem;margin:6px 0 2px">Você encontrou o Cardápio Delas</div>' +
+        '<p class="pd-cond" style="margin:0">Digite a palavra-chave. O garçom conta quando a mesa desbloquear.</p>' +
+        '<input type="text" id="pd-senha" autocomplete="off" autocapitalize="characters" placeholder="Palavra-chave" />' +
+        '<button type="button" class="botao destaque" id="pd-desbloquear" style="justify-content:center">Desbloquear</button>' +
+        '<p class="pd-erro" id="pd-senha-erro"></p></div>';
+    }
+  }
+
+  alvo.innerHTML = '<div class="td-topo"><span class="pd-cap">Convite de terça · mostre ao garçom</span>' +
+      '<div class="pd-titulo" style="font-size:1.9rem;margin:4px 0 6px">' + escapeHtml(p.titulo) + '</div>' +
+      (p.subtitulo ? '<p class="td-italico">' + escapeHtml(p.subtitulo.replace(/\.$/, "")) + '</p>' : '') +
+      '<p class="td-perg">Quem já chegou? Toque nas amigas</p><div class="td-amigas">' + amigas + '</div>' +
+      '<div class="td-status">' + escapeHtml(status) + '</div></div>' +
+    trilha +
+    '<a class="td-wa" id="td-wa" href="https://wa.me/?text=' + encodeURIComponent(msgWa) + '" target="_blank" rel="noopener">' + SVG_WA + 'Chamar as amigas</a>' +
+    '<div class="td-relogio"><span class="d">Válido agora<b id="pd-data">' + dataTxt() + '</b></span><span class="h" id="pd-hora"></span></div>' +
+    menu +
+    '<div class="td-extra"><span class="pd-cap">Tem mais um cadeado</span>' +
+      '<p class="pd-cond" style="margin:6px 0 0">O Código Delas da semana aparece nos stories do @serradouradabar. Fala para o garçom e libera um bônus.</p>' +
+      botaoInsta() + '</div>' +
+    '<button type="button" class="pd-insta" id="pd-mostrar-sticker">' + SVG_INSTA + 'Postar sticker no story</button>' +
+    stickerHtml(false) + condicoesBloco(p.condicoes) + RODAPE_ALCOOL;
+
+  ligarInsta(alvo);
+  ligarSticker(p);
+  document.getElementById("td-wa").addEventListener("click", function () { registrar("click", "promo_chamar_amigas"); });
+  Array.prototype.forEach.call(alvo.querySelectorAll(".td-amiga"), function (b) {
+    b.addEventListener("click", function () {
+      var i = Number(b.getAttribute("data-i"));
+      var novo = (n === i) ? i - 1 : i;
+      gravarDia("niveis", novo);
+      niveis.forEach(function (nv) { if (novo >= nv.qtd && n < nv.qtd) registrar("click", "promo_nivel_" + nv.qtd); });
+      renderAtiva(p);
+    });
+  });
+  var btn = document.getElementById("pd-desbloquear");
+  if (btn) {
+    var tentar = function () {
+      var campo = document.getElementById("pd-senha");
+      if (normalizarSenha(campo.value) && normalizarSenha(campo.value) === normalizarSenha(p.senha_cardapio)) {
+        gravarDia("cardapio", "1");
+        registrar("click", "promo_senha_ok");
+        renderAtiva(p, true);
+      } else {
+        document.getElementById("pd-senha-erro").textContent = campo.value.trim() ? "Palavra-chave incorreta. Confira com o garçom." : "Digite a palavra-chave.";
+        if (campo.value.trim()) registrar("click", "promo_senha_erro");
+      }
+    };
+    btn.addEventListener("click", tentar);
+    document.getElementById("pd-senha").addEventListener("keydown", function (ev) { if (ev.key === "Enter") tentar(); });
+    document.getElementById("pd-senha").addEventListener("input", function () { document.getElementById("pd-senha-erro").textContent = ""; });
+  }
+}
+
+function montarNiveisAntigo(p, alvo, dataTxt, recemAberto) {
   var niveis = p.niveis.slice().sort(function (a, b) { return a.qtd - b.qtd; });
   var sel = Number(lerDia("niveis")) || 0;
   var aberto = lerDia("cardapio") === "1";
@@ -990,6 +1144,8 @@ function mostrarPromocaoDia() {
   }
 
   abrirModal("Promoção de hoje", corpo);
+  var pTema = (promoHoje && estado !== "encerrada") ? promoHoje : amanha;
+  if (pTema && pTema.niveis && pTema.niveis.length) aplicarTema(temaDaPromo(pTema));
 
   if (promoHoje && estado === "antes") {
     var tick = function () {
@@ -1456,7 +1612,7 @@ function renderPromoDiaDestaque() {
         sb.from("botao_pagina").select("*").eq("estabelecimento_id", estabelecimentoId).eq("ativo", true).order("ordem", { ascending: true }),
         sb.from("happy_hour").select("ativo,dias_semana,horario_inicio,horario_fim").maybeSingle(),
         sb.from("google_reviews_cache").select("rating,total_avaliacoes,reviews").eq("estabelecimento_id", estabelecimentoId).maybeSingle(),
-        sb.from("promocao").select("titulo,subtitulo,descricao,condicoes,dia_semana,ativo,hora_inicio,hora_fim,cartela_qtd,cartela_item,imagem_url,niveis,itens,senha_cardapio").not("dia_semana", "is", null).order("dia_semana", { ascending: true }),
+        sb.from("promocao").select("titulo,subtitulo,descricao,condicoes,dia_semana,ativo,hora_inicio,hora_fim,cartela_qtd,cartela_item,imagem_url,niveis,itens,senha_cardapio,tema").not("dia_semana", "is", null).order("dia_semana", { ascending: true }),
       ]);
       happyHourBadgeAtivo = happyHourAtivoAgora(hhRes.data);
       promocoesSemana = promoSemanaRes.data || [];
@@ -1516,8 +1672,15 @@ function renderPromoDiaDestaque() {
     barra.innerHTML = '<span>PRÉVIA · simular ' + DIAS[PREVIA_DIA].toLowerCase() + ':</span>' +
       '<button type="button" data-m="antes">Antes das 16h</button>' +
       '<button type="button" data-m="ativa">Promoção valendo</button>' +
-      '<button type="button" data-m="zerar">Zerar</button>';
+      '<button type="button" data-m="zerar">Zerar</button>' +
+      '<select id="previa-tema" style="font-family:inherit;font-size:0.75rem;border-radius:20px;padding:4px 8px"><option value="">Paleta…</option>' +
+      '<option value="petroleo">1 Petróleo e ouro</option><option value="ameixa">2 Ameixa e rosé-gold</option><option value="champagne">3 Preto e champagne</option>' +
+      '<option value="terracota">4 Terracota e creme</option><option value="oliva">5 Oliva e champagne</option><option value="cereja">6 Cereja noturna</option>' +
+      '<option value="areia">7 Areia e caramelo</option><option value="lavanda">8 Lavanda e grafite</option><option value="original">Original do Serra</option></select>';
     document.body.insertBefore(barra, document.body.firstChild);
+    var selTema = barra.querySelector("#previa-tema");
+    selTema.value = sessionStorage.getItem("previaTema") || "";
+    selTema.addEventListener("change", function () { sessionStorage.setItem("previaTema", selTema.value); var m = document.querySelector(".modal"); if (m && m.classList.contains("modal-tema") || document.getElementById("overlay").classList.contains("aberto")) { mostrarPromocaoDia(); } });
     Array.prototype.forEach.call(barra.querySelectorAll("button"), function (b) {
       if (b.getAttribute("data-m") === previaModo) b.classList.add("sel");
       b.addEventListener("click", function () {
