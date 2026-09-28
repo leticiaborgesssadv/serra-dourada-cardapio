@@ -9,8 +9,10 @@
 
 <meta property="og:type" content="website" />
 <meta property="og:title" content="Serra Dourada Bar e Restaurante" />
-<meta property="og:description" content="Cardápio, almoço, happy hour, promoções e reservas do Serra Dourada Bar e Restaurante." />
-<meta property="og:image" content="https://serradouradabar.com.br/img/hero.jpg" />
+<meta property="og:description" content="Cardápio completo, Happy Hour de segunda a sábado das 16h às 20h, reservas e as promoções da semana." />
+<meta property="og:image" content="https://serradouradabar.com.br/img/og-serra.jpg" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
 <meta property="og:url" content="https://serradouradabar.com.br/" />
 <meta name="twitter:card" content="summary_large_image" />
 
@@ -268,6 +270,93 @@
 .pd-insta { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; margin-top: 12px; padding: 12px; border-radius: 10px; background: var(--marrom-2); color: var(--dourado-claro); font-family: inherit; font-weight: 700; font-size: 0.9rem; text-decoration: none; }
 .pd-insta svg { width: 18px; height: 18px; }
 .pd-cond a { color: inherit; font-weight: 800; text-decoration: underline; }
+.pd-sub { font-size: 0.85rem; margin: -6px 0 12px; opacity: 0.85; }
+.pd-perg { font-size: 0.78rem; font-weight: 800; margin: 0 0 8px; }
+.pd-chips { display: flex; gap: 8px; margin-bottom: 12px; }
+.pd-chip { flex: 1; padding: 10px 0; border-radius: 10px; border: 1.5px solid #241608; background: transparent; color: #241608; font-family: inherit; font-weight: 800; font-size: 1.05rem; cursor: pointer; }
+.pd-chip.on { background: #241608; color: var(--dourado-claro); }
+.pd-trilha { background: var(--marrom-2); border-radius: 12px; padding: 6px 12px; margin-bottom: 10px; }
+.pd-nivel { display: flex; gap: 10px; align-items: flex-start; padding: 9px 0; border-top: 1px solid var(--borda); color: #8f7d5f; }
+.pd-nivel:first-child { border-top: none; }
+.pd-nivel svg { width: 20px; height: 20px; flex-shrink: 0; margin-top: 2px; }
+.pd-nivel .n1 { font-size: 0.7rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; }
+.pd-nivel .n2 { font-size: 0.95rem; font-weight: 800; }
+.pd-nivel .n3 { font-size: 0.75rem; }
+.pd-nivel.on { color: var(--texto); }
+.pd-nivel.on svg, .pd-nivel.on .n2 { color: var(--dourado-claro); }
+.pd-cofre { margin-top: 14px; background: var(--marrom); border: 1px dashed var(--dourado); border-radius: 14px; padding: 16px; text-align: center; }
+.pd-cofre svg { width: 30px; height: 30px; color: var(--dourado); }
+.pd-cofre input { width: 100%; margin: 10px 0 8px; padding: 12px; border-radius: 10px; border: 1px solid var(--borda); background: var(--marrom-2); color: var(--texto); font-family: inherit; font-size: 1rem; text-align: center; letter-spacing: 0.08em; text-transform: uppercase; }
+.pd-erro { font-size: 0.78rem; color: #f0997b; min-height: 1em; margin: 6px 0 0; }
+.pd-menu { margin-top: 14px; }
+.pd-menu-topo { text-align: center; margin-bottom: 6px; }
+.pd-combo { border-top: 1px solid var(--borda); padding: 14px 0; }
+.pd-combo-nome { font-family: 'Playfair Display', serif; font-weight: 700; font-size: 1.3rem; color: var(--dourado-claro); line-height: 1.15; }
+.pd-combo-comp { font-size: 0.85rem; color: var(--texto); margin: 3px 0 6px; }
+.pd-combo-precos { display: flex; align-items: baseline; gap: 10px; }
+.pd-combo-sep { font-size: 0.78rem; color: var(--texto-suave); }
+.pd-combo-sep s { opacity: 0.85; }
+.pd-combo-preco { font-size: 1.35rem; font-weight: 800; color: var(--dourado-claro); }
+.pd-combo-frase { font-size: 0.78rem; font-style: italic; color: var(--texto-suave); margin-top: 4px; }
+.pd-extra { margin-top: 14px; border: 1px solid var(--borda); border-radius: 14px; padding: 14px; text-align: center; }
+.pd-regras { margin-top: 12px; font-size: 0.78rem; color: var(--texto-suave); }
+.pd-regras summary { cursor: pointer; font-weight: 700; color: var(--dourado-claro); }
+.pd-regras p { margin: 8px 0 0; line-height: 1.5; white-space: pre-line; }
+.modal.modal-tema { background: var(--td-bg); color: var(--td-tx); border-color: var(--td-line); }
+.modal-tema .modal-topo h2, .modal-tema .pd-titulo { color: var(--td-ac2); }
+.modal-tema .modal-fechar { background: var(--td-card); border-color: var(--td-line); color: var(--td-tx); }
+.modal-tema .pd-cap { color: var(--td-ac); }
+.modal-tema .pd-cond, .modal-tema .pd-regras, .modal-tema .pd-rodape, .modal-tema .pd-caixa-rot { color: var(--td-tx2); }
+.modal-tema .pd-regras summary { color: var(--td-ac2); }
+.modal-tema .pd-texto, .modal-tema .hh-item-nome { color: var(--td-tx); }
+.modal-tema .hh-item { border-color: var(--td-line); }
+.modal-tema .hh-item-preco-por, .modal-tema .pd-caixa-num { color: var(--td-ac); }
+.modal-tema .pd-caixa { background: var(--td-card); border-color: var(--td-line); }
+.modal-tema .botao.destaque { background: var(--td-ac); color: var(--td-bg); }
+.modal-tema .pd-insta { background: var(--td-card); color: var(--td-ac2); border: 1px solid var(--td-line); }
+.modal-tema .pd-sec { border-color: var(--td-line); color: var(--td-tx2); }
+.modal-tema .pd-cond a { color: var(--td-ac2); }
+.td-topo { text-align: center; }
+.td-italico { font-family: 'Playfair Display', serif; font-style: italic; font-size: 0.9rem; color: var(--td-tx2); margin: -4px 0 14px; }
+.td-perg { font-size: 0.82rem; font-weight: 700; margin: 0 0 8px; }
+.td-amigas { display: flex; gap: 7px; justify-content: center; margin-bottom: 8px; }
+.td-amiga { width: 38px; height: 38px; border-radius: 50%; border: 1.5px dashed var(--td-ac); background: transparent; color: var(--td-ac); display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; transition: all 0.2s; }
+.td-amiga svg { width: 18px; height: 18px; }
+.td-amiga.on { background: var(--td-ac); border-style: solid; color: var(--td-bg); }
+.td-status { font-size: 0.85rem; font-weight: 800; color: var(--td-ac2); min-height: 1.2em; margin-bottom: 12px; }
+.td-nivel { display: flex; gap: 10px; align-items: center; padding: 10px 12px; border-radius: 14px; background: var(--td-card); border: 1px solid var(--td-line); margin-bottom: 8px; opacity: 0.55; transition: all 0.25s; }
+.td-nivel.on { opacity: 1; border-color: var(--td-ac); }
+.td-nivel .ic { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: var(--td-line); color: var(--td-tx2); flex-shrink: 0; }
+.td-nivel .ic svg { width: 18px; height: 18px; }
+.td-nivel.on .ic { background: var(--td-ac); color: var(--td-bg); }
+.td-nivel .a { font-size: 0.66rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--td-tx2); }
+.td-nivel .b { font-size: 0.98rem; font-weight: 800; }
+.td-nivel .c { font-size: 0.74rem; color: var(--td-tx2); }
+.td-wa { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 13px; border-radius: 14px; background: #25a35a; color: #fff; font-weight: 700; font-size: 0.92rem; text-decoration: none; margin-top: 4px; }
+.td-wa svg { width: 18px; height: 18px; }
+.td-relogio { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; padding: 10px 14px; border-radius: 14px; background: var(--td-card); border: 1px solid var(--td-line); }
+.td-relogio .d { font-size: 0.72rem; color: var(--td-tx2); }
+.td-relogio .d b { display: block; font-size: 1rem; color: var(--td-tx); }
+.td-relogio .h { font-size: 1.25rem; font-weight: 800; color: var(--td-ac2); font-variant-numeric: tabular-nums; }
+.td-cofre { margin-top: 16px; background: var(--td-card); border: 1px dashed var(--td-ac); border-radius: 16px; padding: 18px 16px; text-align: center; }
+.td-cofre > svg { width: 30px; height: 30px; color: var(--td-ac); }
+.td-cofre input { width: 100%; margin: 12px 0 8px; padding: 12px; border-radius: 12px; border: 1px solid var(--td-line); background: var(--td-bg); color: var(--td-tx); font-family: inherit; font-size: 1rem; text-align: center; letter-spacing: 0.08em; text-transform: uppercase; }
+.td-menu { margin-top: 18px; }
+.td-combo { display: flex; gap: 12px; padding: 14px 0; border-top: 1px solid var(--td-line); }
+.td-fotos { position: relative; width: 78px; height: 78px; flex-shrink: 0; }
+.td-fotos img { position: absolute; width: 56px; height: 56px; object-fit: cover; border-radius: 14px; border: 2px solid var(--td-bg); }
+.td-fotos img:first-child { left: 0; top: 0; }
+.td-fotos img:nth-child(2) { right: 0; bottom: 0; }
+.td-combo .n { font-family: 'Playfair Display', serif; font-weight: 700; font-size: 1.2rem; color: var(--td-ac2); line-height: 1.15; }
+.td-combo .x { font-size: 0.82rem; margin: 2px 0 4px; }
+.td-tag { display: inline-block; font-size: 0.66rem; font-weight: 800; padding: 2px 8px; border-radius: 20px; background: var(--td-bg); border: 1px solid var(--td-line); color: var(--td-tx2); margin: 0 4px 4px 0; }
+.td-combo .pp { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.td-combo .s { font-size: 0.74rem; color: var(--td-tx2); }
+.td-combo .v { font-size: 1.2rem; font-weight: 800; color: var(--td-ac); }
+.td-combo .f { font-family: 'Playfair Display', serif; font-style: italic; font-size: 0.8rem; color: var(--td-tx2); margin-top: 3px; }
+.td-extra { margin-top: 16px; border: 1px solid var(--td-line); border-radius: 16px; padding: 14px; text-align: center; }
+@keyframes pdAbre { 0% { transform: scale(0.92); opacity: 0; } 60% { transform: scale(1.03); opacity: 1; } 100% { transform: scale(1); } }
+.pd-anim { animation: pdAbre 0.6s ease-out; }
 .previa-barra { position: sticky; top: 0; z-index: 60; background: #7a1f1f; color: #fff; font-size: 0.78rem; padding: 8px 10px; display: flex; gap: 6px; align-items: center; justify-content: center; flex-wrap: wrap; }
 .previa-barra button { font-family: inherit; font-size: 0.75rem; font-weight: 700; border: 1px solid #fff; background: transparent; color: #fff; border-radius: 20px; padding: 4px 10px; cursor: pointer; }
 .previa-barra button.sel { background: #fff; color: #7a1f1f; }
@@ -579,13 +668,19 @@ window.addEventListener("DOMContentLoaded", function () {
   var promocoesSemana = [];
   var PREVIA = /previa/.test(location.pathname);
   var previaModo = PREVIA ? (sessionStorage.getItem("previaModo") || "ativa") : null;
-  var PREVIA_PROMO = { dia_semana: 1, ativo: true, titulo: "A 4ª é do Serra", descricao: "3 Spaten 600 ml pagas, 1 por nossa conta.",
-    condicoes: "Pelo menos 1 pessoa da mesa seguindo o @serradouradabar. Válido para consumo no local. A cada 3 pagas, 1 cortesia. Não cumulativo com outras promoções.",
-    hora_inicio: "16:00:00", hora_fim: null, cartela_qtd: 3, cartela_item: "Spaten 600 ml", imagem_url: null };
+  var PREVIA_DIA = 2;
+  var PREVIA_PROMO = { dia_semana: 2, ativo: true, titulo: "Terça Delas", subtitulo: "Tem coisa no Serra que só aparece na terça.",
+    descricao: "A partir de 2 mulheres na mesa, o Cardápio Delas é desbloqueado.",
+    condicoes: "Às terças, das 16h ao encerramento.\nA presença de pelo menos 2 mulheres na mesa libera o Cardápio Delas para toda a mesa.\nNíveis: 4 mulheres maiores de 18 anos liberam a Rodada Delas; 6 ou mais liberam também o Não Espalha. Cada benefício é concedido uma vez por mesa, por noite, quando a mesa atingir a quantidade.\nBebidas alcoólicas apenas para maiores de 18 anos.\nDas 16h às 20h, itens do Happy Hour podem ser pedidos na mesma mesa, cada um pelo seu preço. Os preços do Cardápio Delas não se alteram.\nO Código Delas, divulgado nos stories do @serradouradabar, libera o benefício informado no próprio story.\nNão cumulativo com outras promoções, salvo indicação expressa.",
+    hora_inicio: "16:00:00", hora_fim: null, cartela_qtd: null, cartela_item: null, imagem_url: null, senha_cardapio: "TERÇADELAS",
+    niveis: [{ qtd: 2, nome: "Chegamos", beneficio: "Cardápio Delas", detalhe: "Combos exclusivos da terça para a mesa toda" },
+      { qtd: 4, nome: "Chama mais duas", beneficio: "Rodada Delas", detalhe: "4 Cozumel com Chopp para elas (valor normal R$ 55,60)" },
+      { qtd: 6, nome: "Fechou o bonde", beneficio: "Não Espalha", detalhe: "Um mimo especial da casa" }],
+    itens: [{"nome": "Nem Te Conto", "composicao": "2 Caipirinhas + Delícia Dourada", "preco_separado": 74.7, "preco": 62.9, "frase": "Porque uma conversa dessas pede acompanhamento.", "tags": ["queijo coalho com melaço"], "fotos": ["https://bhxnhiggogosootbtwpb.supabase.co/storage/v1/object/public/pagina-assets/CAIPIRINHA.jpeg", "https://bhxnhiggogosootbtwpb.supabase.co/storage/v1/object/public/pagina-assets/delicia%20dourada.jpg"]}, {"nome": "Abre o Grupo", "composicao": "2 Gin Tradicional + Pastelzinho", "preco_separado": 93.7, "preco": 79.9, "frase": "Essa aqui não dá pra contar só pra uma.", "tags": ["12 unidades"], "fotos": ["https://bhxnhiggogosootbtwpb.supabase.co/storage/v1/object/public/pagina-assets/GIN%20TRADICIONAL.jpeg", "https://bhxnhiggogosootbtwpb.supabase.co/storage/v1/object/public/pagina-assets/pastelzinho.jpg"]}, {"nome": "Passa o Endereço", "composicao": "Isca de Frango + 2 Cozumel com Chopp", "preco_separado": 77.7, "preco": 65.9, "frase": "\"Onde vocês estão?\" Aqui.", "tags": ["500g"], "fotos": ["https://bhxnhiggogosootbtwpb.supabase.co/storage/v1/object/public/pagina-assets/COZUMEL%20C%20CHOPP.jpeg", "https://bhxnhiggogosootbtwpb.supabase.co/storage/v1/object/public/pagina-assets/isca%20de%20frango.jpg"]}, {"nome": "Só Nós Sabemos", "composicao": "2 Sucos Naturais + Batata Frita", "preco_separado": 62.7, "preco": 52.9, "frase": "Sem álcool, com todo o resto.", "tags": ["sem álcool", "600g"], "fotos": ["https://bhxnhiggogosootbtwpb.supabase.co/storage/v1/object/public/pagina-assets/suco%20polpa.jpg", "https://bhxnhiggogosootbtwpb.supabase.co/storage/v1/object/public/pagina-assets/batata.jpg"]}] };
   function agora() {
     var d = new Date();
     if (!PREVIA) return d;
-    var alvo = previaModo === "domingo" ? 0 : 1, diff = (alvo - d.getDay() + 7) % 7;
+    var alvo = previaModo === "domingo" ? 0 : PREVIA_DIA, diff = (alvo - d.getDay() + 7) % 7;
     d.setDate(d.getDate() + diff);
     if (previaModo === "antes") { d.setHours(13, 46, d.getSeconds(), 0); }
     else if (previaModo === "ativa") { d.setHours(19, 12, d.getSeconds(), 0); }
@@ -620,6 +715,7 @@ window.addEventListener("DOMContentLoaded", function () {
   }
 
   function abrirModal(titulo, corpoHtml) {
+    if (typeof aplicarTema === "function") aplicarTema(null);
     document.getElementById("modal-titulo").textContent = titulo;
     document.getElementById("modal-corpo").innerHTML = corpoHtml;
     document.getElementById("form-reserva").classList.add("escondido");
@@ -785,6 +881,207 @@ function fotoPromo(p) { return p && p.imagem_url ? '<img class="modal-foto" src=
 
 function hhmm(min) { var h = Math.floor(min / 60) % 24, mm = min % 60; return h + "h" + (mm ? String(mm).padStart(2, "0") : ""); }
 
+function chaveDia(prefixo) { var d = agora(); return prefixo + "-" + d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate(); }
+function lerDia(prefixo) { try { return localStorage.getItem(chaveDia(prefixo)); } catch (e) { return null; } }
+function gravarDia(prefixo, v) { try { localStorage.setItem(chaveDia(prefixo), String(v)); } catch (e) {} }
+function normalizarSenha(s) { return String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/gi, "").toUpperCase(); }
+var SVG_CADEADO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
+var SVG_ABERTO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/></svg>';
+
+var TEMAS = {"petroleo": ["#0f2a2e", "#173a3f", "#2c5358", "#d9a95b", "#f0d6a0", "#f3ece2", "#a9c1bd"], "ameixa": ["#2a1530", "#3a1f42", "#553160", "#e3a98f", "#f5d3c3", "#f7ece9", "#c9a9c7"], "champagne": ["#131313", "#1e1e1e", "#333333", "#d8c08f", "#efe0bf", "#f4f1ea", "#a8a296"], "terracota": ["#3b1b12", "#4d2518", "#6d3a28", "#ec9f78", "#f7cdb5", "#fbefe6", "#d6ae9c"], "oliva": ["#1e2318", "#2a3121", "#434d36", "#d6c28c", "#ece0b7", "#f3f0e4", "#b3b59f"], "cereja": ["#1c0a10", "#2c1119", "#4b1c29", "#ef7f7f", "#f7c0bd", "#fbeeee", "#d0a3a8"], "areia": ["#f3ebe0", "#fffaf3", "#e8dccb", "#9a5b2e", "#6e3d1d", "#2f2118", "#8a7462"], "lavanda": ["#eeebf3", "#fbfaff", "#ddd6ea", "#6b58a0", "#473a73", "#26222f", "#7a7390"], "original": ["#241608", "#2e1c0e", "#4a3520", "#c9a227", "#e8c766", "#f6ead0", "#cdbb99"]};
+function aplicarTema(nome) {
+  var m = document.querySelector(".modal");
+  if (!m) return;
+  var t = TEMAS[nome];
+  ["bg","card","line","ac","ac2","tx","tx2"].forEach(function (k, i) { if (t) m.style.setProperty("--td-" + k, t[i]); else m.style.removeProperty("--td-" + k); });
+  m.classList.toggle("modal-tema", !!t);
+}
+function temaDaPromo(p) { var q = PREVIA && sessionStorage.getItem("previaTema"); return q || p.tema || "original"; }
+var SVG_PESSOA = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>';
+var SVG_WA = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.5-.3z"/></svg>';
+
+function montarNiveis(p, alvo, dataTxt, recemAberto) {
+  aplicarTema(temaDaPromo(p));
+  var niveis = p.niveis.slice().sort(function (a, b) { return a.qtd - b.qtd; });
+  var maxQ = niveis[niveis.length - 1].qtd;
+  var n = Math.min(Number(lerDia("niveis")) || 0, maxQ);
+  var aberto = lerDia("cardapio") === "1";
+  var amigas = "";
+  for (var i = 1; i <= maxQ; i++) amigas += '<button type="button" class="td-amiga' + (i <= n ? ' on' : '') + '" data-i="' + i + '" aria-label="' + i + (i === 1 ? ' amiga' : ' amigas') + '">' + SVG_PESSOA + '</button>';
+  var prox = niveis.find(function (nv) { return nv.qtd > n; });
+  var status = n === 0 ? "Toque nas amigas que estão na mesa"
+    : prox ? "Falta" + (prox.qtd - n > 1 ? "m " : " ") + (prox.qtd - n) + " para liberar " + prox.beneficio
+    : "Mesa completa: tudo liberado!";
+  var trilha = niveis.map(function (nv, idx) {
+    var on = n >= nv.qtd;
+    return '<div class="td-nivel' + (on ? ' on' : '') + '"><div class="ic">' + (on ? SVG_ABERTO : SVG_CADEADO) + '</div>' +
+      '<div><div class="a">' + nv.qtd + (idx === niveis.length - 1 ? '+' : '') + ' delas · ' + escapeHtml(nv.nome || "") + '</div>' +
+      '<div class="b">' + escapeHtml(nv.beneficio || "") + '</div>' + (nv.detalhe ? '<div class="c">' + escapeHtml(nv.detalhe) + '</div>' : '') + '</div></div>';
+  }).join("");
+  var partes = niveis.map(function (nv, idx) {
+    return idx === 0 ? "com " + nv.qtd + " a gente desbloqueia um cardápio que só existe na terça"
+      : "com " + nv.qtd + (idx === niveis.length - 1 ? " tem o " : " ganha a ") + nv.beneficio;
+  });
+  var fraseNiveis = partes.length > 1 ? partes.slice(0, -1).join(", ") + " e " + partes[partes.length - 1] : partes[0];
+  var msgWa = "Bora pra " + p.titulo + " no Serra Dourada? " + fraseNiveis.charAt(0).toUpperCase() + fraseNiveis.slice(1) + ". " + (p.link_compartilhar || "https://serradouradabar.com.br");
+
+  var menu = "";
+  if (p.itens && p.itens.length) {
+    if (aberto) {
+      menu = '<div class="td-menu' + (recemAberto ? ' pd-anim' : '') + '"><div class="td-topo"><span class="pd-cap">' + SVG_ABERTO.replace('<svg ', '<svg style="width:12px;height:12px;vertical-align:-1px" ') + ' desbloqueado</span>' +
+        '<div class="pd-titulo" style="font-size:1.35rem;margin:2px 0 0">Cardápio Delas</div><p class="td-italico" style="margin:0 0 4px">só hoje, só pra essa mesa</p></div>' +
+        p.itens.map(function (it) {
+          var fotos = (it.fotos || []).slice(0, 2).map(function (u) { return '<img src="' + escapeHtml(u) + '" alt="" loading="lazy" />'; }).join("");
+          var tags = (it.tags || []).map(function (tg) { return '<span class="td-tag">' + escapeHtml(tg) + '</span>'; }).join("");
+          return '<div class="td-combo">' + (fotos ? '<div class="td-fotos">' + fotos + '</div>' : '') + '<div style="flex:1;min-width:0">' +
+            '<div class="n">' + escapeHtml(it.nome) + '</div><div class="x">' + escapeHtml(it.composicao || "") + '</div>' + (tags ? '<div>' + tags + '</div>' : '') +
+            '<div class="pp">' + (it.preco_separado ? '<span class="s">separado <s>' + formatarPreco(it.preco_separado) + '</s></span>' : '') +
+            '<span class="v">' + formatarPreco(it.preco) + '</span></div>' + (it.frase ? '<div class="f">' + escapeHtml(it.frase) + '</div>' : '') + '</div></div>';
+        }).join("") + '</div>';
+    } else {
+      menu = '<div class="td-cofre">' + SVG_CADEADO +
+        '<div class="pd-titulo" style="font-size:1.2rem;margin:6px 0 2px">Você encontrou o Cardápio Delas</div>' +
+        '<p class="pd-cond" style="margin:0">Digite a palavra-chave. O garçom conta quando a mesa desbloquear.</p>' +
+        '<input type="text" id="pd-senha" autocomplete="off" autocapitalize="characters" placeholder="Palavra-chave" />' +
+        '<button type="button" class="botao destaque" id="pd-desbloquear" style="justify-content:center">Desbloquear</button>' +
+        '<p class="pd-erro" id="pd-senha-erro"></p></div>';
+    }
+  }
+
+  alvo.innerHTML = '<div class="td-topo"><span class="pd-cap">Convite de terça · mostre ao garçom</span>' +
+      '<div class="pd-titulo" style="font-size:1.9rem;margin:4px 0 6px">' + escapeHtml(p.titulo) + '</div>' +
+      (p.subtitulo ? '<p class="td-italico">' + escapeHtml(p.subtitulo.replace(/\.$/, "")) + '</p>' : '') +
+      '<p class="td-perg">Quem já chegou? Toque nas amigas</p><div class="td-amigas">' + amigas + '</div>' +
+      '<div class="td-status">' + escapeHtml(status) + '</div></div>' +
+    trilha +
+    '<a class="td-wa" id="td-wa" href="https://wa.me/?text=' + encodeURIComponent(msgWa) + '" target="_blank" rel="noopener">' + SVG_WA + 'Chamar as amigas</a>' +
+    '<div class="td-relogio"><span class="d">Válido agora<b id="pd-data">' + dataTxt() + '</b></span><span class="h" id="pd-hora"></span></div>' +
+    menu +
+    '<div class="td-extra"><span class="pd-cap">Tem mais um cadeado</span>' +
+      '<p class="pd-cond" style="margin:6px 0 0">O Código Delas da semana aparece nos stories do @serradouradabar. Fala para o garçom e libera um bônus.</p>' +
+      botaoInsta() + '</div>' +
+    '<button type="button" class="pd-insta" id="pd-mostrar-sticker">' + SVG_INSTA + 'Postar sticker no story</button>' +
+    stickerHtml(false) + condicoesBloco(p.condicoes) + RODAPE_ALCOOL;
+
+  ligarInsta(alvo);
+  ligarSticker(p);
+  document.getElementById("td-wa").addEventListener("click", function () { registrar("click", "promo_chamar_amigas"); });
+  Array.prototype.forEach.call(alvo.querySelectorAll(".td-amiga"), function (b) {
+    b.addEventListener("click", function () {
+      var i = Number(b.getAttribute("data-i"));
+      var novo = (n === i) ? i - 1 : i;
+      gravarDia("niveis", novo);
+      niveis.forEach(function (nv) { if (novo >= nv.qtd && n < nv.qtd) registrar("click", "promo_nivel_" + nv.qtd); });
+      renderAtiva(p);
+    });
+  });
+  var btn = document.getElementById("pd-desbloquear");
+  if (btn) {
+    var tentar = function () {
+      var campo = document.getElementById("pd-senha");
+      if (normalizarSenha(campo.value) && normalizarSenha(campo.value) === normalizarSenha(p.senha_cardapio)) {
+        gravarDia("cardapio", "1");
+        registrar("click", "promo_senha_ok");
+        renderAtiva(p, true);
+      } else {
+        document.getElementById("pd-senha-erro").textContent = campo.value.trim() ? "Palavra-chave incorreta. Confira com o garçom." : "Digite a palavra-chave.";
+        if (campo.value.trim()) registrar("click", "promo_senha_erro");
+      }
+    };
+    btn.addEventListener("click", tentar);
+    document.getElementById("pd-senha").addEventListener("keydown", function (ev) { if (ev.key === "Enter") tentar(); });
+    document.getElementById("pd-senha").addEventListener("input", function () { document.getElementById("pd-senha-erro").textContent = ""; });
+  }
+}
+
+function montarNiveisAntigo(p, alvo, dataTxt, recemAberto) {
+  var niveis = p.niveis.slice().sort(function (a, b) { return a.qtd - b.qtd; });
+  var sel = Number(lerDia("niveis")) || 0;
+  var aberto = lerDia("cardapio") === "1";
+  var chips = niveis.map(function (nv, i) {
+    var rot = nv.qtd + (i === niveis.length - 1 ? "+" : "");
+    return '<button type="button" class="pd-chip' + (sel === nv.qtd ? ' on' : '') + '" data-q="' + nv.qtd + '">' + rot + '</button>';
+  }).join("");
+  var trilha = niveis.map(function (nv, i) {
+    var on = sel >= nv.qtd;
+    return '<div class="pd-nivel' + (on ? ' on' : '') + '">' + (on ? SVG_ABERTO : SVG_CADEADO) +
+      '<div><div class="n1">' + nv.qtd + (i === niveis.length - 1 ? '+' : '') + ' delas · ' + escapeHtml(nv.nome || "") + '</div>' +
+      '<div class="n2">' + escapeHtml(nv.beneficio || "") + '</div>' +
+      (nv.detalhe ? '<div class="n3">' + escapeHtml(nv.detalhe) + '</div>' : '') + '</div></div>';
+  }).join("");
+  var prox = niveis.find(function (nv) { return nv.qtd > sel; });
+  var status = sel === 0 ? "Toque no número de mulheres na mesa"
+    : prox ? "Chama mais " + (prox.qtd - sel) + " e libera " + prox.beneficio
+    : "Todos os níveis liberados!";
+
+  var menu = "";
+  if (p.itens && p.itens.length) {
+    if (aberto) {
+      menu = '<div class="pd-menu' + (recemAberto ? ' pd-anim' : '') + '"><div class="pd-menu-topo"><span class="pd-cap">Cardápio desbloqueado</span>' +
+        '<div class="pd-titulo" style="font-size:1.25rem;margin:2px 0 0">Cardápio Delas</div></div>' +
+        p.itens.map(function (it) {
+          return '<div class="pd-combo"><div class="pd-combo-nome">' + escapeHtml(it.nome) + '</div>' +
+            '<div class="pd-combo-comp">' + escapeHtml(it.composicao || "") + '</div>' +
+            '<div class="pd-combo-precos">' + (it.preco_separado ? '<span class="pd-combo-sep">Separado: <s>' + formatarPreco(it.preco_separado) + '</s></span>' : '') +
+            '<span class="pd-combo-preco">' + formatarPreco(it.preco) + '</span></div>' +
+            (it.frase ? '<div class="pd-combo-frase">' + escapeHtml(it.frase) + '</div>' : '') + '</div>';
+        }).join("") + '</div>';
+    } else {
+      menu = '<div class="pd-cofre">' + SVG_CADEADO +
+        '<div class="pd-titulo" style="font-size:1.2rem;margin:4px 0 2px">Você encontrou o Cardápio Delas</div>' +
+        '<p class="pd-cond" style="margin:0">Digite a palavra-chave. Peça ao garçom quando a mesa desbloquear.</p>' +
+        '<input type="text" id="pd-senha" autocomplete="off" autocapitalize="characters" placeholder="Palavra-chave" />' +
+        '<button type="button" class="botao destaque" id="pd-desbloquear" style="justify-content:center">Desbloquear</button>' +
+        '<p class="pd-erro" id="pd-senha-erro"></p></div>';
+    }
+  }
+
+  alvo.innerHTML = '<div class="pd-bilhete">' +
+      '<span class="pd-cap">Mostre esta tela ao garçom</span>' +
+      '<div class="pd-titulo">' + escapeHtml(p.titulo) + '</div>' +
+      (p.subtitulo ? '<p class="pd-sub">' + escapeHtml(p.subtitulo) + '</p>' : '') +
+      '<p class="pd-perg">Quantas mulheres na mesa?</p>' +
+      '<div class="pd-chips">' + chips + '</div>' +
+      '<div class="pd-trilha">' + trilha + '</div>' +
+      '<div class="pd-status" style="margin-top:0">' + escapeHtml(status) + '</div>' +
+      '<div class="pd-relogio"><div style="font-size:0.72rem;color:var(--texto-suave)">Válido agora</div><div class="d" id="pd-data">' + dataTxt() + '</div><div class="h" id="pd-hora"></div></div>' +
+    '</div>' + menu +
+    '<div class="pd-extra"><span class="pd-cap">Tem mais um cadeado</span>' +
+      '<p class="pd-cond" style="margin:6px 0 0">O Código Delas da semana aparece nos stories do @serradouradabar. Fala para o garçom e libera um bônus.</p>' +
+      botaoInsta() + '</div>' +
+    '<button type="button" class="pd-insta" id="pd-mostrar-sticker" style="background:transparent;border:1px solid var(--dourado);color:var(--dourado-claro)">' + SVG_INSTA + 'Postar sticker no story</button>' +
+    stickerHtml(false) + condicoesBloco(p.condicoes) + RODAPE_ALCOOL;
+
+  ligarInsta(alvo);
+  ligarSticker(p);
+  Array.prototype.forEach.call(alvo.querySelectorAll(".pd-chip"), function (b) {
+    b.addEventListener("click", function () {
+      var q = Number(b.getAttribute("data-q"));
+      var novo = (sel === q) ? 0 : q;
+      gravarDia("niveis", novo);
+      if (novo) registrar("click", "promo_nivel_" + novo);
+      renderAtiva(p);
+    });
+  });
+  var btn = document.getElementById("pd-desbloquear");
+  if (btn) {
+    var tentar = function () {
+      var campo = document.getElementById("pd-senha");
+      if (normalizarSenha(campo.value) && normalizarSenha(campo.value) === normalizarSenha(p.senha_cardapio)) {
+        gravarDia("cardapio", "1");
+        registrar("click", "promo_senha_ok");
+        renderAtiva(p, true);
+      } else {
+        document.getElementById("pd-senha-erro").textContent = campo.value.trim() ? "Palavra-chave incorreta. Confira com o garçom." : "Digite a palavra-chave.";
+        if (campo.value.trim()) registrar("click", "promo_senha_erro");
+      }
+    };
+    btn.addEventListener("click", tentar);
+    document.getElementById("pd-senha").addEventListener("keydown", function (ev) { if (ev.key === "Enter") tentar(); });
+    document.getElementById("pd-senha").addEventListener("input", function () { document.getElementById("pd-senha-erro").textContent = ""; });
+  }
+}
+
 function chaveCartela() { var d = agora(); return "cartela-" + d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate(); }
 function lerCartela() { try { return Number(localStorage.getItem(chaveCartela())) || 0; } catch (e) { return 0; } }
 function gravarCartela(n) { try { localStorage.setItem(chaveCartela(), String(n)); } catch (e) {} }
@@ -795,6 +1092,11 @@ var SVG_TACA = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strok
 function urlInstagram() { return (config && config.instagram_url) || "https://instagram.com/serradouradabar"; }
 var SVG_INSTA = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="0.6" fill="currentColor" stroke="none"/></svg>';
 function botaoInsta() { return '<a class="pd-insta" href="' + escapeHtml(urlInstagram()) + '" target="_blank" rel="noopener" data-insta="1">' + SVG_INSTA + 'Seguir @serradouradabar</a>'; }
+function condicoesBloco(txt, classeExtra) {
+  if (!txt) return "";
+  if (txt.length > 220) return '<details class="pd-regras"><summary>Regras completas</summary><p>' + condicoesHtml(txt) + '</p></details>';
+  return '<p class="pd-cond' + (classeExtra || "") + '">' + condicoesHtml(txt) + '</p>';
+}
 function condicoesHtml(txt) { return escapeHtml(txt).replace(/@serradouradabar/g, '<a href="' + escapeHtml(urlInstagram()) + '" target="_blank" rel="noopener" data-insta="1">@serradouradabar</a>'); }
 function ligarInsta(raiz) { Array.prototype.forEach.call((raiz || document).querySelectorAll('[data-insta]'), function (a) { a.addEventListener("click", function () { registrar("click", "promo_instagram"); }); }); }
 var RODAPE_ALCOOL = '<p class="pd-rodape">Beba com moderação. Venda proibida para menores de 18 anos.</p>';
@@ -811,12 +1113,12 @@ function mostrarPromocaoDia() {
   var amanha = promoAmanha();
   if (promoHoje && estado === "antes") {
     var j = janelaPromo(promoHoje);
-    corpo += fotoPromo(promoHoje) + '<span class="pd-cap">' + escapeHtml(DIAS[hoje]) + '</span>' +
+    corpo += fotoPromo(promoHoje) + '<span class="pd-cap">Promoção de hoje</span>' +
       '<div class="pd-titulo">' + escapeHtml(promoHoje.titulo) + '</div>' +
       '<div class="pd-caixa"><div class="pd-caixa-rot">Começa em</div><div class="pd-caixa-num" id="pd-contagem">–</div>' +
       '<div class="pd-caixa-rot">hoje, às ' + hhmm(j.ini) + '</div></div>' +
       (promoHoje.descricao ? '<p class="pd-texto">' + escapeHtml(promoHoje.descricao) + ' Já chama a turma.</p>' : '') +
-      (promoHoje.condicoes ? '<p class="pd-cond">' + condicoesHtml(promoHoje.condicoes) + '</p>' : '') +
+      condicoesBloco(promoHoje.condicoes) +
       '<button type="button" class="botao destaque" id="pd-agenda" style="justify-content:center;margin-top:14px">Adicionar à agenda</button>' +
       botaoInsta() +
       RODAPE_ALCOOL;
@@ -827,7 +1129,7 @@ function mostrarPromocaoDia() {
     corpo += fotoPromo(amanha) + '<span class="pd-cap">Amanhã · ' + escapeHtml(DIAS[amanha.dia_semana]) + (amanha.hora_inicio ? ' · a partir das ' + hhmm(ja.ini) : '') + '</span>' +
       '<div class="pd-titulo">' + escapeHtml(amanha.titulo) + '</div>' +
       (amanha.descricao ? '<p class="pd-texto" style="margin-top:0">' + escapeHtml(amanha.descricao) + '</p>' : '') +
-      (amanha.condicoes ? '<p class="pd-cond">' + condicoesHtml(amanha.condicoes) + '</p>' : '') +
+      condicoesBloco(amanha.condicoes) +
       '<button type="button" class="botao destaque" id="pd-agenda" style="justify-content:center;margin-top:14px">Lembrar amanhã</button>' +
       botaoInsta() + RODAPE_ALCOOL;
   } else if (promoHoje && estado === "encerrada") {
@@ -846,6 +1148,8 @@ function mostrarPromocaoDia() {
   }
 
   abrirModal("Promoção de hoje", corpo);
+  var pTema = (promoHoje && estado !== "encerrada") ? promoHoje : amanha;
+  if (pTema && pTema.niveis && pTema.niveis.length) aplicarTema(temaDaPromo(pTema));
 
   if (promoHoje && estado === "antes") {
     var tick = function () {
@@ -867,14 +1171,16 @@ function mostrarPromocaoDia() {
   }
 }
 
-function renderAtiva(p) {
+function renderAtiva(p, recemAberto) {
   pararTimerPromo();
   var alvo = document.getElementById("pd-ativa");
   if (!alvo) return;
   var qtd = p.cartela_qtd || 0, n = Math.min(lerCartela(), qtd);
   var dataTxt = function () { var d = agora(); return DIAS[d.getDay()].slice(0, 3).toLowerCase() + " · " + String(d.getDate()).padStart(2, "0") + "/" + String(d.getMonth() + 1).padStart(2, "0"); };
 
-  if (qtd && n >= qtd) {
+  if (p.niveis && p.niveis.length) {
+    montarNiveis(p, alvo, dataTxt, recemAberto);
+  } else if (qtd && n >= qtd) {
     alvo.innerHTML = '<div style="text-align:center">' +
       '<span class="pd-cap">Rodada liberada</span>' +
       '<div class="pd-selo">' + SVG_TACA + '</div>' +
@@ -898,7 +1204,7 @@ function renderAtiva(p) {
         '<div class="pd-status">' + (n === 0 ? "Toque em cada " + escapeHtml(p.cartela_item || "item") + " que chegar" : "Falta" + (faltam > 1 ? "m " : " ") + faltam + " para liberar a cortesia") + '</div>'
         : (p.descricao ? '<p class="pd-texto" style="color:#241608;margin:0 0 12px">' + escapeHtml(p.descricao) + '</p>' : '')) +
       '<div class="pd-relogio"><div style="font-size:0.72rem;color:var(--texto-suave)">Válido agora</div><div class="d" id="pd-data">' + dataTxt() + '</div><div class="h" id="pd-hora"></div></div>' +
-      (p.condicoes ? '<p class="pd-cond">' + condicoesHtml(p.condicoes) + '</p>' : '') +
+      condicoesBloco(p.condicoes) +
       botaoInsta() +
       '</div>' +
       '<button type="button" class="pd-insta" id="pd-mostrar-sticker" style="background:transparent;border:1px solid var(--dourado);color:var(--dourado-claro)">' + SVG_INSTA + 'Postar sticker no story</button>' +
@@ -965,7 +1271,7 @@ function desenharSticker(x, p, dia) {
   var tam = 92; x.font = "700 " + tam + "px 'Playfair Display', serif";
   while (x.measureText(p.titulo).width > 570 && tam > 50) { tam -= 4; x.font = "700 " + tam + "px 'Playfair Display', serif"; }
   x.fillText(p.titulo, 380, 285);
-  var desc = (p.descricao || "").replace(/\.$/, ""), td = 32; x.font = "600 " + td + "px Manrope, sans-serif";
+  var desc = (p.subtitulo || p.descricao || "").replace(/\.$/, ""), td = 32; x.font = "600 " + td + "px Manrope, sans-serif";
   while (x.measureText(desc).width > 560 && td > 20) { td -= 2; x.font = "600 " + td + "px Manrope, sans-serif"; }
   if (desc) x.fillText(desc, 380, 345);
   x.font = "800 42px Manrope, sans-serif";
@@ -1310,12 +1616,14 @@ function renderPromoDiaDestaque() {
         sb.from("botao_pagina").select("*").eq("estabelecimento_id", estabelecimentoId).eq("ativo", true).order("ordem", { ascending: true }),
         sb.from("happy_hour").select("ativo,dias_semana,horario_inicio,horario_fim").maybeSingle(),
         sb.from("google_reviews_cache").select("rating,total_avaliacoes,reviews").eq("estabelecimento_id", estabelecimentoId).maybeSingle(),
-        sb.from("promocao").select("titulo,descricao,condicoes,dia_semana,ativo,hora_inicio,hora_fim,cartela_qtd,cartela_item,imagem_url").not("dia_semana", "is", null).order("dia_semana", { ascending: true }),
+        sb.from("promocao").select("titulo,subtitulo,descricao,condicoes,dia_semana,ativo,hora_inicio,hora_fim,cartela_qtd,cartela_item,imagem_url,niveis,itens,senha_cardapio,tema,valido_de,valido_ate,link_compartilhar").not("dia_semana", "is", null).order("dia_semana", { ascending: true }),
       ]);
       happyHourBadgeAtivo = happyHourAtivoAgora(hhRes.data);
       promocoesSemana = promoSemanaRes.data || [];
+      var hojeIso = (function (d) { return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); })(agora());
+      promocoesSemana = promocoesSemana.filter(function (p) { return (!p.valido_de || p.valido_de <= hojeIso) && (!p.valido_ate || p.valido_ate >= hojeIso); });
       if (PREVIA) {
-        promocoesSemana = promocoesSemana.filter(function (p) { return p.dia_semana !== 1; }).concat([PREVIA_PROMO]);
+        promocoesSemana = promocoesSemana.filter(function (p) { return p.dia_semana !== PREVIA_DIA; }).concat([PREVIA_PROMO]);
         (botoesRes.data || []).forEach(function (b) { if (b.tipo === "happy_hour") b.label = "Happy Hour (16h às 20h)"; });
       }
       promocaoDiaHoje = promocoesSemana.find(function (p) { return p.dia_semana === agora().getDay() && p.ativo; }) || null;
@@ -1357,6 +1665,7 @@ function renderPromoDiaDestaque() {
       document.getElementById("skeleton-botoes").classList.add("escondido");
       document.getElementById("botoes").classList.remove("escondido");
       registrar("pageview", null);
+      if (/[?&]promo=1/.test(location.search)) { mostrarPromocaoDia(); }
     } catch (e) {
       document.getElementById("skeleton-botoes").classList.add("escondido");
       document.getElementById("botoes").classList.remove("escondido");
@@ -1367,17 +1676,23 @@ function renderPromoDiaDestaque() {
   if (PREVIA) {
     var barra = document.createElement("div");
     barra.className = "previa-barra";
-    barra.innerHTML = '<span>PRÉVIA · simular segunda:</span>' +
+    barra.innerHTML = '<span>PRÉVIA · simular ' + DIAS[PREVIA_DIA].toLowerCase() + ':</span>' +
       '<button type="button" data-m="antes">Antes das 16h</button>' +
       '<button type="button" data-m="ativa">Promoção valendo</button>' +
-      '<button type="button" data-m="domingo">Domingo</button>' +
-      '<button type="button" data-m="zerar">Zerar cartela</button>';
+      '<button type="button" data-m="zerar">Zerar</button>' +
+      '<select id="previa-tema" style="font-family:inherit;font-size:0.75rem;border-radius:20px;padding:4px 8px"><option value="">Paleta…</option>' +
+      '<option value="petroleo">1 Petróleo e ouro</option><option value="ameixa">2 Ameixa e rosé-gold</option><option value="champagne">3 Preto e champagne</option>' +
+      '<option value="terracota">4 Terracota e creme</option><option value="oliva">5 Oliva e champagne</option><option value="cereja">6 Cereja noturna</option>' +
+      '<option value="areia">7 Areia e caramelo</option><option value="lavanda">8 Lavanda e grafite</option><option value="original">Original do Serra</option></select>';
     document.body.insertBefore(barra, document.body.firstChild);
+    var selTema = barra.querySelector("#previa-tema");
+    selTema.value = sessionStorage.getItem("previaTema") || "";
+    selTema.addEventListener("change", function () { sessionStorage.setItem("previaTema", selTema.value); var m = document.querySelector(".modal"); if (m && m.classList.contains("modal-tema") || document.getElementById("overlay").classList.contains("aberto")) { mostrarPromocaoDia(); } });
     Array.prototype.forEach.call(barra.querySelectorAll("button"), function (b) {
       if (b.getAttribute("data-m") === previaModo) b.classList.add("sel");
       b.addEventListener("click", function () {
         var m = b.getAttribute("data-m");
-        if (m === "zerar") { gravarCartela(0); } else { sessionStorage.setItem("previaModo", m); }
+        if (m === "zerar") { gravarCartela(0); try { localStorage.removeItem(chaveDia("niveis")); localStorage.removeItem(chaveDia("cardapio")); } catch (e) {} } else { sessionStorage.setItem("previaModo", m); }
         location.reload();
       });
     });
