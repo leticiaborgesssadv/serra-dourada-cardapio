@@ -30,7 +30,7 @@
   .card h2 { margin: 0 0 6px; font-size: 1rem; color: var(--dourado-claro); }
   .card p.desc { margin: 0 0 14px; font-size: 0.82rem; color: var(--texto-suave); }
   label { display: block; font-size: 0.83rem; margin-bottom: 6px; color: var(--texto-suave); }
-  input[type=email], input[type=password], input[type=text], input[type=date], input[type=time], input[type=datetime-local], textarea, select {
+  input[type=email], input[type=password], input[type=text], input[type=date], input[type=time], input[type=number], input[type=datetime-local], textarea, select {
     width: 100%; padding: 11px 13px; border-radius: 8px; border: 1px solid var(--borda);
     background: #1a1006; color: var(--texto); font-size: 0.92rem; margin-bottom: 12px; font-family: inherit;
   }
@@ -322,6 +322,7 @@
           <div class="stat-box"><div class="num" id="stat-views">–</div><div class="lbl">Visualizações</div></div>
           <div class="stat-box"><div class="num" id="stat-clicks">–</div><div class="lbl">Cliques totais</div></div>
         </div>
+        <div id="stat-promo" style="margin-bottom:18px"></div>
         <div id="stat-botoes"></div>
       </div>
     </section>
@@ -588,7 +589,7 @@
   // ---------- PROMOÇÕES ----------
   async function carregarPromocoes() {
     var lista = document.getElementById("lista-promocoes");
-    var r = await sb.from("promocao").select("*").order("ordem", { ascending: true }).order("criado_em", { ascending: false });
+    var r = await sb.from("promocao").select("*").is("dia_semana", null).order("ordem", { ascending: true }).order("criado_em", { ascending: false });
     if (!r.data || !r.data.length) { lista.innerHTML = '<p class="msg">Nenhuma promoção cadastrada.</p>'; return; }
     lista.innerHTML = "";
     r.data.forEach(function (p) {
@@ -652,7 +653,13 @@
         '<div class="toggle-linha"><label style="margin:0;font-weight:600;color:var(--texto)">' + nome + (i === promoDiaHojeIdx ? ' <span class="meta">(hoje)</span>' : "") + '</label>' +
         '<input type="checkbox" class="promodia-ativo" data-dia="' + i + '" /></div>' +
         '<input type="text" class="promodia-titulo" data-dia="' + i + '" placeholder="Título (ex.: Tome 3, pague 4 no Spaten)" style="margin-top:8px" />' +
-        '<textarea class="promodia-descricao" data-dia="' + i + '" placeholder="Detalhes (opcional)"></textarea>' +
+        '<textarea class="promodia-descricao" data-dia="' + i + '" placeholder="Oferta em uma frase (ex.: 3 Spaten 600 ml pagas, 1 por nossa conta.)"></textarea>' +
+        '<div class="meta" style="margin:8px 0 4px">Horário (vazio = o dia todo · fim vazio = até fechar)</div>' +
+        '<div style="display:flex;gap:8px;align-items:center"><span class="meta">das</span><input type="time" class="promodia-hini" data-dia="' + i + '" style="flex:1" /><span class="meta">até</span><input type="time" class="promodia-hfim" data-dia="' + i + '" style="flex:1" /></div>' +
+        '<textarea class="promodia-condicoes" data-dia="' + i + '" placeholder="Condições (aparecem em letra menor: consumo no local, não cumulativo...)" style="margin-top:8px"></textarea>' +
+        '<div class="meta" style="margin:8px 0 4px">Cartela (deixe vazio se a promoção não tiver)</div>' +
+        '<div style="display:flex;gap:8px;align-items:center"><span class="meta">a cada</span><input type="number" min="1" max="20" class="promodia-cqtd" data-dia="' + i + '" style="width:70px" /><input type="text" class="promodia-citem" data-dia="' + i + '" placeholder="item (ex.: Spaten 600 ml)" style="flex:1" /></div>' +
+        '<div class="meta" style="margin:2px 0 8px">pagas, 1 cortesia</div>' +
         '<img class="preview-img promodia-preview escondido" data-dia="' + i + '" alt="" style="max-height:120px" />' +
         '<input type="file" class="promodia-foto-input" data-dia="' + i + '" accept="image/jpeg,image/png,image/webp" />' +
         '<button type="button" class="botao botao-secundario botao-pequeno promodia-foto-btn" data-dia="' + i + '">Enviar foto</button>' +
@@ -663,7 +670,7 @@
 
   async function carregarPromoDia() {
     montarPromoDiaForm();
-    var r = await sb.from("promocao").select("id,titulo,descricao,ativo,dia_semana,imagem_url").not("dia_semana", "is", null);
+    var r = await sb.from("promocao").select("id,titulo,descricao,ativo,dia_semana,imagem_url,hora_inicio,hora_fim,condicoes,cartela_qtd,cartela_item").not("dia_semana", "is", null);
     var linhas = r.data || [];
     linhas.forEach(function (p) {
       promoDiaIds[p.dia_semana] = p.id;
@@ -674,6 +681,12 @@
       if (tituloEl) tituloEl.value = p.titulo || "";
       if (descEl) descEl.value = p.descricao || "";
       if (ativoEl) ativoEl.checked = !!p.ativo;
+      var q = function (c) { return document.querySelector('.' + c + '[data-dia="' + p.dia_semana + '"]'); };
+      if (q("promodia-hini")) q("promodia-hini").value = p.hora_inicio ? p.hora_inicio.slice(0, 5) : "";
+      if (q("promodia-hfim")) q("promodia-hfim").value = p.hora_fim ? p.hora_fim.slice(0, 5) : "";
+      if (q("promodia-condicoes")) q("promodia-condicoes").value = p.condicoes || "";
+      if (q("promodia-cqtd")) q("promodia-cqtd").value = p.cartela_qtd || "";
+      if (q("promodia-citem")) q("promodia-citem").value = p.cartela_item || "";
       if (previewEl && p.imagem_url) { previewEl.src = p.imagem_url; previewEl.classList.remove("escondido"); }
     });
     var hoje = linhas.find(function (p) { return p.dia_semana === promoDiaHojeIdx; });
@@ -728,10 +741,17 @@
         var descEl = document.querySelector('.promodia-descricao[data-dia="' + dia + '"]');
         var ativoEl = document.querySelector('.promodia-ativo[data-dia="' + dia + '"]');
         var titulo = tituloEl.value.trim() || DIAS_LONGO[dia];
+        var v = function (c) { var e = document.querySelector('.' + c + '[data-dia="' + dia + '"]'); return e ? e.value.trim() : ""; };
+        var qtd = parseInt(v("promodia-cqtd"), 10);
         var r = await sb.from("promocao").update({
           titulo: titulo,
           descricao: descEl.value.trim() || null,
           ativo: ativoEl.checked,
+          hora_inicio: v("promodia-hini") || null,
+          hora_fim: v("promodia-hfim") || null,
+          condicoes: v("promodia-condicoes") || null,
+          cartela_qtd: (qtd >= 1 && qtd <= 20) ? qtd : null,
+          cartela_item: (qtd >= 1 && qtd <= 20) ? (v("promodia-citem") || null) : null,
         }).eq("id", id);
         if (r.error) erros++;
       }
@@ -1009,6 +1029,11 @@
   document.getElementById("btn-baixar-qr-svg").addEventListener("click", function () { if (qrSvgUrl) baixar(qrSvgUrl, "qrcode-serra-dourada.svg"); });
 
   // ---------- ESTATÍSTICAS ----------
+  var ROTULOS_CLIQUE = {
+    cardapio: "Cardápio completo", cardapio_visual: "Cardápio com fotos", almoco: "Almoço", happy_hour: "Happy Hour",
+    promocao_dia: "Promoção de hoje", avaliacao: "Avaliar atendimento", reserva_whatsapp: "Fazer reserva", maps: "Como chegar",
+    horario: "Horário", eventos: "Eventos", avaliar_google: "Avaliar no Google", instagram: "Instagram", trabalhe_conosco: "Trabalhe conosco"
+  };
   async function carregarEstatisticas() {
     var desde = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
     var [viewsRes, clicksRes] = await Promise.all([
@@ -1018,8 +1043,24 @@
     document.getElementById("stat-views").textContent = viewsRes.count != null ? viewsRes.count : "0";
     var cliques = clicksRes.data || [];
     document.getElementById("stat-clicks").textContent = cliques.length;
-    var contagem = {};
-    cliques.forEach(function (c) { contagem[c.botao_tipo] = (contagem[c.botao_tipo] || 0) + 1; });
+    var contagem = {}, promo = {};
+    cliques.forEach(function (c) {
+      var k = c.botao_tipo || "outro";
+      if (k.indexOf("promo_") === 0) promo[k] = (promo[k] || 0) + 1;
+      else contagem[k] = (contagem[k] || 0) + 1;
+    });
+    var etapas = [
+      ["Abriu a promoção", contagem.promocao_dia || 0],
+      ["Completou a cartela", promo.promo_cartela_completa || 0],
+      ["Copiou ou salvou o sticker", (promo.promo_sticker_copiar || 0) + (promo.promo_sticker_salvar || 0)],
+      ["Foi ao Instagram", (promo.promo_instagram || 0) + (promo.promo_abrir_insta || 0)],
+      ["Adicionou à agenda", promo.promo_agenda || 0],
+    ];
+    var topo = Math.max.apply(null, etapas.map(function (e) { return e[1]; }).concat([1]));
+    document.getElementById("stat-promo").innerHTML = '<h3 style="font-size:0.95rem;margin:0 0 8px">Jornada da Promoção do dia</h3>' +
+      etapas.map(function (e) {
+        return '<div class="barra-linha"><span class="rotulo">' + e[0] + '</span><div class="barra"><div class="barra-preenchida" style="width:' + Math.round(e[1] / topo * 100) + '%"></div></div><span class="valor">' + e[1] + '</span></div>';
+      }).join("") + '<h3 style="font-size:0.95rem;margin:18px 0 8px">Botões da página</h3>';
     var maxima = Math.max.apply(null, Object.values(contagem).concat([1]));
     var el = document.getElementById("stat-botoes");
     el.innerHTML = "";
@@ -1027,7 +1068,7 @@
       var pct = Math.round((contagem[tipo] / maxima) * 100);
       var linha = document.createElement("div");
       linha.className = "barra-linha";
-      linha.innerHTML = '<span class="rotulo">' + escapeHtml(tipo) + '</span><div class="barra"><div class="barra-preenchida" style="width:' + pct + '%"></div></div><span class="valor">' + contagem[tipo] + '</span>';
+      linha.innerHTML = '<span class="rotulo">' + escapeHtml(ROTULOS_CLIQUE[tipo] || tipo) + '</span><div class="barra"><div class="barra-preenchida" style="width:' + pct + '%"></div></div><span class="valor">' + contagem[tipo] + '</span>';
       el.appendChild(linha);
     });
   }
