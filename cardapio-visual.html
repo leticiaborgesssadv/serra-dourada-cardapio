@@ -113,6 +113,17 @@
     border: 1px solid var(--dourado);
     border-radius: 14px;
   }
+  .banner-grupo { margin: 0 0 20px; }
+  .banner-grupo a { display: block; }
+  .banner-grupo img {
+    display: block;
+    width: 100%;
+    max-width: 560px;
+    margin: 0 auto;
+    height: auto;
+    border-radius: 14px;
+    border: 1px solid var(--borda);
+  }
   .grade-espetinhos {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -306,6 +317,11 @@
     });
 
     var html = "";
+    if (grupo === "Completão do Serra") {
+      html += '<div class="banner-grupo"><a href="img/completao-do-serra.jpg" target="_blank" rel="noopener">' +
+        '<img src="img/completao-do-serra.jpg" alt="Completão do Serra: preços para 3, 5 e 7 pessoas" loading="lazy" ' +
+        'onerror="this.closest(\'.banner-grupo\').style.display=\'none\'" /></a></div>';
+    }
     categorias.forEach(function (cat) {
       html += '<h2 class="categoria-titulo">' + escapeHtml(cat) + '</h2>';
       porCategoria[cat].forEach(function (it) {
