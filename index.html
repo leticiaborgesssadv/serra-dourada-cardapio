@@ -1629,7 +1629,7 @@ function renderPromoDiaDestaque() {
         "hasMenu": SITE + "cardapio-visual.html"
       };
       if (est && est.endereco) {
-        dados.address = { "@type": "PostalAddress", "streetAddress": est.endereco, "addressLocality": "Goiânia", "addressRegion": "GO", "addressCountry": "BR" };
+        dados.address = { "@type": "PostalAddress", "streetAddress": "Avenida A, 518 - Jardim Goiás", "postalCode": "74805-020", "addressLocality": "Goiânia", "addressRegion": "GO", "addressCountry": "BR" };
       }
       if (cfg && cfg.mapa_lat != null && cfg.mapa_lng != null) {
         dados.geo = { "@type": "GeoCoordinates", "latitude": Number(cfg.mapa_lat), "longitude": Number(cfg.mapa_lng) };
