@@ -550,6 +550,13 @@
   .historia-card { background: var(--marrom-card); border: 1px solid var(--borda); border-radius: 14px; padding: 16px; }
   .historia-card p { margin: 0 0 10px; color: var(--texto); font-size: 0.9rem; line-height: 1.55; }
   .historia-card p:last-child { margin-bottom: 0; color: var(--texto-suave); }
+  .historia-foto { margin: 0 0 12px; border-radius: 14px; overflow: hidden; border: 1px solid var(--borda); }
+  .historia-foto img { display: block; width: 100%; height: auto; }
+  .historia-card p.historia-destaque { font-weight: 600; color: var(--dourado-claro); }
+  .historia-assinatura { font-style: italic; }
+  .historia-mais summary { cursor: pointer; color: var(--dourado); font-size: 0.88rem; font-weight: 600; margin: 0 0 10px; list-style: none; }
+  .historia-mais summary::-webkit-details-marker { display: none; }
+  .historia-mais[open] summary { display: none; }
 
   .avaliacoes { padding: 6px 16px 6px; max-width: 480px; margin: 0 auto; }
   .avaliacoes h2 { margin: 0 0 4px; font-family: 'Playfair Display', serif; font-weight: 600; font-size: 1.2rem; color: var(--dourado-claro); text-align: center; }
@@ -601,13 +608,23 @@
     <div class="avaliacoes-lista" id="avaliacoes-lista"></div>
   </section>
 
-  <!-- PROPOSTA (branch proposta-melhorias): seção Nossa história. Revisar os marcadores [A CONFIRMAR] antes de publicar. -->
+  <!-- PROPOSTA (branch proposta-melhorias): seção Nossa história. Texto enviado pela família em 26/10/2026; foto em img/historia-brinde.jpg. -->
   <section class="historia" id="historia">
-    <h2>Nossa história</h2>
+    <h2>Nossa História</h2>
+    <figure class="historia-foto"><img src="img/historia-brinde.jpg" alt="Brinde com a caneca do Serra Dourada no balcão do bar" width="720" height="900" loading="lazy" /></figure>
     <div class="historia-card">
-      <p>O Serra Dourada é um negócio de família, aberto em [A CONFIRMAR: ano de fundação] por [A CONFIRMAR: quem fundou], no Jardim Goiás.</p>
-      <p>[A CONFIRMAR: origem do nome Serra Dourada]</p>
-      <p>De segunda a sábado, a casa abre para o almoço e, a partir das 16h, para o Happy Hour. Em todos os horários, a ideia é a mesma: receber quem chega como se fosse de casa.</p>
+      <p class="historia-destaque">Uma história de família, trabalho e amor por receber bem.</p>
+      <p>O Serra Dourada nasceu de um sonho simples, construído com muito trabalho, dedicação e a vontade de fazer as coisas bem-feitas.</p>
+      <p>Tudo começou com o Seu Denir e a Dona Eunice, em uma pequena mercearia que, aos poucos, foi se tornando muito mais do que um comércio. Entre os primeiros espetinhos preparados na brasa, a comida caseira e as conversas com quem chegava, nasceu uma tradição que atravessou os anos e conquistou seu espaço na vida de tantas pessoas.</p>
+      <details class="historia-mais">
+        <summary>Ler a história completa</summary>
+        <p>O que começou pequeno foi crescendo, não apenas em tamanho, mas também em histórias. Vieram novas mesas, novos sabores e novos rostos. Clientes se tornaram amigos, famílias passaram a fazer parte da nossa rotina e aquele cantinho se transformou em um lugar de encontros e boas lembranças.</p>
+        <p>Com o tempo, a mercearia deu lugar ao Serra Dourada Bar &amp; Restaurante. Uma transformação que trouxe novidades, mas preservou o que sempre foi a nossa essência: a simplicidade, o cuidado em cada preparo e o prazer de receber bem.</p>
+        <p>Hoje, seguimos reunindo gerações em torno da mesa. Seja no almoço com gostinho de comida de casa, no churrasco compartilhado com a família ou naquela cerveja gelada entre amigos, queremos que cada visita seja uma oportunidade de criar novas memórias.</p>
+        <p>Por trás de tudo isso, permanece o legado do Seu Denir e da Dona Eunice: a certeza de que um bom lugar não é feito apenas de comida saborosa, mas também das pessoas, das histórias e dos momentos que acontecem ao redor da mesa.</p>
+      </details>
+      <p class="historia-destaque">O Serra Dourada cresceu, mas suas raízes continuam as mesmas. Porque, mais do que um bar e restaurante, somos uma história de família que tem a alegria de fazer parte da sua.</p>
+      <p class="historia-assinatura">Serra Dourada Bar &amp; Restaurante: de nossa família para a sua.</p>
     </div>
   </section>
 
