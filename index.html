@@ -3,11 +3,14 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Serra Dourada Bar e Restaurante</title>
+<title>Serra Dourada Bar e Restaurante em Goiânia | Almoço e Happy Hour</title>
 <meta name="theme-color" content="#241608" />
-<meta name="description" content="Cardápio, promoções, happy hour, eventos e contato do Serra Dourada Bar e Restaurante." />
+<meta name="description" content="Bar e restaurante em Goiânia: almoço de segunda a sábado, Happy Hour das 16h às 20h, petiscos na chapa, cerveja gelada e reserva de mesa pelo site." />
+<link rel="canonical" href="https://serradouradabar.com.br/" />
 
 <meta property="og:type" content="website" />
+<meta property="og:locale" content="pt_BR" />
+<meta property="og:site_name" content="Serra Dourada Bar e Restaurante" />
 <meta property="og:title" content="Serra Dourada Bar e Restaurante" />
 <meta property="og:description" content="Cardápio completo, Happy Hour de segunda a sábado das 16h às 20h, reservas e as promoções da semana." />
 <meta property="og:image" content="https://serradouradabar.com.br/img/og-serra.jpg" />
@@ -1604,6 +1607,57 @@ function renderPromoDiaDestaque() {
     }
   }
 
+  // Dados estruturados (schema.org) para o Google. Montados a partir do mesmo
+  // cadastro do painel (estabelecimento + pagina_config), então ficam sempre
+  // sincronizados com horário, endereço e WhatsApp editados no admin.
+  function montarDadosEstruturados(est, cfg) {
+    try {
+      var SITE = "https://serradouradabar.com.br/";
+      var DIAS_SCHEMA = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+      var hm = function (t) { return String(t || "").slice(0, 5); };
+      var dados = {
+        "@context": "https://schema.org",
+        "@type": "Restaurant",
+        "@id": SITE + "#restaurante",
+        "name": (est && (est.nome_fantasia || est.nome)) || "Serra Dourada Bar e Restaurante",
+        "url": SITE,
+        "image": SITE + "img/og-serra.jpg",
+        "logo": SITE + "img/icon-512.png",
+        "servesCuisine": "Brasileira",
+        "acceptsReservations": true,
+        "hasMenu": SITE + "cardapio-visual.html"
+      };
+      if (est && est.endereco) {
+        dados.address = { "@type": "PostalAddress", "streetAddress": est.endereco, "addressLocality": "Goiânia", "addressRegion": "GO", "addressCountry": "BR" };
+      }
+      if (cfg && cfg.mapa_lat != null && cfg.mapa_lng != null) {
+        dados.geo = { "@type": "GeoCoordinates", "latitude": Number(cfg.mapa_lat), "longitude": Number(cfg.mapa_lng) };
+      }
+      var numero = ((cfg && cfg.whatsapp) || "").replace(/\D/g, "");
+      if (numero.length === 10 || numero.length === 11) numero = "55" + numero;
+      if (numero) dados.telephone = "+" + numero;
+      var perfis = [urlInstagram()];
+      if (cfg && cfg.google_maps_url) perfis.push(cfg.google_maps_url);
+      dados.sameAs = perfis;
+      var h = (cfg && cfg.horario_funcionamento) || {};
+      var horarios = [];
+      for (var i = 0; i < 7; i++) {
+        var v = h[String(i)] || {};
+        ["almoco", "bar"].forEach(function (turno) {
+          var t = v[turno];
+          if (t && t.abre && t.fecha) horarios.push({ "@type": "OpeningHoursSpecification", "dayOfWeek": DIAS_SCHEMA[i], "opens": hm(t.abre), "closes": hm(t.fecha) });
+        });
+      }
+      if (horarios.length) dados.openingHoursSpecification = horarios;
+      var tag = document.createElement("script");
+      tag.type = "application/ld+json";
+      tag.textContent = JSON.stringify(dados);
+      document.head.appendChild(tag);
+    } catch (e) {
+      // Falha silenciosa: dados estruturados não podem quebrar a página.
+    }
+  }
+
   async function carregar() {
     try {
       var estRes = await sb.from("estabelecimento").select("id,nome_fantasia,nome,endereco").limit(1).maybeSingle();
@@ -1654,6 +1708,8 @@ function renderPromoDiaDestaque() {
           document.getElementById("boas-vindas").textContent = mensagem;
         }
       }
+
+      montarDadosEstruturados(estRes.data, config);
 
       var turnoAlmocoHoje = ((config && config.horario_funcionamento) || {})[String(new Date().getDay())];
       turnoAlmocoHoje = turnoAlmocoHoje && turnoAlmocoHoje.almoco;
