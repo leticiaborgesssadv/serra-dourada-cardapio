@@ -26,7 +26,10 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playball&family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Manrope:wght@500;600;700&display=swap" rel="stylesheet">
+<!-- PROPOSTA velocidade: fontes carregadas sem travar a exibição da página -->
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Playball&family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Manrope:wght@500;600;700&display=swap">
+<link href="https://fonts.googleapis.com/css2?family=Playball&family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Manrope:wght@500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Playball&family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Manrope:wght@500;600;700&display=swap" rel="stylesheet"></noscript>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" defer></script>
 <style>
   :root {
@@ -544,6 +547,20 @@
   .skeleton-botoes { display: flex; flex-direction: column; gap: 12px; padding: 18px 16px; max-width: 480px; margin: 0 auto; }
   .skeleton-botao { height: 56px; }
 
+  /* PROPOSTA: seção Nossa história (mesmo estilo das avaliações) */
+  .historia { padding: 18px 16px 6px; max-width: 480px; margin: 0 auto; animation: surgir 0.5s ease both; animation-delay: 0.19s; }
+  .historia h2 { margin: 0 0 10px; font-family: 'Playfair Display', serif; font-weight: 600; font-size: 1.2rem; color: var(--dourado-claro); text-align: center; }
+  .historia-card { background: var(--marrom-card); border: 1px solid var(--borda); border-radius: 14px; padding: 16px; }
+  .historia-card p { margin: 0 0 10px; color: var(--texto); font-size: 0.9rem; line-height: 1.55; }
+  .historia-card p:last-child { margin-bottom: 0; color: var(--texto-suave); }
+  .historia-foto { margin: 0 0 12px; border-radius: 14px; overflow: hidden; border: 1px solid var(--borda); }
+  .historia-foto img { display: block; width: 100%; height: auto; }
+  .historia-card p.historia-destaque { font-weight: 600; color: var(--dourado-claro); }
+  .historia-assinatura { font-style: italic; }
+  .historia-mais summary { cursor: pointer; color: var(--dourado); font-size: 0.88rem; font-weight: 600; margin: 0 0 10px; list-style: none; }
+  .historia-mais summary::-webkit-details-marker { display: none; }
+  .historia-mais[open] summary { display: none; }
+
   .avaliacoes { padding: 6px 16px 6px; max-width: 480px; margin: 0 auto; }
   .avaliacoes h2 { margin: 0 0 4px; font-family: 'Playfair Display', serif; font-weight: 600; font-size: 1.2rem; color: var(--dourado-claro); text-align: center; }
   .avaliacoes-resumo { text-align: center; color: var(--texto-suave); font-size: 0.85rem; margin-bottom: 14px; }
@@ -567,7 +584,7 @@
     </div>
   </div>
 
-  <div class="hero" id="hero">
+  <div class="hero escondido" id="hero">
     <div class="placeholder-icone">🍺</div>
     <div class="hero-legenda" id="hero-legenda"></div>
   </div>
@@ -592,6 +609,26 @@
     <h2>O que dizem sobre nós</h2>
     <p class="avaliacoes-resumo" id="avaliacoes-resumo"></p>
     <div class="avaliacoes-lista" id="avaliacoes-lista"></div>
+  </section>
+
+  <!-- PROPOSTA (branch proposta-melhorias): seção Nossa história. Texto enviado pela família em 26/10/2026; foto em img/historia-brinde.jpg. -->
+  <section class="historia" id="historia">
+    <h2>Nossa História</h2>
+    <figure class="historia-foto"><img src="img/historia-brinde.jpg" alt="Brinde com a caneca do Serra Dourada no balcão do bar" width="720" height="900" loading="lazy" /></figure>
+    <div class="historia-card">
+      <p class="historia-destaque">Uma história de família, trabalho e amor por receber bem.</p>
+      <p>O Serra Dourada nasceu de um sonho simples, construído com muito trabalho, dedicação e a vontade de fazer as coisas bem-feitas.</p>
+      <p>Tudo começou com o Seu Denir e a Dona Eunice, em uma pequena mercearia que, aos poucos, foi se tornando muito mais do que um comércio. Entre os primeiros espetinhos preparados na brasa, a comida caseira e as conversas com quem chegava, nasceu uma tradição que atravessou os anos e conquistou seu espaço na vida de tantas pessoas.</p>
+      <details class="historia-mais">
+        <summary>Ler a história completa</summary>
+        <p>O que começou pequeno foi crescendo, não apenas em tamanho, mas também em histórias. Vieram novas mesas, novos sabores e novos rostos. Clientes se tornaram amigos, famílias passaram a fazer parte da nossa rotina e aquele cantinho se transformou em um lugar de encontros e boas lembranças.</p>
+        <p>Com o tempo, a mercearia deu lugar ao Serra Dourada Bar e Restaurante. Uma transformação que trouxe novidades, mas preservou o que sempre foi a nossa essência: a simplicidade, o cuidado em cada preparo e o prazer de receber bem.</p>
+        <p>Hoje, seguimos reunindo gerações em torno da mesa. Seja no almoço com gostinho de comida de casa, no churrasco compartilhado com a família ou naquela cerveja gelada entre amigos, queremos que cada visita seja uma oportunidade de criar novas memórias.</p>
+        <p>Por trás de tudo isso, permanece o legado do Seu Denir e da Dona Eunice: a certeza de que um bom lugar não é feito apenas de comida saborosa, mas também das pessoas, das histórias e dos momentos que acontecem ao redor da mesa.</p>
+      </details>
+      <p class="historia-destaque">O Serra Dourada cresceu, mas suas raízes continuam as mesmas. Porque, mais do que um bar e restaurante, somos uma história de família que tem a alegria de fazer parte da sua.</p>
+      <p class="historia-assinatura">Serra Dourada Bar e Restaurante: de nossa família para a sua.</p>
+    </div>
   </section>
 
   <nav class="botoes escondido" id="botoes">
@@ -1481,7 +1518,7 @@ function renderPromoDiaDestaque() {
   }
 
   document.getElementById("barra-cardapio").addEventListener("click", function () { ACOES.cardapio(); });
-  document.getElementById("barra-whatsapp").addEventListener("click", function () { ACOES.reserva_whatsapp(); });
+  document.getElementById("barra-whatsapp").addEventListener("click", function () { /* PROPOSTA: WhatsApp da barra fixa abre a conversa direta; reserva fica no botão "Fazer reserva". Se o número não carregar, cai no formulário de reserva (o botão nunca fica sem ação). */ registrar("click", "whatsapp_direto"); var link = linkWhatsapp("Olá! Vim pelo site do Serra Dourada."); if (!link) { ACOES.reserva_whatsapp(); return; } var janela = window.open(link, "_blank"); if (janela) { try { janela.opener = null; } catch (e) {} } else { location.href = link; } });
   document.getElementById("promo-dia-card").addEventListener("click", function () { ACOES.promocao_dia(); });
 
   var SW = 'fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"';
@@ -1703,6 +1740,7 @@ function renderPromoDiaDestaque() {
           document.getElementById("hero").innerHTML =
             '<img src="' + escapeHtml(config.imagem_hero_url) + '" alt="Serra Dourada" loading="eager" />' +
             '<div class="hero-legenda" id="hero-legenda">' + escapeHtml(mensagem) + '</div>';
+          document.getElementById("hero").classList.remove("escondido"); // PROPOSTA velocidade: o bloco só aparece quando há imagem (evita o "pulo" da tela)
           document.getElementById("boas-vindas").remove();
           if (config.hero_por_clima) ajustarHeroPorClima(mensagem);
         } else {
@@ -1710,6 +1748,9 @@ function renderPromoDiaDestaque() {
           document.getElementById("boas-vindas").textContent = mensagem;
         }
       }
+
+      // PROPOSTA: liga/desliga da seção Nossa História pelo painel (aba Contato)
+      if (config && config.mostrar_historia === false) { var secHistoria = document.getElementById("historia"); if (secHistoria) secHistoria.remove(); }
 
       montarDadosEstruturados(estRes.data, config);
 
