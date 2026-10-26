@@ -1498,7 +1498,7 @@ function renderPromoDiaDestaque() {
   }
 
   document.getElementById("barra-cardapio").addEventListener("click", function () { ACOES.cardapio(); });
-  document.getElementById("barra-whatsapp").addEventListener("click", function () { ACOES.reserva_whatsapp(); });
+  document.getElementById("barra-whatsapp").addEventListener("click", function () { /* PROPOSTA: WhatsApp da barra fixa abre a conversa direta; reserva fica no botão "Fazer reserva". Se o número não carregar, cai no formulário de reserva (o botão nunca fica sem ação). */ registrar("click", "whatsapp_direto"); var link = linkWhatsapp("Olá! Vim pelo site do Serra Dourada."); if (!link) { ACOES.reserva_whatsapp(); return; } var janela = window.open(link, "_blank"); if (janela) { try { janela.opener = null; } catch (e) {} } else { location.href = link; } });
   document.getElementById("promo-dia-card").addEventListener("click", function () { ACOES.promocao_dia(); });
 
   var SW = 'fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"';
