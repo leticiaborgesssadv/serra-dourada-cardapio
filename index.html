@@ -544,6 +544,13 @@
   .skeleton-botoes { display: flex; flex-direction: column; gap: 12px; padding: 18px 16px; max-width: 480px; margin: 0 auto; }
   .skeleton-botao { height: 56px; }
 
+  /* PROPOSTA: seção Nossa história (mesmo estilo das avaliações) */
+  .historia { padding: 18px 16px 6px; max-width: 480px; margin: 0 auto; animation: surgir 0.5s ease both; animation-delay: 0.19s; }
+  .historia h2 { margin: 0 0 10px; font-family: 'Playfair Display', serif; font-weight: 600; font-size: 1.2rem; color: var(--dourado-claro); text-align: center; }
+  .historia-card { background: var(--marrom-card); border: 1px solid var(--borda); border-radius: 14px; padding: 16px; }
+  .historia-card p { margin: 0 0 10px; color: var(--texto); font-size: 0.9rem; line-height: 1.55; }
+  .historia-card p:last-child { margin-bottom: 0; color: var(--texto-suave); }
+
   .avaliacoes { padding: 6px 16px 6px; max-width: 480px; margin: 0 auto; }
   .avaliacoes h2 { margin: 0 0 4px; font-family: 'Playfair Display', serif; font-weight: 600; font-size: 1.2rem; color: var(--dourado-claro); text-align: center; }
   .avaliacoes-resumo { text-align: center; color: var(--texto-suave); font-size: 0.85rem; margin-bottom: 14px; }
@@ -592,6 +599,16 @@
     <h2>O que dizem sobre nós</h2>
     <p class="avaliacoes-resumo" id="avaliacoes-resumo"></p>
     <div class="avaliacoes-lista" id="avaliacoes-lista"></div>
+  </section>
+
+  <!-- PROPOSTA (branch proposta-melhorias): seção Nossa história. Revisar os marcadores [A CONFIRMAR] antes de publicar. -->
+  <section class="historia" id="historia">
+    <h2>Nossa história</h2>
+    <div class="historia-card">
+      <p>O Serra Dourada é um negócio de família, aberto em [A CONFIRMAR: ano de fundação] por [A CONFIRMAR: quem fundou], no Jardim Goiás.</p>
+      <p>[A CONFIRMAR: origem do nome Serra Dourada]</p>
+      <p>De segunda a sábado, a casa abre para o almoço e, a partir das 16h, para o Happy Hour. Em todos os horários, a ideia é a mesma: receber quem chega como se fosse de casa.</p>
+    </div>
   </section>
 
   <nav class="botoes escondido" id="botoes">
