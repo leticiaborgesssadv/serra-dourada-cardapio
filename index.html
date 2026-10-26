@@ -405,6 +405,8 @@
   .barra-fixa .icone svg { width: 100%; height: 100%; }
   .barra-fixa .principal { background: var(--dourado); color: #241608; }
   .barra-fixa .secundaria { background: var(--marrom-card); color: var(--texto); border: 1px solid var(--borda); }
+  footer a, .link-privacidade a { color: inherit; }
+  .link-privacidade { font-size: 0.74rem; color: var(--texto-suave); margin: -4px 0 12px; }
   footer {
     text-align: center;
     padding: 10px 16px calc(24px + env(safe-area-inset-bottom, 0px));
@@ -512,7 +514,7 @@
   }
   .reserva-linha { display: grid; grid-template-columns: 1.4fr 1fr 0.8fr; gap: 8px; }
   #form-reserva input[type=date], #form-reserva input[type=time], #form-reserva input[type=number],
-  #form-reserva input[type=text] {
+  #form-reserva input[type=text], #form-reserva select {
     width: 100%;
     padding: 11px 13px;
     border-radius: 8px;
@@ -696,7 +698,7 @@
     <div class="skeleton skeleton-botao"></div>
   </div>
 
-  <footer>Serra Dourada Bar e Restaurante · Goiânia/GO</footer>
+  <footer>Serra Dourada Bar e Restaurante · Goiânia/GO · <a href="privacidade.html">Política de Privacidade</a></footer>
 
   <div class="barra-fixa">
     <button type="button" id="barra-cardapio" class="principal">
@@ -735,6 +737,16 @@
             <input type="number" id="reserva-pessoas" required min="1" max="100" inputmode="numeric" />
           </div>
         </div>
+        <label for="reserva-ocasiao">Ocasião (opcional)</label>
+        <select id="reserva-ocasiao">
+          <option value="">Sem ocasião especial</option>
+          <option>Aniversário</option>
+          <option>Confraternização</option>
+          <option>Reunião de família</option>
+          <option>Encontro de amigos</option>
+          <option>Assistir a jogo</option>
+          <option>Reunião de trabalho</option>
+        </select>
         <label class="consentimento">
           <input type="checkbox" id="reserva-consentimento" required />
           <span>Autorizo o Serra Dourada a usar meu nome e WhatsApp para tratar desta reserva.</span>
@@ -743,6 +755,7 @@
           <input type="checkbox" id="reserva-novidades" />
           <span>Quero receber novidades e promoções pelo WhatsApp (opcional).</span>
         </label>
+        <p class="link-privacidade">Saiba como usamos seus dados na nossa <a href="privacidade.html" target="_blank" rel="noopener">Política de Privacidade</a>.</p>
         <button type="submit" class="botao destaque" id="btn-continuar-whatsapp" style="width:100%">Continuar para o WhatsApp</button>
         <p class="modal-vazio" id="msg-reserva" style="padding:8px 0 0"></p>
       </form>
@@ -1537,6 +1550,7 @@ function renderPromoDiaDestaque() {
     var hora = document.getElementById("reserva-hora").value;
     var pessoas = parseInt(document.getElementById("reserva-pessoas").value, 10);
     var novidades = document.getElementById("reserva-novidades").checked;
+    var ocasiao = document.getElementById("reserva-ocasiao").value;
     msgEl.textContent = "";
     if (!nome || telefone.length < 10) { msgEl.textContent = "Preencha seu nome e um WhatsApp com DDD."; return; }
     if (!data || !hora || !(pessoas >= 1 && pessoas <= 100)) { msgEl.textContent = "Informe data, horário e número de pessoas."; return; }
@@ -1570,7 +1584,7 @@ function renderPromoDiaDestaque() {
     var dataBr = data.split("-").reverse().join("/");
     var diaSemana = DIAS[new Date(data + "T12:00:00").getDay()];
     var link = linkWhatsapp("Olá! Gostaria de reservar para " + pessoas + (pessoas === 1 ? " pessoa" : " pessoas") +
-      (diaSemana === "Sábado" || diaSemana === "Domingo" ? " no " : " na ") + diaSemana.toLowerCase() + ", " + dataBr + ", às " + hora + ". Nome: " + nome + ".");
+      (diaSemana === "Sábado" || diaSemana === "Domingo" ? " no " : " na ") + diaSemana.toLowerCase() + ", " + dataBr + ", às " + hora + ". Nome: " + nome + "." + (ocasiao ? " Ocasião: " + ocasiao + "." : ""));
     if (!link) { msgEl.textContent = "Reservas por WhatsApp indisponíveis no momento. Tente outro contato."; return; }
 
     // Abre o WhatsApp imediatamente, ainda dentro do toque do cliente (senão o Safari bloqueia).
@@ -1585,7 +1599,7 @@ function renderPromoDiaDestaque() {
       horario_desejado: hora,
       pessoas: pessoas,
       aceita_novidades: novidades,
-      mensagem: "Reserva pelo site",
+      mensagem: "Reserva pelo site" + (ocasiao ? " · Ocasião: " + ocasiao : ""),
       status: "novo",
     }).then(function () {}, function () {});
 
