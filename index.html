@@ -1629,6 +1629,7 @@ function renderPromoDiaDestaque() {
         "hasMenu": SITE + "cardapio-visual.html"
       };
       if (est && est.endereco) {
+        // Endereço público fixo aqui de propósito. Não vem do painel, porque o cadastro do sistema guarda o endereço do CNPJ. Se o endereço do bar mudar, alterar esta linha.
         dados.address = { "@type": "PostalAddress", "streetAddress": "Avenida A, 518 - Jardim Goiás", "postalCode": "74805-020", "addressLocality": "Goiânia", "addressRegion": "GO", "addressCountry": "BR" };
       }
       if (cfg && cfg.mapa_lat != null && cfg.mapa_lng != null) {
