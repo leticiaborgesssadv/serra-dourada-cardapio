@@ -256,6 +256,10 @@
         <input type="text" id="cfg-maps" placeholder="https://maps.app.goo.gl/..." />
         <label for="cfg-avaliacao">Link para avaliar no Google</label>
         <input type="text" id="cfg-avaliacao" placeholder="https://g.page/r/..." />
+        <div class="toggle-linha" style="margin-top:12px">
+          <label for="cfg-mostrar-historia" style="margin:0">Mostrar a seção "Nossa História" no site</label>
+          <input type="checkbox" id="cfg-mostrar-historia" />
+        </div>
         <button class="botao" id="btn-salvar-contato"><span id="spin-contato" class="spinner escondido"></span>Salvar contato</button>
         <div class="msg" id="msg-contato"></div>
       </div>
@@ -868,6 +872,7 @@
     document.getElementById("cfg-instagram").value = r.data.instagram_url || "";
     document.getElementById("cfg-maps").value = r.data.google_maps_url || "";
     document.getElementById("cfg-avaliacao").value = r.data.avaliacao_url || "";
+    document.getElementById("cfg-mostrar-historia").checked = r.data.mostrar_historia !== false;
     if (r.data.imagem_hero_url) {
       var img = document.getElementById("preview-hero");
       img.src = r.data.imagem_hero_url; img.classList.remove("escondido");
@@ -886,6 +891,7 @@
       instagram_url: document.getElementById("cfg-instagram").value.trim() || null,
       google_maps_url: document.getElementById("cfg-maps").value.trim() || null,
       avaliacao_url: document.getElementById("cfg-avaliacao").value.trim() || null,
+      mostrar_historia: document.getElementById("cfg-mostrar-historia").checked,
       atualizado_em: new Date().toISOString(),
     }).eq("estabelecimento_id", estabelecimentoId);
     btn.disabled = false; spin.classList.add("escondido");
