@@ -1749,6 +1749,9 @@ function renderPromoDiaDestaque() {
         }
       }
 
+      // PROPOSTA: liga/desliga da seção Nossa História pelo painel (aba Contato)
+      if (config && config.mostrar_historia === false) { var secHistoria = document.getElementById("historia"); if (secHistoria) secHistoria.remove(); }
+
       montarDadosEstruturados(estRes.data, config);
 
       var turnoAlmocoHoje = ((config && config.horario_funcionamento) || {})[String(new Date().getDay())];
