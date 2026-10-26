@@ -1691,7 +1691,7 @@ function renderPromoDiaDestaque() {
       promocaoDiaBadgeAtiva = estadoPromo(promocaoDiaHoje) === "ativa";
       renderPromoDiaDestaque();
       if (config) {
-        config.endereco_embed = estRes.data.endereco || null;
+        config.endereco_embed = "Avenida A, 518 - Jardim Goiás, Goiânia/GO, CEP 74805-020"; // Endereço público fixo de propósito (o cadastro do sistema guarda o do CNPJ). Se o endereço do bar mudar, alterar aqui e nos dados estruturados.
         if (config.imagem_logo_url) {
           var logoImg = document.getElementById("logo-img");
           logoImg.src = config.imagem_logo_url;
