@@ -26,7 +26,10 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playball&family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Manrope:wght@500;600;700&display=swap" rel="stylesheet">
+<!-- PROPOSTA velocidade: fontes carregadas sem travar a exibição da página -->
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Playball&family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Manrope:wght@500;600;700&display=swap">
+<link href="https://fonts.googleapis.com/css2?family=Playball&family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Manrope:wght@500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Playball&family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Manrope:wght@500;600;700&display=swap" rel="stylesheet"></noscript>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" defer></script>
 <style>
   :root {
@@ -581,7 +584,7 @@
     </div>
   </div>
 
-  <div class="hero" id="hero">
+  <div class="hero escondido" id="hero">
     <div class="placeholder-icone">🍺</div>
     <div class="hero-legenda" id="hero-legenda"></div>
   </div>
@@ -1737,6 +1740,7 @@ function renderPromoDiaDestaque() {
           document.getElementById("hero").innerHTML =
             '<img src="' + escapeHtml(config.imagem_hero_url) + '" alt="Serra Dourada" loading="eager" />' +
             '<div class="hero-legenda" id="hero-legenda">' + escapeHtml(mensagem) + '</div>';
+          document.getElementById("hero").classList.remove("escondido"); // PROPOSTA velocidade: o bloco só aparece quando há imagem (evita o "pulo" da tela)
           document.getElementById("boas-vindas").remove();
           if (config.hero_por_clima) ajustarHeroPorClima(mensagem);
         } else {
