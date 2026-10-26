@@ -578,6 +578,27 @@
   .avaliacao-autor { font-size: 0.76rem; color: var(--texto-suave); font-weight: 600; }
 
   .mapa-embed { width: 100%; height: 220px; border: 0; border-radius: 12px; margin-bottom: 12px; display: block; }
+
+  /* PROPOSTA: Almoço e Happy Hour em cards */
+  .experiencias, .semana { padding: 18px 16px 6px; max-width: 480px; margin: 0 auto; }
+  .experiencias h2, .semana h2 { margin: 0 0 12px; font-family: 'Playfair Display', serif; font-weight: 600; font-size: 1.2rem; color: var(--dourado-claro); text-align: center; }
+  .experiencias-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .experiencia-card { display: flex; flex-direction: column; background: var(--marrom-card); border: 1px solid var(--borda); border-radius: 14px; overflow: hidden; padding: 0; cursor: pointer; text-align: left; font-family: inherit; color: var(--texto); }
+  .experiencia-foto { display: block; aspect-ratio: 4 / 3; background: var(--marrom-claro); }
+  .experiencia-foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .experiencia-textos { display: flex; flex-direction: column; gap: 4px; padding: 10px 12px 12px; }
+  .experiencia-titulo { font-family: 'Playfair Display', serif; font-weight: 600; font-size: 1.02rem; color: var(--dourado-claro); }
+  .experiencia-info { font-size: 0.74rem; font-weight: 700; color: var(--texto); }
+  .experiencia-desc { font-size: 0.76rem; line-height: 1.4; color: var(--texto-suave); }
+
+  /* PROPOSTA: promoções da semana */
+  .semana-lista { display: flex; flex-direction: column; gap: 8px; }
+  .semana-item { display: flex; gap: 12px; align-items: flex-start; width: 100%; text-align: left; font-family: inherit; background: var(--marrom-card); border: 1px solid var(--borda); border-radius: 12px; padding: 12px 14px; cursor: pointer; color: var(--texto); }
+  .semana-item.hoje { border-color: var(--dourado); }
+  .semana-dia { flex: 0 0 64px; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--dourado); padding-top: 2px; }
+  .semana-textos { display: flex; flex-direction: column; gap: 3px; }
+  .semana-titulo { font-weight: 700; font-size: 0.92rem; }
+  .semana-desc { font-size: 0.78rem; line-height: 1.4; color: var(--texto-suave); }
 </style>
 </head>
 <body>
@@ -608,6 +629,35 @@
       <figure><img src="img/destaque-3.jpg" alt="Prato do Serra Dourada" loading="lazy" /></figure>
       <figure><img src="img/destaque-4.jpg" alt="Prato do Serra Dourada" loading="lazy" /></figure>
     </div>
+  </section>
+
+  <!-- PROPOSTA: Almoço e Happy Hour em cards (dados do painel) -->
+  <section class="experiencias" id="experiencias">
+    <h2>Almoço e Happy Hour</h2>
+    <div class="experiencias-grid">
+      <button type="button" class="experiencia-card" id="exp-almoco">
+        <span class="experiencia-foto"><img id="exp-almoco-foto" alt="Almoço do Serra Dourada" loading="lazy" /></span>
+        <span class="experiencia-textos">
+          <span class="experiencia-titulo">Almoço</span>
+          <span class="experiencia-info" id="exp-almoco-info">Segunda a sábado</span>
+          <span class="experiencia-desc" id="exp-almoco-desc">Comida caseira de segunda a sábado.</span>
+        </span>
+      </button>
+      <button type="button" class="experiencia-card" id="exp-hh">
+        <span class="experiencia-foto"><img src="img/happyhour-1.jpg" alt="Drinks do Happy Hour do Serra Dourada" width="720" height="480" loading="lazy" /></span>
+        <span class="experiencia-textos">
+          <span class="experiencia-titulo">Happy Hour</span>
+          <span class="experiencia-info" id="exp-hh-info">A partir das 16h</span>
+          <span class="experiencia-desc" id="exp-hh-desc">Petiscos e chopp com preço especial.</span>
+        </span>
+      </button>
+    </div>
+  </section>
+
+  <!-- PROPOSTA: promoções da semana (dados do painel) -->
+  <section class="semana escondido" id="semana">
+    <h2>Promoções da semana</h2>
+    <div class="semana-lista" id="semana-lista"></div>
   </section>
 
   <section class="avaliacoes escondido" id="avaliacoes">
@@ -1491,6 +1541,31 @@ function renderPromoDiaDestaque() {
     if (!nome || telefone.length < 10) { msgEl.textContent = "Preencha seu nome e um WhatsApp com DDD."; return; }
     if (!data || !hora || !(pessoas >= 1 && pessoas <= 100)) { msgEl.textContent = "Informe data, horário e número de pessoas."; return; }
     if (data < dataLocalHoje()) { msgEl.textContent = "Escolha uma data a partir de hoje."; return; }
+    // PROPOSTA: não aceita reserva em dia ou horário em que a casa está fechada (horários do painel)
+    var horarios = (config && config.horario_funcionamento) || null;
+    if (horarios) {
+      var diaRes = new Date(data + "T12:00:00").getDay();
+      var turnosDia = horarios[String(diaRes)] ? [horarios[String(diaRes)].almoco, horarios[String(diaRes)].bar].filter(Boolean) : [];
+      if (!turnosDia.length) {
+        var abertos = [];
+        for (var dd = 0; dd < 7; dd++) { if (horarios[String(dd)]) abertos.push(dd); }
+        msgEl.textContent = "Nesse dia a casa não abre. Funcionamos " + textoDias(abertos).toLowerCase() + ".";
+        return;
+      }
+      var dentro = turnosDia.some(function (t) {
+        var ini = formatarHora(t.abre), fim = formatarHora(t.fecha);
+        return hora >= ini && (fim === "00:00" || fim <= ini ? true : hora < fim);
+      });
+      if (!dentro) {
+        msgEl.textContent = "Nesse horário a casa está fechada. Nesse dia funcionamos " +
+          turnosDia.map(function (t) { var f = formatarHora(t.fecha); return "das " + textoHora(formatarHora(t.abre)) + (f === "00:00" ? " à meia-noite" : " às " + textoHora(f)); }).join(" e ") + ".";
+        return;
+      }
+      if (data === dataLocalHoje()) {
+        var agoraD = new Date(), agoraHH = String(agoraD.getHours()).padStart(2, "0") + ":" + String(agoraD.getMinutes()).padStart(2, "0");
+        if (hora < agoraHH) { msgEl.textContent = "Esse horário já passou. Escolha um horário a partir de agora."; return; }
+      }
+    }
 
     var dataBr = data.split("-").reverse().join("/");
     var diaSemana = DIAS[new Date(data + "T12:00:00").getDay()];
@@ -1518,12 +1593,89 @@ function renderPromoDiaDestaque() {
     document.getElementById("form-reserva").reset();
   });
 
+  // PROPOSTA: monta os cards de Almoço e Happy Hour com os dados do painel
+  function faixasDoTurno(campo) {
+    var h = (config && config.horario_funcionamento) || {}, dias = [], faixa = null, iguais = true;
+    for (var d = 0; d < 7; d++) {
+      var t = h[String(d)] && h[String(d)][campo];
+      if (!t) continue;
+      dias.push(d);
+      var f = formatarHora(t.abre) + "|" + formatarHora(t.fecha);
+      if (faixa === null) faixa = f; else if (faixa !== f) iguais = false;
+    }
+    return { dias: dias, faixa: faixa, iguais: iguais };
+  }
+  function textoHora(hhmmTxt) { if (!hhmmTxt) return ""; if (hhmmTxt === "00:00") return "meia-noite"; var p = hhmmTxt.split(":"); return Number(p[0]) + "h" + (p[1] !== "00" ? p[1] : ""); }
+  function textoDias(dias) {
+    if (dias.length === 6 && dias.join(",") === "1,2,3,4,5,6") return "Segunda a sábado";
+    return dias.map(function (d) { return DIAS[d]; }).join(", ");
+  }
+  async function renderExperiencias() {
+    try {
+      var alm = faixasDoTurno("almoco");
+      if (alm.dias.length && alm.iguais) {
+        var fa = alm.faixa.split("|");
+        document.getElementById("exp-almoco-info").textContent = textoDias(alm.dias) + ", " + textoHora(fa[0]) + (fa[1] === "00:00" ? " à meia-noite" : " às " + textoHora(fa[1]));
+      }
+      var hh = hhDados;
+      var partesHH = [];
+      if (hh && hh.ativo && hh.horario_inicio && hh.horario_fim) {
+        partesHH.push("Petiscos com preço especial das " + textoHora(formatarHora(hh.horario_inicio)) + " às " + textoHora(formatarHora(hh.horario_fim)) + ".");
+      }
+      promocoesSemana.filter(function (p) { return p.dia_semana === null && p.ativo; }).forEach(function (p) { partesHH.push(p.titulo + "."); });
+      if (partesHH.length) document.getElementById("exp-hh-desc").textContent = partesHH.join(" ");
+      var bar = faixasDoTurno("bar");
+      if (bar.dias.length && bar.iguais) {
+        var fb = bar.faixa.split("|");
+        document.getElementById("exp-hh-info").textContent = textoDias(bar.dias) + ", a partir das " + textoHora(fb[0]);
+      }
+      var r = await sb.from("cardapio_publico").select("nome,preco,foto_url").eq("grupo", "Almoço (Segunda a Sábado)").eq("ativo", true).order("ordem", { ascending: true });
+      var formatos = r.data || [];
+      if (formatos.length) {
+        var nomes = formatos.map(function (f) { return (f.nome.match(/\(([^)]+)\)/) || [null, f.nome])[1].toLowerCase(); });
+        var menor = Math.min.apply(null, formatos.map(function (f) { return Number(f.preco); }).filter(function (n) { return !isNaN(n); }));
+        var listaNomes = nomes.length > 1 ? nomes.slice(0, -1).join(", ") + " e " + nomes[nomes.length - 1] : nomes[0];
+        document.getElementById("exp-almoco-desc").textContent = listaNomes.charAt(0).toUpperCase() + listaNomes.slice(1) + "." + (isFinite(menor) ? " A partir de " + formatarPreco(menor) + "." : "");
+        if (formatos[0].foto_url) document.getElementById("exp-almoco-foto").src = formatos[0].foto_url;
+      }
+    } catch (e) { /* os cards seguem com o texto padrão */ }
+  }
+
+  // PROPOSTA: lista as promoções fixas de cada dia da semana (cadastradas no painel)
+  function renderSemana() {
+    var lista = promocoesSemana.filter(function (p) { return p.dia_semana !== null && p.ativo; })
+      .sort(function (a, b) { return ((a.dia_semana + 6) % 7) - ((b.dia_semana + 6) % 7); });
+    var secao = document.getElementById("semana");
+    if (!lista.length) { secao.classList.add("escondido"); return; }
+    var hoje = agora().getDay();
+    document.getElementById("semana-lista").innerHTML = lista.map(function (p, i) {
+      var quando = p.hora_inicio ? " · a partir das " + textoHora(formatarHora(p.hora_inicio)) : "";
+      return '<button type="button" class="semana-item' + (p.dia_semana === hoje ? ' hoje' : '') + '" data-i="' + i + '">' +
+        '<span class="semana-dia">' + (p.dia_semana === hoje ? 'Hoje' : escapeHtml(DIAS[p.dia_semana])) + '</span>' +
+        '<span class="semana-textos"><span class="semana-titulo">' + escapeHtml(p.titulo) + '</span>' +
+        '<span class="semana-desc">' + escapeHtml(p.descricao || "") + escapeHtml(quando) + '</span></span></button>';
+    }).join("");
+    document.querySelectorAll("#semana-lista .semana-item").forEach(function (b) {
+      b.addEventListener("click", function () {
+        var p = lista[Number(b.getAttribute("data-i"))];
+        if (p.dia_semana === hoje) { ACOES.promocao_dia(); return; }
+        registrar("click", "promocao_semana");
+        abrirModal(p.titulo + " · " + DIAS[p.dia_semana],
+          (p.descricao ? '<p>' + escapeHtml(p.descricao) + '</p>' : '') +
+          (p.condicoes ? '<p class="modal-vazio" style="text-align:left;white-space:pre-line">' + escapeHtml(p.condicoes) + '</p>' : ''));
+      });
+    });
+    secao.classList.remove("escondido");
+  }
+
   function dataLocalHoje() {
     var d = new Date();
     return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
   }
 
   document.getElementById("barra-cardapio").addEventListener("click", function () { ACOES.cardapio(); });
+  document.getElementById("exp-almoco").addEventListener("click", function () { ACOES.almoco(); });
+  document.getElementById("exp-hh").addEventListener("click", function () { ACOES.happy_hour(); });
   document.getElementById("barra-whatsapp").addEventListener("click", function () { /* PROPOSTA: WhatsApp da barra fixa abre a conversa direta; reserva fica no botão "Fazer reserva". Se o número não carregar, cai no formulário de reserva (o botão nunca fica sem ação). */ registrar("click", "whatsapp_direto"); var link = linkWhatsapp("Olá! Vim pelo site do Serra Dourada."); if (!link) { ACOES.reserva_whatsapp(); return; } var janela = window.open(link, "_blank"); if (janela) { try { janela.opener = null; } catch (e) {} } else { location.href = link; } });
   document.getElementById("promo-dia-card").addEventListener("click", function () { ACOES.promocao_dia(); });
 
@@ -1763,6 +1915,9 @@ function renderPromoDiaDestaque() {
       var turnoAlmocoHoje = ((config && config.horario_funcionamento) || {})[String(new Date().getDay())];
       turnoAlmocoHoje = turnoAlmocoHoje && turnoAlmocoHoje.almoco;
       almocoBadgeAtivo = almocoAtivoAgora(turnoAlmocoHoje);
+
+      renderExperiencias();
+      renderSemana();
 
       botoesAtuais = botoesRes.data || [];
       renderBotoes(botoesAtuais);
