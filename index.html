@@ -1549,7 +1549,7 @@ function renderPromoDiaDestaque() {
       if (!turnosDia.length) {
         var abertos = [];
         for (var dd = 0; dd < 7; dd++) { if (horarios[String(dd)]) abertos.push(dd); }
-        msgEl.textContent = "Nesse dia a casa não abre. Funcionamos " + textoDias(abertos).toLowerCase() + ".";
+        msgEl.textContent = "Nesse dia a casa não abre. Dias de funcionamento: " + textoDias(abertos) + ".";
         return;
       }
       var dentro = turnosDia.some(function (t) {
@@ -1622,7 +1622,10 @@ function renderPromoDiaDestaque() {
       if (hh && hh.ativo && hh.horario_inicio && hh.horario_fim) {
         partesHH.push("Petiscos com preço especial das " + textoHora(formatarHora(hh.horario_inicio)) + " às " + textoHora(formatarHora(hh.horario_fim)) + ".");
       }
-      promocoesSemana.filter(function (p) { return p.dia_semana === null && p.ativo; }).forEach(function (p) { partesHH.push(p.titulo + "."); });
+      var semDia = await sb.from("promocao").select("titulo,ativo,valido_de,valido_ate").is("dia_semana", null).eq("ativo", true).order("ordem", { ascending: true });
+      var hojeIsoHH = dataLocalHoje();
+      (semDia.data || []).filter(function (p) { return (!p.valido_de || p.valido_de <= hojeIsoHH) && (!p.valido_ate || p.valido_ate >= hojeIsoHH); })
+        .forEach(function (p) { partesHH.push(p.titulo + "."); });
       if (partesHH.length) document.getElementById("exp-hh-desc").textContent = partesHH.join(" ");
       var bar = faixasDoTurno("bar");
       if (bar.dias.length && bar.iguais) {
