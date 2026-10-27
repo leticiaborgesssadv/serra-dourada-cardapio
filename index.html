@@ -930,6 +930,23 @@ window.addEventListener("DOMContentLoaded", function () {
       .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
   }
 
+  // PROPOSTA fotos leves: usa a versão reduzida guardada no site (img/cardapio/); se não existir, volta para a original.
+  function fotoMini(url) {
+    var m = /\/pagina-assets\/([^?#\/]+)$/.exec(url || "");
+    if (!m) return url;
+    var nome = decodeURIComponent(m[1]).replace(/\.[^.]+$/, "")
+      .normalize("NFD").replace(/[̀-ͯ]/g, "")
+      .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+    return "img/cardapio/" + nome + ".jpg";
+  }
+  document.addEventListener("error", function (ev) {
+    var img = ev.target;
+    if (img.tagName === "IMG" && img.dataset.original && !img.dataset.trocou) {
+      img.dataset.trocou = "1";
+      img.src = img.dataset.original;
+    }
+  }, true);
+
   function abrirModal(titulo, corpoHtml) {
     if (typeof aplicarTema === "function") aplicarTema(null);
     document.getElementById("modal-titulo").textContent = titulo;
@@ -1033,7 +1050,7 @@ window.addEventListener("DOMContentLoaded", function () {
       var itensHtml = "";
       if (hhRes.data.itens && hhRes.data.itens.length) {
         itensHtml = '<div class="hh-itens">' + hhRes.data.itens.map(function (it) {
-          var fotoHtml = it.foto_url ? '<img class="hh-item-foto" src="' + escapeHtml(it.foto_url) + '" alt="" loading="lazy" />' : '';
+          var fotoHtml = it.foto_url ? '<img class="hh-item-foto" src="' + escapeHtml(fotoMini(it.foto_url)) + '" data-original="' + escapeHtml(it.foto_url) + '" alt="" loading="lazy" decoding="async" />' : '';
           return '<div class="hh-item"><span class="hh-item-esquerda">' + fotoHtml + '<span class="hh-item-nome">' + escapeHtml(it.nome) + '</span></span>' +
             '<span class="hh-item-precos"><span class="hh-item-preco-de">' + formatarPreco(it.preco_de) + '</span>' +
             '<span class="hh-item-preco-por">' + formatarPreco(it.preco_por) + '</span></span></div>';
