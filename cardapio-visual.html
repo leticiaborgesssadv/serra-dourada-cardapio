@@ -80,6 +80,18 @@
     scrollbar-width: none;
   }
   nav.grupos::-webkit-scrollbar { display: none; }
+  /* PROPOSTA cardápio inteligente: busca */
+  .busca { padding: 12px 12px 0; background: var(--marrom-claro); }
+  .busca input {
+    width: 100%; box-sizing: border-box; min-height: 44px; padding: 10px 14px;
+    font-family: inherit; font-size: 16px; color: var(--texto);
+    background: var(--marrom); border: 1px solid var(--borda); border-radius: 12px;
+  }
+  .busca input::placeholder { color: var(--texto-suave); opacity: 0.8; }
+  .busca input:focus { outline: 2px solid var(--dourado-claro); outline-offset: 1px; border-color: transparent; }
+  .busca-resultado { margin: 0 0 14px; font-size: 0.85rem; color: var(--texto-suave); }
+  .so-leitor { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+  nav.grupos button:focus-visible, a:focus-visible { outline: 2px solid var(--dourado-claro); outline-offset: 2px; }
   nav.grupos button {
     flex-shrink: 0;
     background: transparent;
@@ -265,7 +277,13 @@
     <h1>Cardápio</h1>
   </header>
 
-  <nav class="grupos escondido" id="nav-grupos"></nav>
+  <!-- PROPOSTA cardápio inteligente: busca por nome, descrição ou categoria -->
+  <div class="busca escondido" id="busca" role="search">
+    <label class="so-leitor" for="busca-campo">Buscar no cardápio</label>
+    <input type="search" id="busca-campo" placeholder="Buscar: picanha, gin, porção…" autocomplete="off" enterkeyhint="search" />
+  </div>
+
+  <nav class="grupos escondido" id="nav-grupos" aria-label="Categorias do cardápio"></nav>
 
   <main id="main">
     <div class="carregando"><p>Carregando cardápio…</p></div>
@@ -386,7 +404,10 @@
       btn.type = "button";
       btn.textContent = g;
       if (g === ativo) btn.className = "ativo";
+      if (g === ativo) btn.setAttribute("aria-current", "true");
       btn.addEventListener("click", function () {
+        grupoAtivo = g;
+        document.getElementById("busca-campo").value = "";
         renderNav(gruposComItem, todosItens, g);
         renderItens(todosItens.filter(function (it) { return (it.grupo || "Pratos Principais") === g; }), g);
         window.scrollTo({ top: 0, behavior: "smooth" });
@@ -415,13 +436,73 @@
         if (gruposOrdenados.indexOf(g) === -1) gruposOrdenados.push(g);
       });
 
-      var primeiroGrupo = gruposOrdenados[0];
+      todos = itens;
+      gruposLista = gruposOrdenados;
+      // PROPOSTA: link direto para uma aba (?grupo=...) ou para uma busca (?busca=...)
+      var params = new URLSearchParams(location.search);
+      var pedido = params.get("grupo");
+      var primeiroGrupo = (pedido && gruposOrdenados.indexOf(pedido) !== -1) ? pedido : gruposOrdenados[0];
+      grupoAtivo = primeiroGrupo;
+      document.getElementById("busca").classList.remove("escondido");
       renderNav(gruposOrdenados, itens, primeiroGrupo);
-      renderItens(itens.filter(function (it) { return (it.grupo || "Pratos Principais") === primeiroGrupo; }), primeiroGrupo);
+      if (params.get("busca")) {
+        document.getElementById("busca-campo").value = params.get("busca");
+        buscar(params.get("busca"));
+      } else {
+        renderItens(itens.filter(function (it) { return (it.grupo || "Pratos Principais") === primeiroGrupo; }), primeiroGrupo);
+      }
+      if (pedido && primeiroGrupo === pedido) {
+        var botaoAtivo = document.querySelector("#nav-grupos button.ativo");
+        if (botaoAtivo) botaoAtivo.scrollIntoView({ inline: "center", block: "nearest" });
+      }
     } catch (e) {
       document.getElementById("main").innerHTML = '<div class="vazio"><p>Não foi possível carregar o cardápio agora.</p></div>';
     }
   }
+
+  // PROPOSTA cardápio inteligente: busca em todas as abas, sem diferenciar acentos e maiúsculas
+  var todos = [], gruposLista = [], grupoAtivo = null, buscaTimer = null;
+
+  function normalizar(s) {
+    return String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+  }
+
+  function buscar(termo) {
+    var t = normalizar(termo).trim();
+    if (t.length < 2) {
+      renderNav(gruposLista, todos, grupoAtivo);
+      renderItens(todos.filter(function (it) { return (it.grupo || "Pratos Principais") === grupoAtivo; }), grupoAtivo);
+      return;
+    }
+    // Cada palavra digitada precisa aparecer no começo de alguma palavra do item ("gin" acha "Gin", não "Original")
+    var palavras = t.split(/\s+/).map(function (p) {
+      return new RegExp("(^|[^a-z0-9])" + p.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+    });
+    var achados = todos.filter(function (it) {
+      var txt = normalizar([it.nome, it.descricao, it.categoria, it.grupo].join(" "));
+      return palavras.every(function (p) { return p.test(txt); });
+    }).map(function (it) {
+      // Na busca, os resultados ficam separados pela aba de origem
+      return Object.assign({}, it, { categoria: it.grupo || "Pratos Principais" });
+    }).sort(function (a, b) {
+      return gruposLista.indexOf(a.categoria) - gruposLista.indexOf(b.categoria);
+    });
+    document.querySelectorAll("#nav-grupos button").forEach(function (b) { b.classList.remove("ativo"); b.removeAttribute("aria-current"); });
+    var main = document.getElementById("main");
+    if (!achados.length) {
+      main.innerHTML = '<div class="vazio"><p>Nada encontrado para “' + escapeHtml(termo.trim()) + '”.</p>' +
+        '<p style="font-size:0.85rem;margin-top:8px">Tente outra palavra, como “frango”, “chopp” ou “porção”.</p></div>';
+      return;
+    }
+    renderItens(achados, "Busca");
+    main.insertAdjacentHTML("afterbegin", '<p class="busca-resultado" role="status">' + achados.length + (achados.length === 1 ? " item encontrado" : " itens encontrados") + '</p>');
+  }
+
+  document.getElementById("busca-campo").addEventListener("input", function (ev) {
+    clearTimeout(buscaTimer);
+    var valor = ev.target.value;
+    buscaTimer = setTimeout(function () { buscar(valor); }, 150);
+  });
 
   function abrirLightbox(url, nome) {
     document.getElementById("lightbox-img").src = url;
