@@ -1727,7 +1727,7 @@ function renderPromoDiaDestaque() {
       texto: "Chopp gelado e petiscos com preço especial para fechar o dia com os amigos.",
       acoes: [
         { rotulo: "Ver promoções", fn: function () { ACOES.happy_hour(); } },
-        { rotulo: "Ver petiscos", href: "cardapio-visual.html", tipo: "cardapio_visual" }
+        { rotulo: "Ver petiscos", href: "cardapio-visual.html?grupo=" + encodeURIComponent("Entradas & Petiscos"), tipo: "cardapio_visual" }
       ]
     },
     comemorar: {
@@ -1736,7 +1736,7 @@ function renderPromoDiaDestaque() {
       texto: "Reserve a mesa e conte a ocasião. Para grupos, o Completão do Serra serve de 3 a 7 pessoas.",
       acoes: [
         { rotulo: "Reservar mesa", fn: function () { ACOES.reserva_whatsapp(); } },
-        { rotulo: "Ver Completão", href: "cardapio-visual.html", tipo: "cardapio_visual" }
+        { rotulo: "Ver Completão", href: "cardapio-visual.html?grupo=" + encodeURIComponent("Completão do Serra"), tipo: "cardapio_visual" }
       ]
     },
     chegar: {
