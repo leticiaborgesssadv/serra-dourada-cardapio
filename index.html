@@ -663,6 +663,11 @@ a:focus-visible, button:focus-visible { outline: 2px solid var(--dourado-claro);
     margin-bottom: 6px;
   }
   .reserva-linha { display: grid; grid-template-columns: 1.4fr 1fr 0.8fr; gap: 8px; }
+  .reserva-linha { grid-template-columns: 1.3fr 1.05fr 0.75fr; }
+  #form-reserva select#reserva-hora { padding-left: 10px; padding-right: 4px; }
+  .reserva-dica { margin: -4px 0 12px; font-size: 0.78rem; line-height: 1.4; color: var(--texto-suave); }
+  .reserva-dica:empty { display: none; }
+  .reserva-dica.fechado { color: var(--dourado-claro); }
   #form-reserva input[type=date], #form-reserva input[type=time], #form-reserva input[type=number],
   #form-reserva input[type=text], #form-reserva select {
     width: 100%;
@@ -905,13 +910,15 @@ a:focus-visible, button:focus-visible { outline: 2px solid var(--dourado-claro);
           </div>
           <div>
             <label for="reserva-hora">Horário</label>
-            <input type="time" id="reserva-hora" required />
+            <!-- PROPOSTA reserva inteligente: só aparecem os horários em que a casa está aberta na data escolhida -->
+            <select id="reserva-hora" required aria-describedby="reserva-dica"></select>
           </div>
           <div>
             <label for="reserva-pessoas">Pessoas</label>
             <input type="number" id="reserva-pessoas" required min="1" max="100" inputmode="numeric" />
           </div>
         </div>
+        <p class="reserva-dica" id="reserva-dica" aria-live="polite"></p>
         <label for="reserva-ocasiao">Ocasião (opcional)</label>
         <select id="reserva-ocasiao">
           <option value="">Sem ocasião especial</option>
@@ -1033,6 +1040,8 @@ window.addEventListener("DOMContentLoaded", function () {
       '<p class="modal-vazio" style="padding:0 0 4px;text-align:left">Preencha os dados e você será direcionado ao WhatsApp. A reserva é confirmada pela nossa equipe.</p>';
     document.getElementById("msg-reserva").textContent = "";
     document.getElementById("reserva-data").min = dataLocalHoje();
+    sugerirDataReserva();
+    preencherHorarios();
     document.getElementById("form-reserva").classList.remove("escondido");
     document.getElementById("overlay").classList.add("aberto");
   }
@@ -1971,6 +1980,79 @@ function renderPromoDiaDestaque() {
     var d = new Date();
     return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
   }
+
+  // PROPOSTA reserva inteligente: monta a lista de horários a partir do horário de funcionamento do painel.
+  // De 30 em 30 minutos, do horário em que abre até 1 hora antes de fechar. Para hoje, só a partir de daqui a 30 minutos.
+  function minutos(hhmm) { var p = String(hhmm).split(":"); return Number(p[0]) * 60 + Number(p[1]); }
+  function hhmmDe(min) { return String(Math.floor(min / 60)).padStart(2, "0") + ":" + String(min % 60).padStart(2, "0"); }
+
+  function horariosParaReserva(dataIso) {
+    var horarios = (config && config.horario_funcionamento) || null;
+    var dia = new Date(dataIso + "T12:00:00").getDay();
+    var turnos = [];
+    if (horarios) {
+      var v = horarios[String(dia)] || {};
+      if (v.almoco && v.almoco.abre && v.almoco.fecha) turnos.push({ nome: "Almoço", abre: formatarHora(v.almoco.abre), fecha: formatarHora(v.almoco.fecha) });
+      if (v.bar && v.bar.abre && v.bar.fecha) turnos.push({ nome: "Happy Hour e noite", abre: formatarHora(v.bar.abre), fecha: formatarHora(v.bar.fecha) });
+    } else {
+      turnos.push({ nome: "Horário", abre: "11:00", fecha: "23:00" });
+    }
+    var limiteHoje = -1;
+    if (dataIso === dataLocalHoje()) { var a = new Date(); limiteHoje = a.getHours() * 60 + a.getMinutes() + 30; }
+    turnos.forEach(function (t) {
+      var ini = minutos(t.abre), fim = minutos(t.fecha);
+      if (fim <= ini) fim += 24 * 60; // fecha à meia-noite ou depois
+      var ultimo = Math.max(ini, fim - 60);
+      t.horarios = [];
+      for (var m = ini; m <= ultimo && m < 24 * 60; m += 30) { if (m >= limiteHoje) t.horarios.push(hhmmDe(m)); }
+    });
+    return { fechadoNoDia: !turnos.length, turnos: turnos.filter(function (t) { return t.horarios.length; }), todos: turnos };
+  }
+
+  function preencherHorarios() {
+    var data = document.getElementById("reserva-data").value;
+    var sel = document.getElementById("reserva-hora");
+    var dica = document.getElementById("reserva-dica");
+    var anterior = sel.value;
+    dica.className = "reserva-dica";
+    if (!data) { sel.innerHTML = '<option value="">Escolha a data</option>'; dica.textContent = ""; return; }
+    var r = horariosParaReserva(data);
+    if (!r.turnos.length) {
+      sel.innerHTML = '<option value="">Fechado</option>';
+      dica.className = "reserva-dica fechado";
+      if (r.fechadoNoDia) {
+        var abertos = [], h = (config && config.horario_funcionamento) || {};
+        for (var d = 0; d < 7; d++) { if (h[String(d)]) abertos.push(d); }
+        dica.textContent = "Nesse dia o Serra não abre." + (abertos.length ? " Funcionamos de " + textoDias(abertos).toLowerCase() + "." : "") + " Escolha outra data.";
+      } else {
+        dica.textContent = "Hoje não há mais horários para reserva. Escolha outra data.";
+      }
+      return;
+    }
+    sel.innerHTML = '<option value="">Escolha</option>' + r.turnos.map(function (t) {
+      return '<optgroup label="' + escapeHtml(t.nome) + '">' + t.horarios.map(function (hh) {
+        return '<option value="' + hh + '">' + hh.replace(":", "h").replace("h00", "h") + '</option>';
+      }).join("") + '</optgroup>';
+    }).join("");
+    if (anterior && sel.querySelector('option[value="' + anterior + '"]')) sel.value = anterior;
+    dica.textContent = r.todos.map(function (t) {
+      return t.nome + ": " + (t.fecha === "00:00" ? "a partir das " + textoHora(t.abre) : "das " + textoHora(t.abre) + " às " + textoHora(t.fecha));
+    }).join(" · ");
+  }
+
+  // Sugere hoje, se ainda houver horário; senão, o próximo dia em que a casa abre
+  function sugerirDataReserva() {
+    var campo = document.getElementById("reserva-data");
+    if (campo.value && campo.value >= dataLocalHoje()) return;
+    var d = new Date();
+    for (var i = 0; i < 8; i++) {
+      var iso = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+      if (horariosParaReserva(iso).turnos.length) { campo.value = iso; return; }
+      d.setDate(d.getDate() + 1);
+    }
+  }
+
+  document.getElementById("reserva-data").addEventListener("change", preencherHorarios);
 
   document.getElementById("barra-cardapio").addEventListener("click", function () { ACOES.cardapio(); });
   document.getElementById("abertura-cardapio").addEventListener("click", function () { registrar("click", "cardapio_visual"); });
