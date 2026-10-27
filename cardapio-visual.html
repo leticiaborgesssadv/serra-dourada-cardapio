@@ -292,6 +292,30 @@
       .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
   }
 
+  // PROPOSTA fotos leves: na lista usa a versão reduzida guardada no site (img/cardapio/).
+  // Ao tocar na foto, abre a original. Foto nova enviada pelo painel, ainda sem versão leve, usa a original.
+  function fotoMini(url) {
+    var m = /\/pagina-assets\/([^?#\/]+)$/.exec(url || "");
+    if (!m) return url;
+    var nome = decodeURIComponent(m[1]).replace(/\.[^.]+$/, "")
+      .normalize("NFD").replace(/[̀-ͯ]/g, "")
+      .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+    return "img/cardapio/" + nome + ".jpg";
+  }
+
+  function fotoItem(url, nome) {
+    return '<img src="' + escapeHtml(fotoMini(url)) + '" data-original="' + escapeHtml(url) + '" alt="' + escapeHtml(nome) + '" loading="lazy" decoding="async" />';
+  }
+
+  // Se a versão leve não existir, troca pela foto original.
+  document.addEventListener("error", function (ev) {
+    var img = ev.target;
+    if (img.tagName === "IMG" && img.dataset.original && !img.dataset.trocou) {
+      img.dataset.trocou = "1";
+      img.src = img.dataset.original;
+    }
+  }, true);
+
   function formatarPreco(p) {
     var n = Number(p);
     if (isNaN(n)) return "";
@@ -309,7 +333,7 @@
       var tagline = '<p class="grupo-tagline">🍢 Na brasa, no palito — peça quantos quiser</p>';
       var grade = '<div class="grade-espetinhos">' + itens.map(function (it) {
         var fotoHtml = it.foto_url
-          ? '<div class="item-foto"><img src="' + escapeHtml(it.foto_url) + '" alt="' + escapeHtml(it.nome) + '" loading="lazy" /></div>'
+          ? '<div class="item-foto">' + fotoItem(it.foto_url, it.nome) + '</div>'
           : '<div class="item-foto sem-foto">🍢</div>';
         return '<div class="card-espetinho">' + fotoHtml +
           '<div class="info"><p class="item-nome">' + escapeHtml(it.nome) + '</p>' +
@@ -338,7 +362,7 @@
       html += '<h2 class="categoria-titulo">' + escapeHtml(cat) + '</h2>';
       porCategoria[cat].forEach(function (it) {
         var fotoHtml = it.foto_url
-          ? '<div class="item-foto"><img src="' + escapeHtml(it.foto_url) + '" alt="' + escapeHtml(it.nome) + '" loading="lazy" /></div>'
+          ? '<div class="item-foto">' + fotoItem(it.foto_url, it.nome) + '</div>'
           : '<div class="item-foto sem-foto">🍽️</div>';
         html +=
           '<div class="item-card">' +
@@ -412,7 +436,7 @@
 
   document.getElementById("main").addEventListener("click", function (ev) {
     var img = ev.target.closest(".item-foto img");
-    if (img) abrirLightbox(img.src, img.alt);
+    if (img) abrirLightbox(img.dataset.original || img.src, img.alt);
   });
   document.getElementById("lightbox").addEventListener("click", fecharLightbox);
   document.getElementById("lightbox-fechar").addEventListener("click", function (ev) {
