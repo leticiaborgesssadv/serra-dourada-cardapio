@@ -246,9 +246,104 @@
 .promo-dia-destaque { padding: 4px 16px 2px; max-width: 480px; margin: 0 auto; }
 /* Velocidade: espaço reservado enquanto o site carrega, para a tela não "pular" */
 .promo-dia-destaque.promo-reservada { visibility: hidden; min-height: 94px; }
-.topo { min-height: calc(160px + env(safe-area-inset-top, 0px)); }
-.boas-vindas { min-height: calc(22px + 2 * 1.5 * 1.05rem); }
-@media (max-width: 480px) { .boas-vindas { min-height: calc(22px + 3 * 1.5 * 1.05rem); } }
+/* PROPOSTA: nova abertura */
+.abertura {
+  position: relative;
+  max-width: 480px;
+  margin: calc(12px + env(safe-area-inset-top, 0px)) auto 0;
+  min-height: 600px;
+  border-radius: 0 0 24px 24px;
+  overflow: hidden;
+  display: flex;
+  background: var(--marrom-2);
+}
+@media (min-width: 500px) { .abertura { border-radius: 24px; margin-top: 20px; } }
+.abertura-foto { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 70%; }
+.abertura::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(20,12,5,0.55) 0%, rgba(20,12,5,0.05) 24%, rgba(20,12,5,0.35) 38%, rgba(20,12,5,0.86) 56%, rgba(20,12,5,0.96) 100%);
+}
+.abertura-conteudo {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 24px;
+  width: 100%;
+  padding: 18px 20px 22px;
+}
+.abertura-marca { display: flex; justify-content: center; }
+/* O logo tem letras marrons: fica num selo creme para ser legível sobre a foto */
+.abertura-marca .logo-imagem {
+  max-width: 128px;
+  max-height: 100px;
+  padding: 10px 14px;
+  background: rgba(246,234,208,0.94);
+  border-radius: 16px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+}
+.abertura-marca .logo-script { text-shadow: 0 2px 12px rgba(0,0,0,0.6); }
+.abertura-textos { display: flex; flex-direction: column; gap: 10px; }
+.abertura-local {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--dourado-claro);
+}
+.abertura h1 {
+  margin: 0;
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+  font-size: 1.7rem;
+  line-height: 1.18;
+  color: #fdf6e8;
+  text-wrap: balance;
+}
+.abertura-legenda {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: var(--texto-suave);
+}
+.abertura-acoes { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 6px; }
+.abertura-botao {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 50px;
+  padding: 0 12px;
+  border-radius: 14px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 0.08s ease, background 0.15s ease;
+}
+.abertura-botao:active { transform: scale(0.98); }
+.abertura-botao:focus-visible { outline: 2px solid var(--dourado-claro); outline-offset: 3px; }
+.abertura-botao.principal { background: var(--dourado); color: #241608; border: none; }
+.abertura-botao.secundaria { background: rgba(246,234,208,0.1); color: #fdf6e8; border: 1px solid rgba(246,234,208,0.45); }
+.abertura-horarios {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 12px 0 0;
+  border-top: 1px solid rgba(246,234,208,0.18);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: var(--texto-suave);
+}
+.abertura-horarios li { display: flex; gap: 10px; align-items: baseline; }
+.abertura-turno { flex: 0 0 84px; font-weight: 700; color: var(--texto); }
+.abertura + .promo-dia-destaque { padding-top: 16px; }
 .promo-dia-card { display: flex; align-items: center; gap: 14px; border-radius: 16px; background: linear-gradient(135deg, var(--dourado), #a9791c); color: #241608; padding: 16px 18px; cursor: pointer; border: none; width: 100%; text-align: left; font-family: inherit; }
 .promo-dia-card img { width: 56px; height: 56px; border-radius: 12px; object-fit: cover; flex-shrink: 0; }
 .promo-dia-textos { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
@@ -539,11 +634,10 @@
   .escondido { display: none !important; }
 
   @keyframes surgir { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-  .topo, .hero, .boas-vindas, .destaques, .avaliacoes, .botoes {
+  .abertura-textos, .destaques, .avaliacoes, .botoes {
     animation: surgir 0.5s ease both;
   }
-  .hero { animation-delay: 0.05s; }
-  .boas-vindas { animation-delay: 0.1s; }
+  .abertura-textos { animation-delay: 0.05s; }
   .destaques { animation-delay: 0.15s; }
   .avaliacoes { animation-delay: 0.18s; }
   .botoes { animation-delay: 0.2s; }
@@ -604,20 +698,33 @@
 </style>
 </head>
 <body>
-  <div class="topo">
-    <img id="logo-img" class="logo-imagem escondido" alt="Serra Dourada Bar e Restaurante" />
-    <div id="logo-texto">
-      <p class="logo-script" id="logo-nome">Serra Dourada</p>
-      <p class="logo-label">BAR E RESTAURANTE</p>
+  <!-- PROPOSTA: nova abertura (foto real, título, Ver cardápio / Reservar mesa e horários). A foto pode ser trocada no painel em "Imagem de destaque". -->
+  <header class="abertura" id="hero">
+    <img class="abertura-foto" src="img/destaque-5.jpg" alt="Completão do Serra: carnes na chapa com arroz, feijão tropeiro, mandioca e acompanhamentos" width="720" height="1080" fetchpriority="high" />
+    <div class="abertura-conteudo">
+      <div class="abertura-marca">
+        <img id="logo-img" class="logo-imagem escondido" alt="Serra Dourada Bar e Restaurante" />
+        <div id="logo-texto">
+          <p class="logo-script" id="logo-nome">Serra Dourada</p>
+          <p class="logo-label">BAR E RESTAURANTE</p>
+        </div>
+      </div>
+      <div class="abertura-textos">
+        <p class="abertura-local">Jardim Goiás · Goiânia</p>
+        <h1>Almoço caseiro e Happy Hour com a tradição de receber bem</h1>
+        <p class="abertura-legenda" id="hero-legenda">Comida de verdade, chopp gelado e a tradição de receber bem. Vem pro Serra Dourada!</p>
+        <div class="abertura-acoes">
+          <a class="abertura-botao principal" id="abertura-cardapio" href="cardapio-visual.html">Ver cardápio</a>
+          <button type="button" class="abertura-botao secundaria" id="abertura-reserva">Reservar mesa</button>
+        </div>
+        <ul class="abertura-horarios">
+          <li><span class="abertura-turno">Almoço</span><span id="abertura-almoco">Segunda a sábado, 11h às 14h30</span></li>
+          <li><span class="abertura-turno">Happy Hour</span><span id="abertura-hh">Segunda a sábado, a partir das 16h</span></li>
+        </ul>
+      </div>
     </div>
-  </div>
+  </header>
 
-  <div class="hero escondido" id="hero">
-    <div class="placeholder-icone">🍺</div>
-    <div class="hero-legenda" id="hero-legenda"></div>
-  </div>
-
-  <p class="boas-vindas" id="boas-vindas">Bem-vindo!</p>
   <section class="promo-dia-destaque promo-reservada" id="promo-dia-destaque">
   <button type="button" class="promo-dia-card" id="promo-dia-card"></button>
   </section>
@@ -1630,6 +1737,7 @@ function renderPromoDiaDestaque() {
       if (alm.dias.length && alm.iguais) {
         var fa = alm.faixa.split("|");
         document.getElementById("exp-almoco-info").textContent = textoDias(alm.dias) + ", " + textoHora(fa[0]) + (fa[1] === "00:00" ? " à meia-noite" : " às " + textoHora(fa[1]));
+        document.getElementById("abertura-almoco").textContent = document.getElementById("exp-almoco-info").textContent;
       }
       var hh = hhDados;
       var partesHH = [];
@@ -1645,6 +1753,7 @@ function renderPromoDiaDestaque() {
       if (bar.dias.length && bar.iguais) {
         var fb = bar.faixa.split("|");
         document.getElementById("exp-hh-info").textContent = textoDias(bar.dias) + ", a partir das " + textoHora(fb[0]);
+        document.getElementById("abertura-hh").textContent = document.getElementById("exp-hh-info").textContent;
       }
       var r = await sb.from("cardapio_publico").select("nome,preco,foto_url").eq("grupo", "Almoço (Segunda a Sábado)").eq("ativo", true).order("ordem", { ascending: true });
       var formatos = r.data || [];
@@ -1691,6 +1800,8 @@ function renderPromoDiaDestaque() {
   }
 
   document.getElementById("barra-cardapio").addEventListener("click", function () { ACOES.cardapio(); });
+  document.getElementById("abertura-cardapio").addEventListener("click", function () { registrar("click", "cardapio_visual"); });
+  document.getElementById("abertura-reserva").addEventListener("click", function () { ACOES.reserva_whatsapp(); });
   document.getElementById("exp-almoco").addEventListener("click", function () { ACOES.almoco(); });
   document.getElementById("exp-hh").addEventListener("click", function () { ACOES.happy_hour(); });
   document.getElementById("barra-whatsapp").addEventListener("click", function () { /* PROPOSTA: WhatsApp da barra fixa abre a conversa direta; reserva fica no botão "Fazer reserva". Se o número não carregar, cai no formulário de reserva (o botão nunca fica sem ação). */ registrar("click", "whatsapp_direto"); var link = linkWhatsapp("Olá! Vim pelo site do Serra Dourada."); if (!link) { ACOES.reserva_whatsapp(); return; } var janela = window.open(link, "_blank"); if (janela) { try { janela.opener = null; } catch (e) {} } else { location.href = link; } });
@@ -1811,7 +1922,7 @@ function renderPromoDiaDestaque() {
       var temp = dados && dados.current && dados.current.temperature_2m;
       if (typeof temp !== "number" || temp < LIMIAR_QUENTE_C) return;
 
-      var heroImg = document.querySelector("#hero img");
+      var heroImg = document.querySelector("#hero img.abertura-foto");
       var heroLegenda = document.getElementById("hero-legenda");
       if (heroImg) heroImg.src = IMAGEM_CLIMA_QUENTE;
       if (heroLegenda) heroLegenda.textContent = LEGENDA_CLIMA_QUENTE;
@@ -1910,18 +2021,15 @@ function renderPromoDiaDestaque() {
           logoImg.classList.remove("escondido");
           document.getElementById("logo-texto").classList.add("escondido");
         }
+        // PROPOSTA nova abertura: a foto padrão já vem no HTML; o painel pode trocá-la e mudar a mensagem.
         var mensagem = config.mensagem_boas_vindas || "";
+        if (mensagem) document.getElementById("hero-legenda").textContent = mensagem;
         if (config.imagem_hero_url) {
-          document.getElementById("hero").innerHTML =
-            '<img src="' + escapeHtml(config.imagem_hero_url) + '" alt="Serra Dourada" loading="eager" />' +
-            '<div class="hero-legenda" id="hero-legenda">' + escapeHtml(mensagem) + '</div>';
-          document.getElementById("hero").classList.remove("escondido"); // PROPOSTA velocidade: o bloco só aparece quando há imagem (evita o "pulo" da tela)
-          document.getElementById("boas-vindas").remove();
-          if (config.hero_por_clima) ajustarHeroPorClima(mensagem);
-        } else {
-          document.getElementById("hero").remove();
-          document.getElementById("boas-vindas").textContent = mensagem;
+          var heroFoto = document.querySelector("#hero img.abertura-foto");
+          heroFoto.src = config.imagem_hero_url;
+          heroFoto.alt = "Serra Dourada Bar e Restaurante";
         }
+        if (config.hero_por_clima) ajustarHeroPorClima(mensagem);
       }
 
       // PROPOSTA: liga/desliga da seção Nossa História pelo painel (aba Contato)
