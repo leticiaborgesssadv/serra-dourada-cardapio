@@ -1875,11 +1875,9 @@ function renderPromoDiaDestaque() {
       (diaSemana === "Sábado" || diaSemana === "Domingo" ? " no " : " na ") + diaSemana.toLowerCase() + ", " + dataBr + ", às " + hora + ". Nome: " + nome + "." + (ocasiao ? " Ocasião: " + ocasiao + "." : ""));
     if (!link) { msgEl.textContent = "Reservas por WhatsApp indisponíveis no momento. Tente outro contato."; return; }
 
-    // Abre o WhatsApp imediatamente, ainda dentro do toque do cliente (senão o Safari bloqueia).
-    var janela = window.open(link, "_blank");
-    if (janela) { try { janela.opener = null; } catch (e) {} } else { location.href = link; }
-
-    sb.from("contato_publico").insert({
+    // CORREÇÃO: grava a reserva ANTES de abrir o WhatsApp. Com "keepalive", o envio termina
+    // mesmo se o celular sair da página para abrir o WhatsApp (antes a reserva se perdia e não chegava ao painel).
+    var reserva = {
       estabelecimento_id: estabelecimentoId,
       nome: nome,
       telefone: telefone,
@@ -1888,8 +1886,20 @@ function renderPromoDiaDestaque() {
       pessoas: pessoas,
       aceita_novidades: novidades,
       mensagem: "Reserva pelo site" + (ocasiao ? " · Ocasião: " + ocasiao : ""),
-      status: "novo",
-    }).then(function () {}, function () {});
+      status: "novo"
+    };
+    try {
+      fetch(SUPABASE_URL + "/rest/v1/contato_publico", {
+        method: "POST",
+        keepalive: true,
+        headers: { "apikey": ANON_KEY, "Authorization": "Bearer " + ANON_KEY, "Content-Type": "application/json", "Prefer": "return=minimal" },
+        body: JSON.stringify(reserva)
+      }).catch(function () {});
+    } catch (e) {}
+
+    // Abre o WhatsApp imediatamente, ainda dentro do toque do cliente (senão o Safari bloqueia).
+    var janela = window.open(link, "_blank");
+    if (janela) { try { janela.opener = null; } catch (e) {} } else { location.href = link; }
 
     fecharModal();
     document.getElementById("form-reserva").reset();
