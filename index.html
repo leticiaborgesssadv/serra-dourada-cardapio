@@ -3,10 +3,34 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Serra Dourada Bar e Restaurante em Goiânia | Almoço e Happy Hour</title>
+<title>Serra Dourada Bar e Restaurante | Almoço e Happy Hour no Jardim Goiás, Goiânia</title>
 <meta name="theme-color" content="#241608" />
-<meta name="description" content="Bar e restaurante em Goiânia: almoço de segunda a sábado, Happy Hour das 16h às 20h, petiscos na chapa, cerveja gelada e reserva de mesa pelo site." />
+<meta name="description" content="Bar e restaurante no Jardim Goiás, em Goiânia: almoço caseiro de segunda a sábado, Happy Hour a partir das 16h, petiscos na chapa, chopp gelado e reserva de mesa pelo site." />
 <link rel="canonical" href="https://serradouradabar.com.br/" />
+<!-- PROPOSTA SEO local: dados do restaurante já escritos na página, para o Google ler sem depender do JavaScript.
+     Ao abrir a página, o script atualiza este bloco com o que estiver no painel (horários, WhatsApp, mapa). -->
+<script type="application/ld+json" id="dados-restaurante">
+{
+  "@context": "https://schema.org",
+  "@type": "Restaurant",
+  "@id": "https://serradouradabar.com.br/#restaurante",
+  "name": "Serra Dourada Bar e Restaurante",
+  "url": "https://serradouradabar.com.br/",
+  "image": "https://serradouradabar.com.br/img/og-serra.jpg",
+  "logo": "https://serradouradabar.com.br/img/icon-512.png",
+  "servesCuisine": "Brasileira",
+  "acceptsReservations": true,
+  "hasMenu": "https://serradouradabar.com.br/cardapio-visual.html",
+  "address": { "@type": "PostalAddress", "streetAddress": "Avenida A, 518 - Jardim Goiás", "postalCode": "74805-020", "addressLocality": "Goiânia", "addressRegion": "GO", "addressCountry": "BR" },
+  "geo": { "@type": "GeoCoordinates", "latitude": -16.6961675, "longitude": -49.240612 },
+  "telephone": "+5562982390476",
+  "sameAs": ["https://instagram.com/serradouradabar"],
+  "openingHoursSpecification": [
+    { "@type": "OpeningHoursSpecification", "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"], "opens": "11:00", "closes": "14:30" },
+    { "@type": "OpeningHoursSpecification", "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"], "opens": "16:00", "closes": "00:00" }
+  ]
+}
+</script>
 <meta name="google-site-verification" content="W891BMxrnsdGtzc6XOgNwAg8r0DA9e2ydq-xZ4DGupw" />
 
 <meta property="og:type" content="website" />
@@ -2128,10 +2152,15 @@ function renderPromoDiaDestaque() {
         });
       }
       if (horarios.length) dados.openingHoursSpecification = horarios;
-      var tag = document.createElement("script");
-      tag.type = "application/ld+json";
+      // PROPOSTA SEO local: atualiza o bloco que já vem escrito na página (em vez de criar um segundo)
+      var tag = document.getElementById("dados-restaurante");
+      if (!tag) {
+        tag = document.createElement("script");
+        tag.type = "application/ld+json";
+        tag.id = "dados-restaurante";
+        document.head.appendChild(tag);
+      }
       tag.textContent = JSON.stringify(dados);
-      document.head.appendChild(tag);
     } catch (e) {
       // Falha silenciosa: dados estruturados não podem quebrar a página.
     }
