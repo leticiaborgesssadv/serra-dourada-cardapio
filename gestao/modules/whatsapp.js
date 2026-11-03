@@ -49,18 +49,42 @@ function ListaConversas({ conversas, selecionadaId, onSelecionar }) {
         >
           <div class="item-conta-topo"><span class="item-conta-desc">${formatarTelefone(c.telefone)}</span></div>
           <div class="item-conta-meta">Última atividade: ${formatarDataHora(c.atualizado_em)}</div>
+          ${c.aguardando_humano_desde && html`<div style="font-size:0.75rem; color:var(--alerta); font-weight:700;">🙋 Pediu atendimento</div>`}
         </div>
       `)}
     </div>
   `;
 }
 
-function Thread({ conversaId, telefone }) {
+// Robô x pessoa: quando a equipe assume, o robô fica em silêncio nessa conversa.
+async function acaoConversa(acao, conversaId) {
+  const sess = await sb.auth.getSession();
+  const r = await fetch(SUPABASE_URL + "/functions/v1/pedido-acao", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: "Bearer " + sess.data?.session?.access_token, apikey: ANON_KEY },
+    body: JSON.stringify({ acao, conversa: conversaId, minutos: 60 }),
+  });
+  const out = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(out.error || "Não foi possível concluir.");
+}
+
+function Thread({ conversaId, telefone, humanoAte, onMudou }) {
   const [mensagens, setMensagens] = useState([]);
   const [texto, setTexto] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState("");
   const fimRef = useRef(null);
+  const humanoAtivo = humanoAte && new Date(humanoAte).getTime() > Date.now();
+
+  async function alternarRobo() {
+    setErro("");
+    try {
+      await acaoConversa(humanoAtivo ? "devolver_conversa" : "assumir_conversa", conversaId);
+      onMudou && onMudou();
+    } catch (e) {
+      setErro(e.message);
+    }
+  }
 
   async function carregar() {
     const r = await sb.from("whatsapp_mensagem").select("id,direcao,conteudo,intencao,criado_em").eq("conversa_id", conversaId).order("criado_em", { ascending: true });
@@ -103,7 +127,15 @@ function Thread({ conversaId, telefone }) {
 
   return html`
     <div class="card" style="display:flex; flex-direction:column; height:70vh;">
-      <h3 style="margin-top:0;">${formatarTelefone(telefone)}</h3>
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
+        <h3 style="margin:0;">${formatarTelefone(telefone)}</h3>
+        <span style="display:flex; align-items:center; gap:8px;">
+          <span class="chip" style=${humanoAtivo ? "background:var(--alerta); color:#241608;" : "background:var(--fundo-input); color:var(--texto-suave);"}>
+            ${humanoAtivo ? "Atendimento humano (robô em silêncio)" : "Robô respondendo"}
+          </span>
+          <button class="botao-secundario-pequeno" onClick=${alternarRobo}>${humanoAtivo ? "Devolver ao robô" : "Assumir conversa"}</button>
+        </span>
+      </div>
       <div style="flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:8px; padding:4px 0;">
         ${mensagens.map((m) => html`
           <div key=${m.id} style=${"max-width:75%; padding:8px 12px; border-radius:10px;" + (m.direcao === "entrada" ? "align-self:flex-start; background:var(--marrom-claro,#3a2712); color:#f6ead0;" : "align-self:flex-end; background:var(--dourado,#c9a227); color:#241608;")}>
@@ -130,7 +162,7 @@ export default function WhatsApp() {
   const [selecionadaId, setSelecionadaId] = useState(null);
 
   async function carregarConversas() {
-    const r = await sb.from("whatsapp_conversa").select("id,telefone,atualizado_em").order("atualizado_em", { ascending: false });
+    const r = await sb.from("whatsapp_conversa").select("id,telefone,atualizado_em,atendimento_humano_ate,aguardando_humano_desde").order("atualizado_em", { ascending: false });
     setConversas(r.data || []);
     setCarregando(false);
   }
@@ -154,7 +186,7 @@ export default function WhatsApp() {
         </div>
         <div>
           ${selecionada
-            ? html`<${Thread} conversaId=${selecionada.id} telefone=${selecionada.telefone} key=${selecionada.id} />`
+            ? html`<${Thread} conversaId=${selecionada.id} telefone=${selecionada.telefone} humanoAte=${selecionada.atendimento_humano_ate} onMudou=${carregarConversas} key=${selecionada.id} />`
             : html`<p class="vazio">Selecione uma conversa à esquerda.</p>`}
         </div>
       </div>

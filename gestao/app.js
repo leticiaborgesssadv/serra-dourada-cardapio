@@ -1,14 +1,15 @@
-import { h, render } from "https://esm.sh/preact@10.19.6";
+import { h, render, Fragment } from "https://esm.sh/preact@10.19.6";
 import { useState, useEffect } from "https://esm.sh/preact@10.19.6/hooks";
 import htm from "https://esm.sh/htm@3.1.1";
-import { sb, coletarAlertas } from "./lib/supabase.js";
+import { sb, coletarAlertas, AMBIENTE } from "./lib/supabase.js";
 import Cozinha from "./cozinha.js";
 
 const html = htm.bind(h);
 
-const VERSAO_CACHE = "31";
+const VERSAO_CACHE = "32";
 
 const MODULOS = [
+  { rota: "pedidos", rotulo: "Pedidos (WhatsApp)", pronto: true },
   { rota: "financeiro", rotulo: "Financeiro", pronto: true },
   { rota: "estoque", rotulo: "Estoque e CMV", pronto: true },
   { rota: "etiquetas", rotulo: "Etiquetas", pronto: true },
@@ -164,4 +165,12 @@ function App() {
   `;
 }
 
-render(html`<${App} />`, document.getElementById("app"));
+// Faixa fixa quando o painel está apontando para o ambiente de testes.
+function FaixaAmbiente() {
+  if (AMBIENTE !== "teste") return null;
+  return html`<div style="position:sticky; top:0; z-index:50; background:#b3261e; color:#fff; text-align:center; font-weight:800; padding:8px; letter-spacing:0.04em;">
+    AMBIENTE DE TESTES — nada aqui é pedido real · <a href="?ambiente=producao" style="color:#fff;">voltar ao sistema real</a>
+  </div>`;
+}
+
+render(html`<${Fragment}><${FaixaAmbiente} /><${App} /></${Fragment}>`, document.getElementById("app"));

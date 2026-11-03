@@ -1,0 +1,7 @@
+{
+  "url": "https://SEU-PROJETO.supabase.co/functions/v1/impressao-agente",
+  "token": "COLE-AQUI-O-TOKEN-DO-AGENTE (gerado no painel; nunca envie por WhatsApp ou e-mail)",
+  "intervaloSegundos": 3,
+  "modoTeste": false,
+  "pastaTeste": ""
+}
