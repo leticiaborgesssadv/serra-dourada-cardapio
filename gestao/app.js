@@ -6,10 +6,11 @@ import Cozinha from "./cozinha.js";
 
 const html = htm.bind(h);
 
-const VERSAO_CACHE = "32";
+const VERSAO_CACHE = "33";
 
 const MODULOS = [
   { rota: "pedidos", rotulo: "Pedidos (WhatsApp)", pronto: true },
+  { rota: "config-pedidos", rotulo: "Configurar pedidos", pronto: true },
   { rota: "financeiro", rotulo: "Financeiro", pronto: true },
   { rota: "estoque", rotulo: "Estoque e CMV", pronto: true },
   { rota: "etiquetas", rotulo: "Etiquetas", pronto: true },

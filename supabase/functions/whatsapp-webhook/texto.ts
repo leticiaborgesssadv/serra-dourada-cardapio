@@ -36,15 +36,17 @@ export type Interpretacao = {
   naoEntendidos: string[];
 };
 
-function pontuar(trecho: string[], item: ItemCatalogo): number {
+// pontos: quão parecido; cobertas: quantas palavras do cliente aparecem no nome do item
+function pontuar(trecho: string[], item: ItemCatalogo): { pontos: number; cobertas: number } {
   const doItem = palavras(item.nome);
-  if (!doItem.length) return 0;
   let pontos = 0;
+  let cobertas = 0;
+  if (!doItem.length) return { pontos, cobertas };
   for (const p of trecho) {
-    if (doItem.some((q) => q === p)) pontos += 2;
-    else if (p.length >= 4 && doItem.some((q) => q.startsWith(p) || p.startsWith(q))) pontos += 1;
+    if (doItem.some((q) => q === p)) { pontos += 2; cobertas++; }
+    else if (p.length >= 4 && doItem.some((q) => q.startsWith(p) || p.startsWith(q))) { pontos += 1; cobertas++; }
   }
-  return pontos;
+  return { pontos, cobertas };
 }
 
 export function interpretar(texto: string, catalogo: ItemCatalogo[]): Interpretacao {
@@ -65,19 +67,21 @@ export function interpretar(texto: string, catalogo: ItemCatalogo[]): Interpreta
     const chave = palavras(trecho);
     if (!chave.length) continue;
 
-    const pontuados = catalogo.map((item) => ({ item, pontos: pontuar(chave, item) })).filter((x) => x.pontos > 0);
+    const pontuados = catalogo.map((item) => ({ item, ...pontuar(chave, item) })).filter((x) => x.pontos > 0);
     if (!pontuados.length) {
       r.naoEntendidos.push(trecho);
       continue;
     }
     const melhor = Math.max(...pontuados.map((x) => x.pontos));
-    const empatados = pontuados.filter((x) => x.pontos === melhor).map((x) => x.item);
+    const empatados = pontuados.filter((x) => x.pontos === melhor);
 
-    // só decide sozinho quando há UM item claramente melhor e o trecho cobre bem o nome dele
-    if (empatados.length === 1 && melhor >= 2) {
-      r.certos.push({ item: empatados[0], quantidade, trecho });
+    // Só decide sozinho quando há UM item melhor e ele tem TODAS as palavras que o cliente usou.
+    // Ex.: "coca lata" com a lata esgotada NÃO vira "coca 600 ml" sem perguntar.
+    if (empatados.length === 1 && melhor >= 2 && empatados[0].cobertas === chave.length) {
+      r.certos.push({ item: empatados[0].item, quantidade, trecho });
     } else {
-      r.duvidas.push({ quantidade, trecho, opcoes: empatados.slice(0, 30) });
+      const opcoes = pontuados.sort((a, b) => b.pontos - a.pontos).map((x) => x.item);
+      r.duvidas.push({ quantidade, trecho, opcoes: opcoes.slice(0, 30) });
     }
   }
   return r;
