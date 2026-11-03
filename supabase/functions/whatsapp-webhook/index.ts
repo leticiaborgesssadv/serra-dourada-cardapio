@@ -1,4 +1,4 @@
-// Agente de WhatsApp — Fase 1 + Etapa 1 (pedidos, impressão, atendimento humano).
+// Agente de WhatsApp — Fase 1 + Etapa 1 (pedidos, impressão, atendimento humano) + Etapa 2 (triagem e reservas).
 // Usa a WhatsApp Cloud API OFICIAL. Respostas por palavra-chave e botões, com dados reais do Supabase.
 // Segredos (variáveis da função OU Supabase Vault com o mesmo nome em minúsculas):
 //   WHATSAPP_TOKEN, WHATSAPP_PHONE_NUMBER_ID, WHATSAPP_VERIFY_TOKEN, WHATSAPP_APP_SECRET
@@ -8,6 +8,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { assinaturaValida, enviar, extrairRecebida, textoDaSaida, type Recebida, type Saida } from "./whatsapp.ts";
 import { continuarPedido, iniciarPedido, type ContextoPedido } from "./pedido.ts";
 import { brl } from "./texto.ts";
+import { TRIAGEM, continuarTriagem, iniciarTriagem, type CategoriaTriagem, type ContextoTriagem } from "./triagem.ts";
+import { continuarReserva, iniciarReserva, responderMinhaReserva, type ContextoReserva } from "./reserva.ts";
 
 const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
@@ -29,10 +31,9 @@ const CONTEXTO_EXPIRA_MS = 2 * 3600000;
 
 const DIAS = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 
-type CategoriaCaptura = "reclamacao" | "gerente" | "vagas" | "fornecedor" | "parceria" | "nota_fiscal";
 type Intencao =
-  | "cardapio" | "horario" | "horario_almoco" | "endereco" | "happy_hour" | "reserva" | "atendente"
-  | "elogio" | "avaliacao" | "prato" | "pedido" | "status_pedido" | CategoriaCaptura | "fallback";
+  | "cardapio" | "horario" | "horario_almoco" | "endereco" | "happy_hour" | "reserva" | "minha_reserva" | "atendente"
+  | "elogio" | "avaliacao" | "prato" | "pedido" | "status_pedido" | CategoriaTriagem | "fallback";
 
 // "1".."7" respondem ao menu numerado.
 const OPCAO_NUMERICA: Record<string, Intencao> = {
@@ -59,6 +60,15 @@ function detectarIntencao(texto: string, permitirAtalhoNumerico = true): Intenca
 
   if (/atendente|falar com (uma pessoa|alguem|humano)|pessoa de verdade/.test(t)) return "atendente";
   if (/\b(meu pedido|status do pedido|cade (o|meu) pedido|pedido (ja )?(saiu|esta pronto|ficou pronto))\b/.test(t)) return "status_pedido";
+  if (/\b(minhas? reservas?|status da reserva|reserva (ja )?(foi |esta )?confirmada)\b/.test(t)) return "minha_reserva";
+  if (/\b(sou (musico|cantor|cantora|dj)|minha banda|nossa banda|tocar (ai|aqui|no bar|na casa)|musica ao vivo|show ao vivo|apresentacao musical|cache)\b/.test(t)) return "artista";
+  // assuntos da gestão vêm antes de "pedido": "quero falar com o gerente" não é pedido de comida
+  if (/gerente|falar com o dono|responsavel pelo restaurante/.test(t)) return "gerente";
+  if (/reclama|\bproblema\b|insatisfeit|pessimo|decepcion/.test(t)) return "reclamacao";
+  if (/emprego|curriculo|trabalhar (aqui|conosco|com voces|na equipe)|vagas? de (emprego|trabalho)/.test(t)) return "curriculo";
+  if (/fornecedor|fornecimento|represent(o|amos) a empresa/.test(t)) return "fornecedor";
+  if (/parceria|divulgacao|publicidade|permuta|influenciador/.test(t)) return "parceria";
+  if (/nota fiscal|\bnf\b|cnpj|razao social/.test(t)) return "nota_fiscal";
   if (/\breserv|\bmesa\b/.test(t)) return "reserva";
   if (/cardapio|menu/.test(t)) return "cardapio";
   if (/happy ?hour|promocao/.test(t)) return "happy_hour";
@@ -67,48 +77,12 @@ function detectarIntencao(texto: string, permitirAtalhoNumerico = true): Intenca
   if (/\b(pedir|pedido|fazer (um )?pedido|delivery|encomendar|marmit|quero|me (ve|manda)|manda (um|uma|dois|duas))\b/.test(t)) return "pedido";
   if (/almoc/.test(t)) return "horario_almoco";
 
-  if (/gerente|falar com o dono|responsavel pelo restaurante/.test(t)) return "gerente";
-  if (/reclama|\bproblema\b|insatisfeit|pessimo|decepcion/.test(t)) return "reclamacao";
   if (/elogio|parabens|adorei|amei|maravilhoso|show de bola/.test(t)) return "elogio";
   if (/avali|deixar.*review|nota no google/.test(t)) return "avaliacao";
-  if (/emprego|curriculo|trabalhar (aqui|conosco|com voces|na equipe)|vagas? de (emprego|trabalho)/.test(t)) return "vagas";
-  if (/fornecedor|fornecimento|represent(o|amos) a empresa/.test(t)) return "fornecedor";
-  if (/parceria|divulgacao|publicidade|permuta/.test(t)) return "parceria";
-  if (/nota fiscal|\bnf\b|cnpj|razao social/.test(t)) return "nota_fiscal";
   if (/prato|quanto custa|preco|valor/.test(t)) return "prato";
 
   return "fallback";
 }
-
-const CAPTURAS: Record<CategoriaCaptura, { abertura: string; tituloLog: string }> = {
-  reclamacao: {
-    abertura:
-      "Sentimos muito que sua experiência não tenha sido como esperava. Queremos entender e resolver da melhor forma. Conte o que aconteceu e, se possível, informe a data e o horário da visita. Sua mensagem será encaminhada ao responsável.",
-    tituloLog: "Reclamação",
-  },
-  gerente: {
-    abertura: "Entendemos e vamos encaminhar sua mensagem diretamente ao responsável. Por favor, me conte um resumo do ocorrido para que possamos retornar.",
-    tituloLog: "Pedido de gerente",
-  },
-  vagas: {
-    abertura:
-      "Obrigado pelo interesse em trabalhar conosco! Envie seu currículo (ou um resumo da sua experiência) e o nome da vaga desejada. Nossa equipe analisará e entrará em contato caso seu perfil seja selecionado.",
-    tituloLog: "Vaga de emprego",
-  },
-  fornecedor: {
-    abertura: "Olá! Envie o nome da empresa e os produtos ou serviços oferecidos. Encaminharemos a apresentação ao setor responsável.",
-    tituloLog: "Fornecedor",
-  },
-  parceria: {
-    abertura: "Obrigado pelo contato! Envie sua proposta, seu perfil ou portfólio. Nossa equipe responsável avaliará a possibilidade de parceria.",
-    tituloLog: "Parceria/divulgação",
-  },
-  nota_fiscal: {
-    abertura:
-      "Para solicitar nota fiscal ou corrigir algum dado, envie o nome ou razão social, CPF ou CNPJ e as informações da compra. Evite enviar dados bancários ou senhas pelo WhatsApp.",
-    tituloLog: "Nota fiscal",
-  },
-};
 
 function respostaElogio(): string {
   return "Ficamos muito felizes com sua mensagem! 😊 Obrigado por compartilhar sua experiência. Vamos repassar seu elogio para toda a equipe.";
@@ -237,110 +211,6 @@ async function responderStatusPedido(estabelecimentoId: string, telefone: string
   return `Seu pedido *#${String(data.numero).padStart(3, "0")}* (${brl(Number(data.total))}) está *${rotulo[data.status] || data.status}*.`;
 }
 
-// ---------- Reserva (sem mudanças em relação à Fase 1) ----------
-
-function hojeISOLocal(): string {
-  const partes = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date());
-  const y = partes.find((p) => p.type === "year")!.value;
-  const m = partes.find((p) => p.type === "month")!.value;
-  const d = partes.find((p) => p.type === "day")!.value;
-  return `${y}-${m}-${d}`;
-}
-
-function somarDiasISO(iso: string, dias: number): string {
-  const [y, m, d] = iso.split("-").map(Number);
-  const dt = new Date(Date.UTC(y, m - 1, d));
-  dt.setUTCDate(dt.getUTCDate() + dias);
-  return dt.toISOString().slice(0, 10);
-}
-
-const DIAS_SEMANA_TXT = ["domingo", "segunda", "terca", "quarta", "quinta", "sexta", "sabado"];
-
-function parseData(t: string): string | null {
-  const dataNumerica = t.match(/\b(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?\b/);
-  if (dataNumerica) {
-    const dia = Number(dataNumerica[1]);
-    const mes = Number(dataNumerica[2]);
-    let ano = dataNumerica[3] ? Number(dataNumerica[3]) : Number(hojeISOLocal().slice(0, 4));
-    if (ano < 100) ano += 2000;
-    if (dia >= 1 && dia <= 31 && mes >= 1 && mes <= 12) return `${ano}-${String(mes).padStart(2, "0")}-${String(dia).padStart(2, "0")}`;
-  }
-  const hoje = hojeISOLocal();
-  if (/\bhoje\b/.test(t)) return hoje;
-  if (/\bamanha\b/.test(t)) return somarDiasISO(hoje, 1);
-  const { diaSemana: diaSemanaHoje } = obterAgoraLocal();
-  for (let alvo = 0; alvo < 7; alvo++) {
-    if (new RegExp(`\\b${DIAS_SEMANA_TXT[alvo]}\\b`).test(t)) return somarDiasISO(hoje, (alvo - diaSemanaHoje + 7) % 7);
-  }
-  return null;
-}
-
-function parseHorarioReserva(t: string): string | null {
-  const m = t.match(/\b(\d{1,2})[:h](\d{2})?\b/);
-  if (!m) return null;
-  const h = Number(m[1]);
-  const min = m[2] ? Number(m[2]) : 0;
-  if (h > 23 || min > 59) return null;
-  return `${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
-}
-
-function parseQuantidade(t: string): number | null {
-  const m = t.match(/\b(\d{1,3})\s*pessoas?\b/) || t.match(/\bpara\s+(\d{1,3})\b/);
-  if (!m) return null;
-  const n = Number(m[1]);
-  return n > 0 && n <= 200 ? n : null;
-}
-
-function formatarDataBR(iso: string): string {
-  const [y, m, d] = iso.split("-");
-  return `${d}/${m}/${y}`;
-}
-
-type ContextoReserva = { tipo: "reserva"; data?: string | null; horario?: string | null; quantidade?: number | null };
-
-async function tratarFluxoReserva(
-  estabelecimentoId: string, telefone: string, nomeContato: string, textoOriginal: string, contextoAtual: any, eraNovoPedido: boolean,
-): Promise<{ resposta: string; novoContexto: any }> {
-  const t = normalizarTexto(textoOriginal);
-  const parcial: ContextoReserva = contextoAtual?.tipo === "reserva" ? contextoAtual : { tipo: "reserva" };
-  const data = parseData(t) || parcial.data || null;
-  const horario = parseHorarioReserva(t) || parcial.horario || null;
-  let quantidade = parseQuantidade(t) || parcial.quantidade || null;
-  if (!quantidade && data && horario) {
-    const soNumero = t.match(/^\d{1,3}$/);
-    if (soNumero) quantidade = Number(soNumero[0]);
-  }
-  const faltando: string[] = [];
-  if (!data) faltando.push("a data");
-  if (!horario) faltando.push("o horário");
-  if (!quantidade) faltando.push("a quantidade de pessoas");
-  if (faltando.length) {
-    const novoContexto: ContextoReserva = { tipo: "reserva", data, horario, quantidade };
-    if (eraNovoPedido) {
-      return {
-        resposta:
-          "Será um prazer receber você! Pra solicitar sua reserva, me diga:\n\n📅 Data\n🕒 Horário\n👥 Quantidade de pessoas\n\nVocê pode mandar tudo em uma mensagem só (ex.: \"amanhã às 20h, 4 pessoas\"). Após o envio, nossa equipe verificará a disponibilidade.",
-        novoContexto,
-      };
-    }
-    return { resposta: `Para continuar com a solicitação, ainda preciso: ${faltando.join(", ")}.`, novoContexto };
-  }
-  await sb.from("contato_publico").insert({
-    estabelecimento_id: estabelecimentoId,
-    nome: nomeContato || "Cliente WhatsApp",
-    telefone,
-    mensagem: `Reserva via WhatsApp (agente): ${quantidade} pessoa(s), às ${horario}.`,
-    data_desejada: data,
-    pessoas: quantidade,
-    horario_desejado: horario,
-    status: "novo",
-  });
-  return {
-    resposta: `Recebi sua solicitação para ${quantidade} pessoa(s), no dia ${formatarDataBR(data!)}, às ${horario}, em nome de ${nomeContato || "você"}. Agora nossa equipe verificará a disponibilidade e confirmará por aqui.`,
-    novoContexto: {},
-  };
-}
-
 function obterAgoraLocal(): { diaSemana: number; hhmm: string } {
   const partes = new Intl.DateTimeFormat("en-US", { timeZone: "America/Sao_Paulo", weekday: "short", hour: "2-digit", minute: "2-digit", hour12: false }).formatToParts(new Date());
   const mapaDia: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
@@ -427,7 +297,9 @@ async function obterOuCriarConversa(estabelecimentoId: string, telefone: string)
 // Grava a mensagem recebida ANTES de processar. O índice único em wamid barra reentregas da Meta,
 // inclusive as que chegam enquanto a primeira ainda está sendo respondida.
 async function registrarEntrada(conversaId: string, recebida: Recebida): Promise<string | null> {
-  const conteudo = recebida.texto || `[${recebida.tipo}]`;
+  const conteudo = recebida.midia
+    ? `[${recebida.midia.tipo === "image" ? "foto" : "arquivo"}: ${recebida.midia.nome}]${recebida.texto ? " " + recebida.texto : ""}`
+    : recebida.texto || `[${recebida.tipo}]`;
   const r = await sb.from("whatsapp_mensagem").insert({ conversa_id: conversaId, direcao: "entrada", conteudo, intencao: null, wamid: recebida.wamid }).select("id").single();
   if (r.error) {
     if (r.error.code === "23505") return null; // já processada
@@ -507,35 +379,32 @@ async function tratarWebhook(req: Request): Promise<Response> {
     saidas = r.saidas;
     novoContexto = r.contexto;
     intencaoLog = "pedido";
+  } else if (tipoFluxo === "triagem") {
+    // triagem em andamento: tudo que o cliente escreve é resposta (inclusive "o pedido veio frio")
+    const r = await continuarTriagem(sb, estabelecimento.id, contexto as ContextoTriagem, { ...entrada, midia: recebida.midia }, segredo);
+    saidas = r.saidas;
+    novoContexto = r.contexto;
+    intencaoLog = (contexto as ContextoTriagem).categoria;
+  } else if (tipoFluxo === "reserva" && ((contexto as ContextoReserva).etapa !== "dados" || recebida.respostaId || intencao === "reserva" || intencao === "fallback")) {
+    const r = await continuarReserva(sb, estabelecimento.id, contexto as ContextoReserva, entrada, segredo);
+    saidas = r.saidas;
+    novoContexto = r.contexto;
+    intencaoLog = "reserva";
   } else if (intencao === "pedido") {
     const r = await iniciarPedido(sb, estabelecimento.id, entrada, textoHorario);
     saidas = r.saidas;
     novoContexto = r.contexto;
-  } else if (tipoFluxo === "reserva" && (intencao === "reserva" || intencao === "fallback")) {
-    const r = await tratarFluxoReserva(estabelecimento.id, recebida.telefone, recebida.nomeContato, recebida.texto, contexto, false);
-    saidas = [texto(r.resposta)];
-    novoContexto = r.novoContexto;
-    intencaoLog = "reserva";
-  } else if (tipoFluxo === "captura" && intencao === "fallback") {
-    const categoria = contexto.categoria as CategoriaCaptura;
-    const info = CAPTURAS[categoria];
-    await sb.from("contato_publico").insert({
-      estabelecimento_id: estabelecimento.id,
-      nome: recebida.nomeContato || "Cliente WhatsApp",
-      telefone: recebida.telefone,
-      mensagem: `[${info.tituloLog}] ${recebida.texto}`,
-      status: "novo",
-    });
-    saidas = [texto("Recebido! Nossa equipe vai analisar e retornar em breve.")];
+  } else if (intencao === "minha_reserva") {
+    saidas = [texto(await responderMinhaReserva(sb, estabelecimento.id, recebida.telefone))];
     novoContexto = {};
-    intencaoLog = categoria;
   } else if (intencao === "reserva") {
-    const r = await tratarFluxoReserva(estabelecimento.id, recebida.telefone, recebida.nomeContato, recebida.texto, {}, true);
-    saidas = [texto(r.resposta)];
-    novoContexto = r.novoContexto;
-  } else if (intencao in CAPTURAS) {
-    saidas = [texto(CAPTURAS[intencao as CategoriaCaptura].abertura)];
-    novoContexto = { tipo: "captura", categoria: intencao };
+    const r = await iniciarReserva(sb, estabelecimento.id, entrada);
+    saidas = r.saidas;
+    novoContexto = r.contexto;
+  } else if (intencao in TRIAGEM) {
+    const r = iniciarTriagem(intencao as CategoriaTriagem);
+    saidas = r.saidas;
+    novoContexto = r.contexto;
   } else if (recebida.tipo === "audio") {
     saidas = [texto("Por enquanto ainda não consigo ouvir áudios. 🙏 Pode me escrever o que precisa?")];
     novoContexto = {};

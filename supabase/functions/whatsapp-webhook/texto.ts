@@ -25,7 +25,8 @@ function raiz(p: string): string {
 }
 
 function palavras(t: string): string[] {
-  return normalizar(t).split(" ").filter((p) => p.length >= 3 && !IGNORAR.has(p) && !(p in NUMEROS) && !/^\d+$/.test(p)).map(raiz);
+  // números de 1-2 dígitos são quantidade; de 3+ fazem parte do nome ("coca 600", "lata 350")
+  return normalizar(t).split(" ").filter((p) => p.length >= 3 && !IGNORAR.has(p) && !(p in NUMEROS) && !/^\d{1,2}$/.test(p)).map(raiz);
 }
 
 export type ItemCatalogo = { id: string; nome: string; preco: number; categoria: string; grupo: string; pergunta: string | null };
@@ -44,7 +45,7 @@ function pontuar(trecho: string[], item: ItemCatalogo): { pontos: number; cobert
   if (!doItem.length) return { pontos, cobertas };
   for (const p of trecho) {
     if (doItem.some((q) => q === p)) { pontos += 2; cobertas++; }
-    else if (p.length >= 4 && doItem.some((q) => q.startsWith(p) || p.startsWith(q))) { pontos += 1; cobertas++; }
+    else if ((p.length >= 4 || /^\d{3,}$/.test(p)) && doItem.some((q) => q.startsWith(p) || p.startsWith(q))) { pontos += 1; cobertas++; }
   }
   return { pontos, cobertas };
 }

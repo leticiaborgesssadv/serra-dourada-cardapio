@@ -15,7 +15,10 @@ export type Recebida = {
   tipo: string;
   texto: string;        // texto digitado, ou o título do botão/linha tocado
   respostaId: string;   // id do botão/linha tocado ("" quando é texto digitado)
+  midia: Midia | null;  // documento ou foto enviada (o arquivo em si é baixado depois, se houver token)
 };
+
+export type Midia = { id: string; tipo: string; mime: string; nome: string };
 
 const corta = (s: string, n: number) => (s.length <= n ? s : s.slice(0, n - 1) + "…");
 
@@ -52,6 +55,12 @@ export function extrairRecebida(payload: any): Recebida | null {
     texto = m.button?.text || "";
     respostaId = m.button?.payload || "";
   }
+  let midia: Midia | null = null;
+  if (m.type === "document" || m.type === "image") {
+    const d = m[m.type] || {};
+    texto = d.caption || "";
+    midia = { id: d.id, tipo: m.type, mime: d.mime_type || "", nome: (d.filename || `${m.type}.${(d.mime_type || "/bin").split("/")[1]}`).slice(0, 120) };
+  }
   return {
     wamid: m.id,
     telefone: m.from,
@@ -59,6 +68,7 @@ export function extrairRecebida(payload: any): Recebida | null {
     tipo: m.type,
     texto,
     respostaId,
+    midia,
   };
 }
 
@@ -122,4 +132,35 @@ export async function enviar(token: string, phoneId: string, para: string, s: Sa
   } catch (e) {
     return { status: "falhou", erro: String(e).slice(0, 300) };
   }
+}
+
+// Mensagem modelo (template) aprovada pela Meta. É o único jeito de iniciar conversa com um número
+// que não escreveu nas últimas 24 h (ex.: o WhatsApp da gestão).
+export async function enviarModelo(token: string, phoneId: string, para: string, nome: string, idioma: string, parametros: string[]): Promise<ResultadoEnvio> {
+  if (!token || !phoneId || !para || !nome) return { status: "nao_configurado" };
+  try {
+    const r = await fetch(`https://graph.facebook.com/v20.0/${phoneId}/messages`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        messaging_product: "whatsapp", to: para, type: "template",
+        template: { name: nome, language: { code: idioma || "pt_BR" }, components: [{ type: "body", parameters: parametros.map((t) => ({ type: "text", text: corta(t, 60) })) }] },
+      }),
+    });
+    const corpo = await r.text();
+    if (!r.ok) return { status: "falhou", erro: `${r.status} ${corpo.slice(0, 300)}` };
+    return { status: "enviado", wamid: JSON.parse(corpo || "{}")?.messages?.[0]?.id };
+  } catch (e) {
+    return { status: "falhou", erro: String(e).slice(0, 300) };
+  }
+}
+
+// Baixa um arquivo enviado pelo cliente (o link da Meta expira em minutos e exige o token).
+export async function baixarMidia(token: string, mediaId: string): Promise<{ bytes: Uint8Array; mime: string }> {
+  const info = await fetch(`https://graph.facebook.com/v20.0/${mediaId}`, { headers: { Authorization: `Bearer ${token}` } });
+  if (!info.ok) throw new Error(`mídia ${info.status}`);
+  const { url, mime_type } = await info.json();
+  const arq = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+  if (!arq.ok) throw new Error(`download ${arq.status}`);
+  return { bytes: new Uint8Array(await arq.arrayBuffer()), mime: mime_type || "application/octet-stream" };
 }
