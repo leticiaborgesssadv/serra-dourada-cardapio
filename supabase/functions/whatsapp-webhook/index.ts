@@ -8,7 +8,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { assinaturaValida, enviar, extrairEcos, extrairRecebidas, textoDaSaida, variantesTelefone, type Eco, type Recebida, type Saida } from "./whatsapp.ts";
 import { continuarPedido, iniciarPedido, type ContextoPedido } from "./pedido.ts";
 import { brl } from "./texto.ts";
-import { TRIAGEM, continuarTriagem, iniciarTriagem, type CategoriaTriagem, type ContextoTriagem } from "./triagem.ts";
+import { DIRETO_GESTAO, TRIAGEM, continuarTriagem, iniciarTriagem, responderContatoGestao, type CategoriaTriagem, type ContextoTriagem } from "./triagem.ts";
 import { continuarReserva, iniciarReserva, responderMinhaReserva, type ContextoReserva } from "./reserva.ts";
 import { MARCA_CARDAPIO, cardapioDoDia, citaCardapio, salvarCardapioDia } from "./cardapio-dia.ts";
 
@@ -33,8 +33,6 @@ const HORAS_ATENDIMENTO_HUMANO = 1;
 // a equipe escreve isto (pelo celular ou WhatsApp Web) para devolver a conversa ao robô na hora
 const PALAVRA_DEVOLVER = /#rob[oô](?![a-z])/i;
 
-// Promoções só do salão, informadas pela gestão em 03/11 (não valem para pedidos pelo WhatsApp).
-const PROMOCOES_SALAO = "🍺 *A 4ª é do Serra*: toda segunda-feira, tomou 3 Spaten, a 4ª é por nossa conta!";
 const CONTEXTO_EXPIRA_MS = 2 * 3600000;
 
 const DIAS = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
@@ -102,7 +100,7 @@ function detectarIntencao(texto: string, permitirAtalhoNumerico = true): Intenca
   if (/parceria|divulgacao|publicidade|permuta|influenciador/.test(t)) return "parceria";
   if (/nota fiscal|\bnf\b|cnpj|razao social/.test(t)) return "nota_fiscal";
   if (/\breserv|\bmesa\b/.test(t)) return "reserva";
-  if (/happy ?hour|promoc|spaten|4[aª]? e do serra/.test(t)) return "happy_hour";
+  if (/happy ?hour|promoc|spaten|4[aª]? e do serra|terca delas|\bdelas\b/.test(t)) return "happy_hour";
   if (/cardapio|menu|\bmistura\b|almoco de hoje|o que tem (hoje|de almoco|pro almoco|no almoco)/.test(t)) return "cardapio";
   // palavras inteiras: "fechar o pedido" e "como funciona o pedido" não são pergunta de horário
   if (/\b(horarios?|funcionamento|que horas|abre|abrem|fecha|fecham|aberto|abertos)\b/.test(t)) return "horario";
@@ -217,15 +215,36 @@ async function responderEndereco(estabelecimento: { endereco: string | null }, e
   return `Estamos na ${estabelecimento.endereco}.${mapa}`;
 }
 
+// Promoções cadastradas no site (A 4ª é do Serra, Terça Delas, Chopp a R$ 7,90…). Só colunas públicas:
+// a senha do cardápio da promoção nunca sai daqui.
+const DIA_PROMO = ["todo domingo", "toda segunda", "toda terça", "toda quarta", "toda quinta", "toda sexta", "todo sábado"];
+async function promocoesSalao(): Promise<string[]> {
+  const hoje = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(new Date());
+  const { data } = await sb.from("promocao").select("titulo, descricao, condicoes, dia_semana, hora_inicio, ordem, valido_de, valido_ate").eq("ativo", true);
+  const { diaSemana } = obterAgoraLocal();
+  return (data || [])
+    .filter((p: any) => (!p.valido_de || p.valido_de <= hoje) && (!p.valido_ate || p.valido_ate >= hoje))
+    .sort((a: any, b: any) => (a.dia_semana ?? 9) - (b.dia_semana ?? 9) || (a.ordem ?? 0) - (b.ordem ?? 0))
+    .map((p: any) => {
+      const quando = p.dia_semana != null
+        ? `${DIA_PROMO[p.dia_semana]}${p.hora_inicio ? `, a partir das ${formatarHoraNatural(p.hora_inicio)}` : ""}${p.dia_semana === diaSemana ? " (é hoje!)" : ""}`
+        : "";
+      return [`🔸 *${p.titulo}*${quando ? ` — ${quando}` : ""}`, p.descricao, p.condicoes ? `_${p.condicoes}_` : ""].filter(Boolean).join("\n");
+    });
+}
+
 async function responderHappyHour(): Promise<string> {
   const { data } = await sb.from("happy_hour").select("descricao, dias_semana, horario_inicio, horario_fim, ativo").maybeSingle();
-  const salao = "\n\n_Promoções válidas só para consumo no salão._";
-  if (!data?.ativo) return `${PROMOCOES_SALAO}${salao}`;
-  const dias = formatarDiasSemana(data.dias_semana || []);
-  const periodo = data.horario_inicio && data.horario_fim ? `, das ${formatarHoraNatural(data.horario_inicio)} às ${formatarHoraNatural(data.horario_fim)}` : "";
-  const descricao = data.descricao || "confira com a equipe os detalhes!";
-  // happy hour vem do cadastro; a promoção de segunda foi informada pela gestão (PROMOCOES_SALAO)
-  return `Nosso Happy Hour acontece ${dias}${periodo}! 🍻\n\n${descricao}\n\n${PROMOCOES_SALAO}${salao}`;
+  const partes: string[] = [];
+  if (data?.ativo) {
+    const dias = formatarDiasSemana(data.dias_semana || []);
+    const periodo = data.horario_inicio && data.horario_fim ? `, das ${formatarHoraNatural(data.horario_inicio)} às ${formatarHoraNatural(data.horario_fim)}` : "";
+    partes.push(`Nosso Happy Hour acontece ${dias}${periodo}! 🍻\n\n${data.descricao || "confira com a equipe os detalhes!"}`);
+  }
+  partes.push(...(await promocoesSalao()));
+  // só o que está cadastrado: nada de promessa que não esteja no banco
+  if (!partes.length) return "No momento não temos promoção ativa, mas fique de olho — em breve tem novidade!";
+  return `${partes.join("\n\n")}\n\n_Promoções válidas só para consumo no salão._`;
 }
 
 // Cliente pergunta "e meu pedido?": responde com o último pedido do dia desse telefone.
@@ -458,6 +477,13 @@ async function processarMensagem(estabelecimento: { id: string; endereco: string
       ? "Certo! Já chamei alguém da equipe para continuar o atendimento por aqui. Aguarde só um pouquinho. 🙏"
       : "Certo! Deixei avisado para a equipe. Estamos fora do horário agora, então a resposta chega por aqui assim que retomarmos o atendimento. 🙏")];
     novoContexto = {};
+  } else if ((recebida.respostaId.startsWith("tri:") && DIRETO_GESTAO.has(recebida.respostaId.slice(4)))
+    || (!recebida.respostaId && (!tipoFluxo || tipoFluxo === "complemento") && DIRETO_GESTAO.has(intencao))) {
+    // currículo, fornecedor, artista e parceria: contato direto da gestão (decisão de 04/11)
+    const categoria = recebida.respostaId.startsWith("tri:") ? recebida.respostaId.slice(4) : intencao;
+    saidas = [await responderContatoGestao(sb, estabelecimento.id, categoria)];
+    novoContexto = {};
+    intencaoLog = categoria as CategoriaTriagem;
   } else if (recebida.respostaId.startsWith("tri:") && recebida.respostaId.slice(4) in TRIAGEM) {
     // tocou num assunto da lista "Outros assuntos"
     const r = iniciarTriagem(recebida.respostaId.slice(4) as CategoriaTriagem);

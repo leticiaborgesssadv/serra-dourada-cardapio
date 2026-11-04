@@ -28,6 +28,8 @@ Respostas da gestão às perguntas da revisão. Servem de base para configurar o
 - **Logins:** só a gestora por enquanto.
 - **"Falar com uma pessoa":** responde quem estiver com o celular na cozinha, ou a gestora pelo WhatsApp Web. O robô fica em silêncio até a equipe devolver; se ninguém devolver, volta sozinho em **1 hora**.
 - **Apresentação:** "assistente virtual da casa" (sem nome próprio).
+- **Currículo, fornecedor, artista e parceria (04/11):** o robô passa direto o WhatsApp da gestão, (62) 98274-3552, com link wa.me. O número do restaurante fica dedicado aos clientes. Reclamação, gerência e nota fiscal continuam no robô, com protocolo. Exceção autorizada à regra de não mostrar o número da gestão.
+- **Promoções (04/11):** o robô lê o cadastro de promoções do site: A 4ª é do Serra (segunda), Terça Delas (terça) e Chopp Brahma a R$ 7,90 (segunda a sábado, 16h às 23h). Sem texto fixo no código; a senha do Cardápio Delas nunca é enviada.
 - **Link de avaliação Google:** https://g.page/r/CZaydLnugycBEBM/review
 
 ## Meta / WhatsApp

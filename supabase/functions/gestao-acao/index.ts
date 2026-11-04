@@ -67,7 +67,13 @@ async function avisarCliente(conversaId: string | null, telefone: string | null,
 
 function textoDecisao(r: any): string | null {
   switch (r.status) {
-    case "confirmada": return `✅ Sua reserva *${r.protocolo}* está confirmada: ${quando(r)}, ${r.pessoas} pessoa(s), em nome de ${r.cliente_nome}. Até lá!`;
+    case "confirmada": {
+      // texto aprovado pela gestão em 03/11 (o mesmo do modelo enviado à Meta)
+      const [, m, d] = String(r.data).split("-");
+      const nome = String(r.cliente_nome || "").trim().split(/\s+/)[0] || "";
+      const hora = r.horario ? `, às ${String(r.horario).slice(0, 5)}` : "";
+      return `Oi${nome ? ", " + nome : ""}! 😊 Que alegria: sua reserva no Serra Dourada está confirmada! Vamos te esperar no dia ${d}/${m}${hora}, com tudo pronto para ${r.pessoas} pessoa(s). Se for comemorar algo especial, conta pra gente que a equipe capricha. Seu protocolo é ${r.protocolo}. Qualquer mudança, é só responder aqui. Até lá!`;
+    }
     case "lista_espera": return `📝 Sua solicitação *${r.protocolo}* (${quando(r)}) está na lista de espera. Se abrir vaga, avisamos por aqui.`;
     case "recusada": return `Infelizmente não conseguimos confirmar a reserva *${r.protocolo}* (${quando(r)}). Motivo: ${r.motivo}.\nSe quiser, escreva *reserva* para tentar outro dia ou horário.`;
     case "cancelada": return `Sua reserva *${r.protocolo}* (${quando(r)}) foi cancelada. Motivo: ${r.motivo}.\nSe precisar, é só responder aqui.`;

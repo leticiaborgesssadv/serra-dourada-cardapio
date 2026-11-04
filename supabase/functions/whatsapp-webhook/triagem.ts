@@ -100,6 +100,30 @@ function pergunta(def: Definicao, passo: number): string {
   return def.perguntas[passo].texto;
 }
 
+// Decisão da gestão (04/11): currículo, fornecedor, artista e parceria falam direto com a gestão.
+// O número do restaurante fica dedicado aos clientes. Reclamação, gerência e nota fiscal seguem aqui.
+export const DIRETO_GESTAO = new Set<string>(["curriculo", "fornecedor", "artista", "parceria"]);
+const CONTATO_GESTAO_PADRAO = "5562982743552";
+
+const ABERTURA_DIRETA: Record<string, string> = {
+  curriculo: "Obrigado pelo interesse em trabalhar conosco! 😊 Currículos são recebidos direto pela nossa gestão",
+  fornecedor: "Olá! Apresentações de fornecedores são tratadas direto com a nossa gestão",
+  artista: "Que bom! Adoramos música ao vivo. 🎶 A agenda de artistas é feita direto com a nossa gestão",
+  parceria: "Obrigado pelo contato! Propostas de parceria e divulgação são tratadas direto com a nossa gestão",
+};
+
+function formatarTelefone(t: string): string {
+  const d = (t || "").replace(/\D/g, "").replace(/^55(?=\d{10,11}$)/, "");
+  return d.length === 11 ? `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}` : d.length === 10 ? `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}` : t;
+}
+
+export async function responderContatoGestao(sb: SupabaseClient, estab: string, categoria: string): Promise<Saida> {
+  const { data: cfg } = await sb.from("triagem_config").select("telefone_gestao").eq("estabelecimento_id", estab).maybeSingle();
+  const numero = (cfg?.telefone_gestao || CONTATO_GESTAO_PADRAO).replace(/\D/g, "");
+  const abertura = ABERTURA_DIRETA[categoria] || "Esse assunto é tratado direto com a nossa gestão";
+  return texto(`${abertura}. Fale pelo WhatsApp *${formatarTelefone(numero)}*: https://wa.me/${numero.startsWith("55") ? numero : "55" + numero}\n\nEste número aqui é dedicado ao atendimento dos nossos clientes. 😊`);
+}
+
 export function iniciarTriagem(categoria: CategoriaTriagem): Resultado {
   const def = TRIAGEM[categoria];
   const ctx: ContextoTriagem = { tipo: "triagem", categoria, passo: 0, dados: {}, anexos: [] };
