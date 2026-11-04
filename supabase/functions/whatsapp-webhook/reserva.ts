@@ -145,7 +145,7 @@ async function conferir(sb: SupabaseClient, estab: string, ctx: ContextoReserva,
   if (!v.ok) {
     const erros: string[] = v.erros || [];
     if (erros.some((x) => x.includes("aceitando"))) return { saidas: [texto(erros.join("\n") + "\n\nSe quiser, escreva *atendente* para falar com a equipe.")], contexto: {} };
-    if (erros.some((x) => /fechad|anteced|dias/.test(x))) { ctx.data = null; ctx.horario = null; }
+    if (erros.some((x) => /fechad|anteced|dias|passou/.test(x))) { ctx.data = null; ctx.horario = null; }
     return { saidas: [texto(`⚠️ ${erros.join("\n⚠️ ")}\n\nPode me dizer outro dia e horário?`)], contexto: ctx };
   }
   ctx.especial = !!v.especial;
@@ -193,7 +193,7 @@ export async function continuarReserva(
       ctx.nome = nome.slice(0, 60);
       if (ctx.especial) {
         ctx.etapa = "ocasiao";
-        return { saidas: [texto(`Para grupos com mais de ${ctx.limiteGrupo} pessoas, nossa gestão organiza tudo com você. 😊\nQual é a ocasião (aniversário, confraternização…) e algum detalhe importante?`)], contexto: ctx };
+        return { saidas: [texto(`Para grupos a partir de ${(ctx.limiteGrupo || 0) + 1} pessoas, nossa gestão organiza tudo com você. 😊\nQual é a ocasião (aniversário, confraternização…) e algum detalhe importante?`)], contexto: ctx };
       }
       return { saidas: [telaConfirmar(ctx)], contexto: ctx };
     }

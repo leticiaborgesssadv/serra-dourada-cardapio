@@ -43,10 +43,13 @@ function Geral({ estab }) {
       almoco_aceita_ate: c.almoco_aceita_ate || null,
       bar_aceita_ate: c.bar_aceita_ate || null,
       chave_pix: (c.chave_pix || "").trim() || null,
+      pix_titular: (c.pix_titular || "").trim() || null,
+      ifood_url: (c.ifood_url || "").trim() || null,
       tempo_retirada: (c.tempo_retirada || "").trim() || null,
       tempo_entrega: (c.tempo_entrega || "").trim() || null,
       atualizado_em: new Date().toISOString(),
     };
+    if (dados.ifood_url && !/^https:\/\//.test(dados.ifood_url)) { setErro("O link do iFood precisa começar com https://"); return; }
     if (dados.entrega_ativa && dados.taxa_entrega === null) { setErro("Para ligar a entrega, informe a taxa de entrega (pode ser 0 se for grátis)."); return; }
     const r = await sb.from("pedido_config").upsert(dados, { onConflict: "estabelecimento_id" });
     if (r.error) { setErro("Não foi possível salvar: " + r.error.message); return; }
@@ -76,11 +79,13 @@ function Geral({ estab }) {
       <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:4px 18px; margin-top:8px;">
         <label><span style=${rotulo}>Retirada no balcão</span><input type="checkbox" checked=${c.retirada_ativa} onChange=${muda("retirada_ativa")} /> aceitar retirada</label>
         <label><span style=${rotulo}>Entrega</span><input type="checkbox" checked=${c.entrega_ativa} onChange=${muda("entrega_ativa")} /> aceitar entrega</label>
-        <label><span style=${rotulo}>Taxa de entrega (R$)</span><input style=${campo} value=${c.taxa_entrega ?? ""} onInput=${muda("taxa_entrega")} placeholder="ex.: 7,00 (vazio = sem entrega)" /></label>
+        <label><span style=${rotulo}>Taxa de entrega (R$)</span><input style=${campo} value=${c.taxa_entrega ?? ""} onInput=${muda("taxa_entrega")} placeholder="0 = grátis (vazio = sem entrega)" /></label>
         <label><span style=${rotulo}>Pedido mínimo (R$)</span><input style=${campo} value=${c.pedido_minimo ?? 0} onInput=${muda("pedido_minimo")} /></label>
         <label><span style=${rotulo}>Tempo para retirada</span><input style=${campo} value=${c.tempo_retirada || ""} onInput=${muda("tempo_retirada")} placeholder="ex.: 20 a 30 minutos" /></label>
         <label><span style=${rotulo}>Tempo de entrega</span><input style=${campo} value=${c.tempo_entrega || ""} onInput=${muda("tempo_entrega")} placeholder="ex.: 40 a 60 minutos" /></label>
         <label><span style=${rotulo}>Chave Pix (enviada ao cliente)</span><input style=${campo} value=${c.chave_pix || ""} onInput=${muda("chave_pix")} placeholder="CNPJ, e-mail ou telefone" /></label>
+        <label><span style=${rotulo}>Titular da conta Pix</span><input style=${campo} value=${c.pix_titular || ""} onInput=${muda("pix_titular")} placeholder="nome que aparece no app do banco" /></label>
+        <label><span style=${rotulo}>Link da loja no iFood (fora da área de entrega)</span><input style=${campo} value=${c.ifood_url || ""} onInput=${muda("ifood_url")} placeholder="https://www.ifood.com.br/delivery/..." /></label>
         <label><span style=${rotulo}>Almoço aceita pedidos até</span><input type="time" style=${campo} value=${(c.almoco_aceita_ate || "").slice(0, 5)} onInput=${muda("almoco_aceita_ate")} /></label>
         <label><span style=${rotulo}>Bar aceita pedidos até</span><input type="time" style=${campo} value=${(c.bar_aceita_ate || "").slice(0, 5)} onInput=${muda("bar_aceita_ate")} /></label>
         <label><span style=${rotulo}>Máximo de itens por pedido</span><input type="number" min="1" max="200" style=${campo} value=${c.max_itens_por_pedido} onInput=${muda("max_itens_por_pedido")} /></label>

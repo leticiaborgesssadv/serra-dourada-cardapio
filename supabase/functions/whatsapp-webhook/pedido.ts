@@ -3,6 +3,7 @@
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import type { Saida, LinhaLista } from "./whatsapp.ts";
 import { interpretar, lerQuantidade, lerValor, normalizar, brl, type ItemCatalogo } from "./texto.ts";
+import { cardapioDoDia } from "./cardapio-dia.ts";
 
 type ItemCarrinho = { cardapio_id: string; nome: string; quantidade: number; detalhe?: string };
 
@@ -22,12 +23,16 @@ export type ContextoPedido = {
   pagamento?: "pix" | "cartao" | "dinheiro";
   troco_para?: number | null;
   observacao?: string | null;
+  cardapioDia?: string; // cardápio do almoço de hoje, mostrado quando o cliente escolhe a marmita/prato
 };
 
 export type Entrada = { texto: string; respostaId: string; wamid: string; telefone: string; nomeContato: string; conversaId: string };
 export type Resultado = { saidas: Saida[]; contexto: Record<string, unknown> };
 
 const POR_PAGINA = 9;
+// decisão da gestão: chopp e drinques não saem pelo WhatsApp, só no salão
+const soNoSalao = (t: string) => /chop|drink|drinque|caipir|\bgin\b|whisky|dose/.test(normalizar(t));
+const AVISO_SALAO = "Chopp e drinques são servidos só aqui no salão. 🍻";
 const PALAVRAS_CANCELAR = ["cancelar", "cancela", "desisto", "sair"];
 
 async function catalogo(sb: SupabaseClient, estab: string): Promise<ItemCatalogo[]> {
@@ -128,7 +133,8 @@ function pedirDetalheOuQuantidade(ctx: ContextoPedido, item: ItemCatalogo, quant
   ctx.pendente = { cardapio_id: item.id, nome: item.nome, pergunta: item.pergunta, quantidade };
   if (item.pergunta) {
     ctx.etapa = "detalhe";
-    return [{ tipo: "texto", texto: `*${item.nome}* — ${brl(item.preco)}\n${item.pergunta}` }];
+    const doDia = ctx.cardapioDia && /^almo/i.test(normalizar(item.categoria)) ? `🍽️ *Hoje no almoço:*\n${ctx.cardapioDia}\n\n` : "";
+    return [{ tipo: "texto", texto: `${doDia}*${item.nome}* — ${brl(item.preco)}\n${item.pergunta}` }];
   }
   ctx.etapa = "quantidade";
   return [telaQuantidade(item.nome)];
@@ -157,6 +163,7 @@ async function tentarTextoLivre(sb: SupabaseClient, estab: string, ctx: Contexto
   const avisos: string[] = avisoAnterior ? [avisoAnterior] : [];
   if (semDetalhe.length) avisos.push("Anotei: " + semDetalhe.map((c) => `${c.quantidade}x ${c.item.nome}`).join(", ") + ".");
   if (r.naoEntendidos.length) avisos.push(`Não encontrei no cardápio de agora: _${r.naoEntendidos.join(", ")}_.`);
+  if (r.naoEntendidos.some(soNoSalao)) avisos.push(AVISO_SALAO);
 
   const comDetalhe = r.certos.filter((c) => c.item.pergunta);
   const pendentes = [...comDetalhe.slice(1).map((c) => c.trecho), ...r.duvidas.map((d) => d.trecho)];
@@ -191,6 +198,14 @@ async function tentarTextoLivre(sb: SupabaseClient, estab: string, ctx: Contexto
 
 // ---------- etapas finais ----------
 
+// Entrega só nas proximidades: a equipe confere o endereço; longe, o cliente pede pelo iFood.
+function perguntaEndereco(cfg: any): string {
+  const ifood = cfg?.ifood_url ? ` Para endereços mais distantes, peça pelo iFood: ${cfg.ifood_url}` : " Para endereços mais distantes, atendemos pelo iFood.";
+  return `Entregamos só aqui nas proximidades, e a equipe confere o endereço antes de liberar.${ifood}\n\nQual o endereço completo? Rua, número, bairro e um ponto de referência.`;
+}
+
+const rotuloTaxa = (taxa: number) => (Number(taxa) > 0 ? `taxa ${brl(taxa)}` : "sem taxa");
+
 async function perguntarModalidade(sb: SupabaseClient, estab: string, ctx: ContextoPedido): Promise<Saida[]> {
   const cfg = await config(sb, estab);
   const entrega = cfg?.entrega_ativa && cfg?.taxa_entrega != null;
@@ -202,13 +217,13 @@ async function perguntarModalidade(sb: SupabaseClient, estab: string, ctx: Conte
   if (entrega && !retirada) {
     ctx.modalidade = "entrega";
     ctx.etapa = "endereco";
-    return [{ tipo: "texto", texto: `Os pedidos de agora são para *entrega* (taxa ${brl(cfg.taxa_entrega)}).\nQual o endereço completo? Rua, número, bairro e um ponto de referência.` }];
+    return [{ tipo: "texto", texto: `Os pedidos de agora são para *entrega* (${rotuloTaxa(cfg.taxa_entrega)}).\n${perguntaEndereco(cfg)}` }];
   }
   ctx.etapa = "modalidade";
   return [{
     tipo: "botoes",
     texto: "Vai ser para entrega ou para retirar no balcão?",
-    botoes: [{ id: "mod:retirada", titulo: "Retirar no balcão" }, { id: "mod:entrega", titulo: `Entrega (${brl(cfg.taxa_entrega)})` }],
+    botoes: [{ id: "mod:retirada", titulo: "Retirar no balcão" }, { id: "mod:entrega", titulo: Number(cfg.taxa_entrega) > 0 ? `Entrega (${brl(cfg.taxa_entrega)})` : "Entrega grátis" }],
   }];
 }
 
@@ -280,12 +295,12 @@ async function confirmar(sb: SupabaseClient, estab: string, ctx: ContextoPedido,
     `✅ *Pedido #${numero} confirmado!*`,
     `Total: *${brl(data.total)}*`,
     ctx.modalidade === "entrega"
-      ? `🛵 ${cfg?.tempo_entrega ? "Previsão de entrega: " + cfg.tempo_entrega : "Avisamos aqui quando sair para entrega."}`
+      ? `🛵 ${cfg?.tempo_entrega ? "Previsão de entrega: " + cfg.tempo_entrega + "." : "Avisamos aqui quando sair para entrega."}\nA equipe confere se o endereço está na nossa área de entrega e, se precisar, fala com você por aqui.`
       : `🏪 ${cfg?.tempo_retirada ? "Fica pronto em " + cfg.tempo_retirada + "." : "Avisamos aqui quando estiver pronto."}`,
   ];
   if (ctx.pagamento === "pix") {
     linhas.push(cfg?.chave_pix
-      ? `\n🔑 Chave Pix: *${cfg.chave_pix}*\nDepois de pagar, envie o comprovante aqui. A equipe confere o pagamento antes de liberar.`
+      ? `\n🔑 Chave Pix: *${cfg.chave_pix}*${cfg.pix_titular ? `\nEm nome de: ${cfg.pix_titular}` : ""}\nDepois de pagar, envie o comprovante aqui. A equipe confere o pagamento antes de liberar.`
       : "\n🔑 A equipe vai te enviar a chave Pix por aqui. O pagamento é conferido antes de liberar o pedido.");
   }
   linhas.push("\nObrigado! Te avisamos por aqui quando estiver pronto.");
@@ -301,12 +316,13 @@ export async function iniciarPedido(sb: SupabaseClient, estab: string, e: Entrad
     return { saidas: [{ tipo: "texto", texto: `No momento não estamos recebendo pedidos pelo WhatsApp.\n\n${await textoHorario()}` }], contexto: {} };
   }
   const ctx = novo();
+  ctx.cardapioDia = (await cardapioDoDia(sb, estab)) || undefined;
   // a própria mensagem já pode trazer itens ("quero 2 espetinhos de picanha")
   const livre = await tentarTextoLivre(sb, estab, ctx, e.texto, itens);
   if (livre) return { saidas: livre, contexto: ctx };
   // o cliente citou algo que não está no cardápio deste horário (ex.: espetinho no almoço)
   const citouItem = interpretar(e.texto, itens).naoEntendidos.length > 0;
-  const aviso: Saida[] = citouItem ? [{ tipo: "texto", texto: "Esse item não está disponível neste horário. Veja o que temos agora:" }] : [];
+  const aviso: Saida[] = citouItem ? [{ tipo: "texto", texto: soNoSalao(e.texto) ? `${AVISO_SALAO} Para pedir por aqui, veja o que temos:` : "Esse item não está disponível neste horário. Veja o que temos agora:" }] : [];
   return { saidas: [...aviso, telaGrupos(itens)], contexto: ctx };
 }
 
@@ -396,7 +412,7 @@ export async function continuarPedido(sb: SupabaseClient, estab: string, ctx: Co
       }
       const livre = await tentarTextoLivre(sb, estab, ctx, e.texto, itens);
       if (livre) return pronto(livre);
-      return pronto(await telaCarrinho(sb, estab, ctx, "Não entendi. Use os botões ou escreva o item que quer adicionar."));
+      return pronto(await telaCarrinho(sb, estab, ctx, soNoSalao(e.texto) ? AVISO_SALAO : "Não entendi. Use os botões ou escreva o item que quer adicionar."));
     }
 
     case "remover": {
@@ -423,7 +439,7 @@ export async function continuarPedido(sb: SupabaseClient, estab: string, ctx: Co
       if (id === "mod:entrega" || t.includes("entreg")) {
         ctx.modalidade = "entrega";
         ctx.etapa = "endereco";
-        return pronto([{ tipo: "texto", texto: "Qual o endereço completo? Rua, número, bairro e um ponto de referência." }]);
+        return pronto([{ tipo: "texto", texto: perguntaEndereco(await config(sb, estab)) }]);
       }
       return pronto(await perguntarModalidade(sb, estab, ctx));
     }
@@ -487,7 +503,7 @@ export async function continuarPedido(sb: SupabaseClient, estab: string, ctx: Co
       const livre = await tentarTextoLivre(sb, estab, ctx, e.texto, itens);
       if (livre) return pronto(livre);
       ctx.etapa = "grupos";
-      return pronto([{ tipo: "texto", texto: "Não encontrei esse item no cardápio de agora." }, telaGrupos(itens)]);
+      return pronto([{ tipo: "texto", texto: soNoSalao(e.texto) ? AVISO_SALAO : "Não encontrei esse item no cardápio de agora." }, telaGrupos(itens)]);
     }
   }
 }

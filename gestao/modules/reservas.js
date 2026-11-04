@@ -167,7 +167,7 @@ function Configuracao({ estab, cfg, onSalvo }) {
         <label><span style=${rotulo}>Reservas pelo WhatsApp</span><input type="checkbox" checked=${c.aceitando_reservas} onChange=${muda("aceitando_reservas")} /> aceitando pedidos de reserva</label>
         <label><span style=${rotulo}>Lugares no almoço</span><input type="number" min="1" style=${campo} value=${c.capacidade_almoco ?? ""} onInput=${muda("capacidade_almoco")} placeholder="sem limite" /></label>
         <label><span style=${rotulo}>Lugares à noite</span><input type="number" min="1" style=${campo} value=${c.capacidade_noite ?? ""} onInput=${muda("capacidade_noite")} placeholder="sem limite" /></label>
-        <label><span style=${rotulo}>Grupo grande a partir de</span><input type="number" min="2" style=${campo} value=${c.limite_grupo} onInput=${muda("limite_grupo")} /></label>
+        <label><span style=${rotulo}>Grupo grande: acima de quantas pessoas</span><input type="number" min="2" style=${campo} value=${c.limite_grupo} onInput=${muda("limite_grupo")} /></label>
         <label><span style=${rotulo}>Antecedência mínima (horas)</span><input type="number" min="0" style=${campo} value=${c.antecedencia_min_horas} onInput=${muda("antecedencia_min_horas")} /></label>
         <label><span style=${rotulo}>Até quantos dias à frente</span><input type="number" min="1" style=${campo} value=${c.dias_max_antecedencia} onInput=${muda("dias_max_antecedencia")} /></label>
       </div>

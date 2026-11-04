@@ -89,6 +89,23 @@ function CartaoPedido({ p, coluna, onAcao, ocupado }) {
   `;
 }
 
+// Cardápio do almoço de hoje, recebido pelo WhatsApp do restaurante (mensagem que começa com #cardapio).
+function CardapioDoDia() {
+  const [c, setC] = useState(undefined);
+  const [aberto, setAberto] = useState(false);
+  useEffect(() => {
+    const hoje = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(new Date());
+    sb.from("cardapio_dia").select("texto, atualizado_em").eq("data", hoje).maybeSingle().then((r) => setC(r.data || null));
+  }, []);
+  if (c === undefined) return null;
+  if (!c) return html`<div class="item-conta" style="margin-bottom:12px; font-size:0.85rem;">🍽️ <strong>Cardápio do dia ainda não recebido.</strong> No WhatsApp do restaurante, mande o cardápio começando com <code>#cardapio</code> (para acrescentar, <code>#cardapio+</code>). O robô passa a mostrar aos clientes.</div>`;
+  return html`<div class="item-conta" style="margin-bottom:12px; font-size:0.85rem;">
+    🍽️ <strong>Cardápio do dia recebido</strong> às ${formatarDataHora(c.atualizado_em)}.
+    <button class="botao-secundario-pequeno" style="margin-left:8px;" onClick=${() => setAberto(!aberto)}>${aberto ? "Esconder" : "Ver"}</button>
+    ${aberto && html`<pre style="white-space:pre-wrap; font-family:inherit; margin:8px 0 0;">${c.texto}</pre>`}
+  </div>`;
+}
+
 function Alertas({ impressoras, jobsErro, aguardando, onDevolver }) {
   const itens = [];
   const agora = Date.now();
@@ -190,6 +207,7 @@ export default function Pedidos() {
       </p>
       ${erro && html`<div class="msg-erro" style="font-size:0.9rem; margin-bottom:10px;">${erro}</div>`}
       ${aviso && html`<div style="color:var(--sucesso); font-size:0.9rem; margin-bottom:10px;">${aviso}</div>`}
+      <${CardapioDoDia} />
       <${Alertas} impressoras=${impressoras} jobsErro=${jobsErro} aguardando=${aguardando} onDevolver=${(id) => executar({ acao: "devolver_conversa", conversa: id })} />
       ${carregando
         ? html`<p class="vazio">Carregando…</p>`

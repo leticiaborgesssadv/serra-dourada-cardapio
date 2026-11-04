@@ -5,11 +5,12 @@
 // (SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY são injetadas pela plataforma.)
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { assinaturaValida, enviar, extrairRecebidas, textoDaSaida, type Recebida, type Saida } from "./whatsapp.ts";
+import { assinaturaValida, enviar, extrairEcos, extrairRecebidas, textoDaSaida, variantesTelefone, type Eco, type Recebida, type Saida } from "./whatsapp.ts";
 import { continuarPedido, iniciarPedido, type ContextoPedido } from "./pedido.ts";
 import { brl } from "./texto.ts";
 import { TRIAGEM, continuarTriagem, iniciarTriagem, type CategoriaTriagem, type ContextoTriagem } from "./triagem.ts";
 import { continuarReserva, iniciarReserva, responderMinhaReserva, type ContextoReserva } from "./reserva.ts";
+import { MARCA_CARDAPIO, cardapioDoDia, citaCardapio, salvarCardapioDia } from "./cardapio-dia.ts";
 
 const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
@@ -27,7 +28,13 @@ async function segredo(nome: string): Promise<string> {
 
 // o link antigo (storage do Supabase) dava erro 400; a página do site está no ar
 const CARDAPIO_URL = "https://serradouradabar.com.br/cardapio-visual.html";
-const HORAS_ATENDIMENTO_HUMANO = 4;
+// decisão da gestão: se ninguém da equipe devolver a conversa, o robô volta sozinho em 1 hora
+const HORAS_ATENDIMENTO_HUMANO = 1;
+// a equipe escreve isto (pelo celular ou WhatsApp Web) para devolver a conversa ao robô na hora
+const PALAVRA_DEVOLVER = /#rob[oô](?![a-z])/i;
+
+// Promoções só do salão, informadas pela gestão em 03/11 (não valem para pedidos pelo WhatsApp).
+const PROMOCOES_SALAO = "🍺 *A 4ª é do Serra*: toda segunda-feira, tomou 3 Spaten, a 4ª é por nossa conta!";
 const CONTEXTO_EXPIRA_MS = 2 * 3600000;
 
 const DIAS = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
@@ -95,8 +102,8 @@ function detectarIntencao(texto: string, permitirAtalhoNumerico = true): Intenca
   if (/parceria|divulgacao|publicidade|permuta|influenciador/.test(t)) return "parceria";
   if (/nota fiscal|\bnf\b|cnpj|razao social/.test(t)) return "nota_fiscal";
   if (/\breserv|\bmesa\b/.test(t)) return "reserva";
-  if (/cardapio|menu/.test(t)) return "cardapio";
-  if (/happy ?hour|promocao/.test(t)) return "happy_hour";
+  if (/happy ?hour|promoc|spaten|4[aª]? e do serra/.test(t)) return "happy_hour";
+  if (/cardapio|menu|\bmistura\b|almoco de hoje|o que tem (hoje|de almoco|pro almoco|no almoco)/.test(t)) return "cardapio";
   // palavras inteiras: "fechar o pedido" e "como funciona o pedido" não são pergunta de horário
   if (/\b(horarios?|funcionamento|que horas|abre|abrem|fecha|fecham|aberto|abertos)\b/.test(t)) return "horario";
   if (/endereco|localizacao|onde fica|como chegar|mapa/.test(t)) return "endereco";
@@ -128,8 +135,10 @@ async function getEstabelecimento() {
   return data;
 }
 
-async function responderCardapio(): Promise<string> {
-  return `Confira nosso cardápio completo, com todas as opções e valores: ${CARDAPIO_URL}\n\nPara fazer um pedido por aqui, é só escrever *pedido*.`;
+async function responderCardapio(estabelecimentoId: string): Promise<string> {
+  const doDia = await cardapioDoDia(sb, estabelecimentoId);
+  const hoje = doDia ? `🍽️ *Almoço de hoje:*\n${doDia}\n\n` : "";
+  return `${hoje}Confira nosso cardápio completo, com todas as opções e valores: ${CARDAPIO_URL}\n\nPara fazer um pedido por aqui, é só escrever *pedido*.`;
 }
 
 function formatarHoraNatural(hhmmss: string): string {
@@ -194,7 +203,9 @@ async function responderHorarioAlmoco(estabelecimentoId: string): Promise<string
   const uniforme = horarioUniformeSegSab(horario);
   if (!uniforme) return responderHorario(estabelecimentoId);
   const fechamentoDomingo = uniforme.domingoFechado ? " Aos domingos, não abrimos." : "";
-  return `Nosso almoço é servido de segunda a sábado, das ${formatarHoraNatural(uniforme.almocoAbre)} às ${formatarHoraNatural(uniforme.almocoFecha)}. 🍽️${fechamentoDomingo}\n\nPara ver o cardápio, escreva *cardápio*. Para pedir, escreva *pedido*.`;
+  const doDia = await cardapioDoDia(sb, estabelecimentoId);
+  const hoje = doDia ? `\n\n*Hoje no almoço:*\n${doDia}` : "";
+  return `Nosso almoço é servido de segunda a sábado, das ${formatarHoraNatural(uniforme.almocoAbre)} às ${formatarHoraNatural(uniforme.almocoFecha)}. 🍽️${fechamentoDomingo}${hoje}\n\nPara ver o cardápio, escreva *cardápio*. Para pedir, escreva *pedido*.`;
 }
 
 async function responderEndereco(estabelecimento: { endereco: string | null }, estabelecimentoId: string): Promise<string> {
@@ -208,12 +219,13 @@ async function responderEndereco(estabelecimento: { endereco: string | null }, e
 
 async function responderHappyHour(): Promise<string> {
   const { data } = await sb.from("happy_hour").select("descricao, dias_semana, horario_inicio, horario_fim, ativo").maybeSingle();
-  if (!data?.ativo) return "No momento não temos happy hour ativo, mas fique de olho — em breve tem novidade!";
+  const salao = "\n\n_Promoções válidas só para consumo no salão._";
+  if (!data?.ativo) return `${PROMOCOES_SALAO}${salao}`;
   const dias = formatarDiasSemana(data.dias_semana || []);
   const periodo = data.horario_inicio && data.horario_fim ? `, das ${formatarHoraNatural(data.horario_inicio)} às ${formatarHoraNatural(data.horario_fim)}` : "";
   const descricao = data.descricao || "confira com a equipe os detalhes!";
-  // só o que está cadastrado: nada de promessa que não esteja no banco
-  return `Nosso Happy Hour acontece ${dias}${periodo}! 🍻\n\n${descricao}`;
+  // happy hour vem do cadastro; a promoção de segunda foi informada pela gestão (PROMOCOES_SALAO)
+  return `Nosso Happy Hour acontece ${dias}${periodo}! 🍻\n\n${descricao}\n\n${PROMOCOES_SALAO}${salao}`;
 }
 
 // Cliente pergunta "e meu pedido?": responde com o último pedido do dia desse telefone.
@@ -296,11 +308,11 @@ async function respostaFallback(estabelecimentoId: string): Promise<string> {
 }
 
 const AVISO_LGPD =
-  "Oi! Seja bem-vindo(a) ao Serra Dourada Bar e Restaurante! 😊 Sou o assistente virtual da casa e estou aqui para agilizar seu atendimento. Para reservas e pedidos, usamos seu nome e telefone só para organizar e confirmar sua solicitação. Para falar com uma pessoa da equipe, é só escrever \"atendente\".";
+  "Oi! Seja bem-vindo(a) ao Serra Dourada Bar e Restaurante! 😊 Sou o assistente virtual da casa e estou aqui para agilizar seu atendimento. Para reservas e pedidos, usamos seu nome e telefone só para organizar e confirmar sua solicitação. Para falar com uma pessoa da equipe, é só escrever \"atendente\". Nossa política de privacidade: https://serradouradabar.com.br/privacidade.html";
 
 async function gerarResposta(intencao: Intencao, estabelecimento: { id: string; endereco: string | null }, telefone: string): Promise<string> {
   switch (intencao) {
-    case "cardapio": return responderCardapio();
+    case "cardapio": return responderCardapio(estabelecimento.id);
     case "horario": return responderHorario(estabelecimento.id);
     case "horario_almoco": return responderHorarioAlmoco(estabelecimento.id);
     case "endereco": return responderEndereco(estabelecimento, estabelecimento.id);
@@ -365,10 +377,19 @@ async function tratarWebhook(req: Request): Promise<Response> {
     return new Response("assinatura inválida", { status: 401 });
   }
 
-  const recebidas = extrairRecebidas(JSON.parse(corpo));
-  if (!recebidas.length) return new Response("ok", { status: 200 }); // só avisos de entrega/leitura
+  const payload = JSON.parse(corpo);
+  const recebidas = extrairRecebidas(payload);
+  const ecos = extrairEcos(payload);
+  if (!recebidas.length && !ecos.length) return new Response("ok", { status: 200 }); // só avisos de entrega/leitura
 
   const estabelecimento = await getEstabelecimento();
+  for (const eco of ecos) {
+    try {
+      await registrarEco(estabelecimento.id, eco);
+    } catch (e) {
+      console.error("Erro ao registrar resposta da equipe:", e);
+    }
+  }
   // uma por vez, na ordem: a Meta pode juntar várias mensagens na mesma entrega
   for (const recebida of recebidas) {
     try {
@@ -378,6 +399,26 @@ async function tratarWebhook(req: Request): Promise<Response> {
     }
   }
   return new Response("ok", { status: 200 });
+}
+
+// A equipe respondeu pelo app do celular (coexistência): o robô fica em silêncio por 1 hora a partir
+// da última resposta dela. Se a mensagem tiver #robo, a conversa volta para o robô na hora.
+async function registrarEco(estabelecimentoId: string, eco: Eco): Promise<void> {
+  // "#cardapio ..." mandado pelo próprio número do restaurante: vira o cardápio de hoje (não pausa conversa nenhuma)
+  if (MARCA_CARDAPIO.test(eco.texto)) return salvarCardapioDia(sb, estabelecimentoId, eco.texto, eco.wamid);
+  const { data: achada } = await sb.from("whatsapp_conversa").select("id").eq("estabelecimento_id", estabelecimentoId)
+    .in("telefone", variantesTelefone(eco.para)).limit(1).maybeSingle();
+  const conversaId = achada?.id || (await obterOuCriarConversa(estabelecimentoId, eco.para)).id;
+  const r = await sb.from("whatsapp_mensagem").insert({
+    conversa_id: conversaId, direcao: "saida", conteudo: "[equipe pelo celular] " + eco.texto, intencao: null, wamid: eco.wamid, envio_status: "enviado",
+  });
+  if (r.error?.code === "23505") return; // reentrega da Meta
+  if (r.error) throw new Error("registrar eco: " + r.error.message);
+  const devolver = PALAVRA_DEVOLVER.test(eco.texto);
+  await sb.from("whatsapp_conversa").update(devolver
+    ? { atendimento_humano_ate: null, atendimento_humano_por: null, aguardando_humano_desde: null, contexto: {}, atualizado_em: new Date().toISOString() }
+    : { atendimento_humano_ate: new Date(Date.now() + HORAS_ATENDIMENTO_HUMANO * 3600000).toISOString(), aguardando_humano_desde: null, contexto: {}, atualizado_em: new Date().toISOString() },
+  ).eq("id", conversaId);
 }
 
 async function processarMensagem(estabelecimento: { id: string; endereco: string | null }, recebida: Recebida): Promise<void> {
@@ -479,6 +520,14 @@ async function processarMensagem(estabelecimento: { id: string; endereco: string
     novoContexto = {};
   } else {
     if (intencao === "fallback" || intencao === "prato") {
+      // "tem feijoada hoje?": responde com o cardápio do dia
+      const doDia = await cardapioDoDia(sb, estabelecimento.id);
+      if (doDia && citaCardapio(recebida.texto, doDia)) {
+        saidas = [texto(`😊 *Hoje no almoço temos:*\n${doDia}\n\nPara pedir, escreva *pedido*.`)];
+        intencaoLog = "cardapio";
+      }
+    }
+    if (!saidas.length && (intencao === "fallback" || intencao === "prato")) {
       const respostaProduto = await buscarProdutoNoTexto(estabelecimento.id, recebida.texto);
       if (respostaProduto) {
         saidas = [texto(respostaProduto)];

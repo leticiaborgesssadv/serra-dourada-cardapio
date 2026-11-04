@@ -54,6 +54,8 @@ export function extrairRecebidas(payload: any): Recebida[] {
   const lista: Recebida[] = [];
   for (const entry of payload?.entry || []) {
     for (const change of entry?.changes || []) {
+      // só mensagens novas: na coexistência o campo "history" também traz "messages" (histórico antigo)
+      if (change?.field && change.field !== "messages") continue;
       const valor = change?.value;
       for (const m of valor?.messages || []) {
         const r = lerMensagem(valor, m);
@@ -64,10 +66,38 @@ export function extrairRecebidas(payload: any): Recebida[] {
   return lista; // vazia = só avisos de entrega/leitura
 }
 
+// Coexistência (WhatsApp Business no celular + API no mesmo número): o que a equipe manda
+// pelo app chega como "eco" (campo smb_message_echoes). Não é mensagem do cliente.
+export type Eco = { wamid: string; para: string; texto: string };
+
+export function extrairEcos(payload: any): Eco[] {
+  const lista: Eco[] = [];
+  for (const entry of payload?.entry || []) {
+    for (const change of entry?.changes || []) {
+      if (change?.field !== "smb_message_echoes") continue;
+      for (const m of change?.value?.message_echoes || []) {
+        if (!m?.id || !m?.to) continue;
+        const texto = m.text?.body || m[m.type]?.caption || `[${m.type || "mensagem"}]`;
+        lista.push({ wamid: m.id, para: String(m.to), texto });
+      }
+    }
+  }
+  return lista;
+}
+
+// O mesmo celular pode vir com ou sem o nono dígito: devolve as duas formas.
+export function variantesTelefone(t: string): string[] {
+  const d = (t || "").replace(/\D/g, "");
+  const com9 = numeroParaEnvio(d);
+  const sem9 = d.length === 13 && d.startsWith("55") && d[4] === "9" ? d.slice(0, 4) + d.slice(5) : d;
+  return [...new Set([d, com9, sem9])];
+}
+
 function lerMensagem(valor: any, m: any): Recebida | null {
   if (!m?.id || !m?.from) return null;
   // reação (👍 numa mensagem) não é pedido de nada: não responde com menu
-  if (m.type === "reaction" || m.type === "unsupported") return null;
+  // edição ou exclusão de mensagem já enviada também não pede resposta
+  if (["reaction", "unsupported", "edit", "revoke", "system"].includes(m.type)) return null;
   let texto = m.text?.body || "";
   let respostaId = "";
   if (m.type === "interactive") {

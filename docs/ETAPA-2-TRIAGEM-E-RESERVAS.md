@@ -72,6 +72,15 @@ O que mudou depois da revisão completa:
 3. Publicar o painel (`gestao/`).
 4. Fazer uma reserva e uma triagem de teste pelo WhatsApp real e conferir no painel.
 
+## Ordem para ligar no sistema real (atualizada em 04/11)
+
+1. Aplicar no sistema real as migrações `20261104140000_etapa2_decisoes.sql`, `20261104150000_cardapio_do_dia.sql` e `20261104160000_reserva_horario_passado.sql` **antes** de publicar o painel novo. O painel usa as colunas e a tabela novas.
+2. Preencher a configuração com as decisões: entrega grátis, prazos, Pix e titular, almoço até 13h45, link do iFood, Chopp e Drinks fora do pedido, grupo grande "acima de 14", antecedência 0 e link de avaliação.
+3. Coexistência do 98239-0476 (depois que a Meta aprovar o app como Provedor de Tecnologia). No webhook do app, assinar os campos `messages`, `smb_message_echoes`, `history`, `smb_app_state_sync` e `account_update`.
+4. **Em até 24 h depois de conectar**, pedir à Meta a sincronização dos contatos e do histórico (`smb_app_data`, `smb_app_state_sync` e depois `history`). Se passar de 24 h, a Meta exige desconectar e conectar de novo.
+5. Cadastrar no sistema real o token permanente, o Phone Number ID e o App Secret, e publicar o robô novo.
+6. Depois de conectar, os aparelhos ligados ao número se desconectam uma vez. Reconectar o WhatsApp Web (o aplicativo WhatsApp para Windows não funciona com coexistência). O celular principal precisa abrir o app pelo menos a cada 14 dias.
+
 ## Plano B
 
 - **Reservas pelo robô com problema:** em Reservas › Regras, desmarque "aceitando pedidos de reserva". O robô passa a orientar o cliente a falar com um atendente. O formulário do site continua funcionando.
