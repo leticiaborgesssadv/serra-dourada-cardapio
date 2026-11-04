@@ -16,6 +16,13 @@ function resposta(body: unknown, status = 200) {
 
 const MINUTOS_ATENDIMENTO_HUMANO = 60;
 
+// Brasil: a Meta entrega alguns celulares sem o nono dígito; para enviar, usa o formato com o 9.
+function numeroParaEnvio(t: string): string {
+  const d = (t || "").replace(/\D/g, "");
+  if (d.length === 12 && d.startsWith("55") && /[6-9]/.test(d[4])) return d.slice(0, 4) + "9" + d.slice(4);
+  return d;
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   if (req.method !== "POST") return resposta({ error: "Método não permitido" }, 405);
@@ -63,7 +70,7 @@ Deno.serve(async (req: Request) => {
   const envio = await fetch(`https://graph.facebook.com/v20.0/${PHONE_NUMBER_ID}/messages`, {
     method: "POST",
     headers: { Authorization: `Bearer ${WHATSAPP_TOKEN}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ messaging_product: "whatsapp", to: conversa.telefone, type: "text", text: { body: texto } }),
+    body: JSON.stringify({ messaging_product: "whatsapp", to: numeroParaEnvio(conversa.telefone), type: "text", text: { body: texto } }),
   });
   if (!envio.ok) {
     const erro = await envio.text();

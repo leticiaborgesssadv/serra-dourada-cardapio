@@ -1,13 +1,15 @@
-// Agente de WhatsApp — Fase 1 + Etapa 1 (pedidos, impressão, atendimento humano).
+// Agente de WhatsApp — Fase 1 + Etapa 1 (pedidos, impressão, atendimento humano) + Etapa 2 (triagem e reservas).
 // Usa a WhatsApp Cloud API OFICIAL. Respostas por palavra-chave e botões, com dados reais do Supabase.
 // Segredos (variáveis da função OU Supabase Vault com o mesmo nome em minúsculas):
 //   WHATSAPP_TOKEN, WHATSAPP_PHONE_NUMBER_ID, WHATSAPP_VERIFY_TOKEN, WHATSAPP_APP_SECRET
 // (SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY são injetadas pela plataforma.)
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { assinaturaValida, enviar, extrairRecebida, textoDaSaida, type Recebida, type Saida } from "./whatsapp.ts";
+import { assinaturaValida, enviar, extrairRecebidas, textoDaSaida, type Recebida, type Saida } from "./whatsapp.ts";
 import { continuarPedido, iniciarPedido, type ContextoPedido } from "./pedido.ts";
 import { brl } from "./texto.ts";
+import { TRIAGEM, continuarTriagem, iniciarTriagem, type CategoriaTriagem, type ContextoTriagem } from "./triagem.ts";
+import { continuarReserva, iniciarReserva, responderMinhaReserva, type ContextoReserva } from "./reserva.ts";
 
 const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
@@ -23,18 +25,18 @@ async function segredo(nome: string): Promise<string> {
   return valor;
 }
 
-const CARDAPIO_URL = "https://bhxnhiggogosootbtwpb.supabase.co/storage/v1/object/public/site/cardapio/index.html";
+// o link antigo (storage do Supabase) dava erro 400; a página do site está no ar
+const CARDAPIO_URL = "https://serradouradabar.com.br/cardapio-visual.html";
 const HORAS_ATENDIMENTO_HUMANO = 4;
 const CONTEXTO_EXPIRA_MS = 2 * 3600000;
 
 const DIAS = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 
-type CategoriaCaptura = "reclamacao" | "gerente" | "vagas" | "fornecedor" | "parceria" | "nota_fiscal";
 type Intencao =
-  | "cardapio" | "horario" | "horario_almoco" | "endereco" | "happy_hour" | "reserva" | "atendente"
-  | "elogio" | "avaliacao" | "prato" | "pedido" | "status_pedido" | CategoriaCaptura | "fallback";
+  | "cardapio" | "horario" | "horario_almoco" | "endereco" | "happy_hour" | "reserva" | "minha_reserva" | "atendente"
+  | "elogio" | "avaliacao" | "prato" | "pedido" | "status_pedido" | "outros" | CategoriaTriagem | "fallback";
 
-// "1".."7" respondem ao menu numerado.
+// "1".."8" respondem ao menu numerado.
 const OPCAO_NUMERICA: Record<string, Intencao> = {
   "1": "cardapio",
   "2": "reserva",
@@ -43,6 +45,29 @@ const OPCAO_NUMERICA: Record<string, Intencao> = {
   "5": "happy_hour",
   "6": "atendente",
   "7": "pedido",
+  "8": "outros",
+};
+
+const MENU =
+  "Como posso te ajudar? Responda com o número:\n1 - Cardápio\n2 - Reserva\n3 - Endereço\n4 - Horário\n5 - Happy hour\n6 - Falar com uma pessoa\n7 - Fazer um pedido\n8 - Outros assuntos (currículo, fornecedor, música ao vivo, nota fiscal…)";
+
+// "Outros assuntos": lista com os temas da triagem (o cliente não precisa adivinhar a palavra certa)
+const LISTA_ASSUNTOS: Saida = {
+  tipo: "lista",
+  texto: "Sobre qual assunto você quer falar?",
+  botao: "Ver assuntos",
+  secoes: [{
+    titulo: "Assuntos",
+    linhas: [
+      { id: "tri:reclamacao", titulo: "Reclamação", descricao: "Algo não saiu como esperado" },
+      { id: "tri:gerente", titulo: "Falar com a gerência" },
+      { id: "tri:curriculo", titulo: "Trabalhe conosco", descricao: "Enviar currículo" },
+      { id: "tri:fornecedor", titulo: "Sou fornecedor" },
+      { id: "tri:artista", titulo: "Música ao vivo", descricao: "Artistas e bandas" },
+      { id: "tri:parceria", titulo: "Parceria / divulgação" },
+      { id: "tri:nota_fiscal", titulo: "Nota fiscal" },
+    ],
+  }],
 };
 
 function normalizarTexto(texto: string): string {
@@ -59,56 +84,31 @@ function detectarIntencao(texto: string, permitirAtalhoNumerico = true): Intenca
 
   if (/atendente|falar com (uma pessoa|alguem|humano)|pessoa de verdade/.test(t)) return "atendente";
   if (/\b(meu pedido|status do pedido|cade (o|meu) pedido|pedido (ja )?(saiu|esta pronto|ficou pronto))\b/.test(t)) return "status_pedido";
+  if (/\b(minhas? reservas?|status da reserva|reserva (ja )?(foi |esta )?confirmada)\b/.test(t)) return "minha_reserva";
+  if (/\b(sou (musico|cantor|cantora|dj)|minha banda|nossa banda|tocar (ai|aqui|no bar|na casa)|musica ao vivo|show ao vivo|apresentacao musical|cache)\b/.test(t)) return "artista";
+  // assuntos da gestão vêm antes de "pedido": "quero falar com o gerente" não é pedido de comida
+  if (/gerente|falar com o dono|responsavel pelo restaurante/.test(t)) return "gerente";
+  // "sem problema" / "nenhum problema" é concordância, não reclamação
+  if (/reclama|(?<!sem |nenhum |nao tem |nao ha )\bproblemas?\b|insatisfeit|pessimo|decepcion/.test(t)) return "reclamacao";
+  if (/emprego|curriculo|trabalhar (aqui|conosco|com voces|na equipe)|vagas? de (emprego|trabalho)/.test(t)) return "curriculo";
+  if (/fornecedor|fornecimento|represent(o|amos) a empresa/.test(t)) return "fornecedor";
+  if (/parceria|divulgacao|publicidade|permuta|influenciador/.test(t)) return "parceria";
+  if (/nota fiscal|\bnf\b|cnpj|razao social/.test(t)) return "nota_fiscal";
   if (/\breserv|\bmesa\b/.test(t)) return "reserva";
   if (/cardapio|menu/.test(t)) return "cardapio";
   if (/happy ?hour|promocao/.test(t)) return "happy_hour";
-  if (/horario|funciona|que horas|abre|fecha|aberto/.test(t)) return "horario";
+  // palavras inteiras: "fechar o pedido" e "como funciona o pedido" não são pergunta de horário
+  if (/\b(horarios?|funcionamento|que horas|abre|abrem|fecha|fecham|aberto|abertos)\b/.test(t)) return "horario";
   if (/endereco|localizacao|onde fica|como chegar|mapa/.test(t)) return "endereco";
   if (/\b(pedir|pedido|fazer (um )?pedido|delivery|encomendar|marmit|quero|me (ve|manda)|manda (um|uma|dois|duas))\b/.test(t)) return "pedido";
   if (/almoc/.test(t)) return "horario_almoco";
 
-  if (/gerente|falar com o dono|responsavel pelo restaurante/.test(t)) return "gerente";
-  if (/reclama|\bproblema\b|insatisfeit|pessimo|decepcion/.test(t)) return "reclamacao";
   if (/elogio|parabens|adorei|amei|maravilhoso|show de bola/.test(t)) return "elogio";
   if (/avali|deixar.*review|nota no google/.test(t)) return "avaliacao";
-  if (/emprego|curriculo|trabalhar (aqui|conosco|com voces|na equipe)|vagas? de (emprego|trabalho)/.test(t)) return "vagas";
-  if (/fornecedor|fornecimento|represent(o|amos) a empresa/.test(t)) return "fornecedor";
-  if (/parceria|divulgacao|publicidade|permuta/.test(t)) return "parceria";
-  if (/nota fiscal|\bnf\b|cnpj|razao social/.test(t)) return "nota_fiscal";
   if (/prato|quanto custa|preco|valor/.test(t)) return "prato";
 
   return "fallback";
 }
-
-const CAPTURAS: Record<CategoriaCaptura, { abertura: string; tituloLog: string }> = {
-  reclamacao: {
-    abertura:
-      "Sentimos muito que sua experiência não tenha sido como esperava. Queremos entender e resolver da melhor forma. Conte o que aconteceu e, se possível, informe a data e o horário da visita. Sua mensagem será encaminhada ao responsável.",
-    tituloLog: "Reclamação",
-  },
-  gerente: {
-    abertura: "Entendemos e vamos encaminhar sua mensagem diretamente ao responsável. Por favor, me conte um resumo do ocorrido para que possamos retornar.",
-    tituloLog: "Pedido de gerente",
-  },
-  vagas: {
-    abertura:
-      "Obrigado pelo interesse em trabalhar conosco! Envie seu currículo (ou um resumo da sua experiência) e o nome da vaga desejada. Nossa equipe analisará e entrará em contato caso seu perfil seja selecionado.",
-    tituloLog: "Vaga de emprego",
-  },
-  fornecedor: {
-    abertura: "Olá! Envie o nome da empresa e os produtos ou serviços oferecidos. Encaminharemos a apresentação ao setor responsável.",
-    tituloLog: "Fornecedor",
-  },
-  parceria: {
-    abertura: "Obrigado pelo contato! Envie sua proposta, seu perfil ou portfólio. Nossa equipe responsável avaliará a possibilidade de parceria.",
-    tituloLog: "Parceria/divulgação",
-  },
-  nota_fiscal: {
-    abertura:
-      "Para solicitar nota fiscal ou corrigir algum dado, envie o nome ou razão social, CPF ou CNPJ e as informações da compra. Evite enviar dados bancários ou senhas pelo WhatsApp.",
-    tituloLog: "Nota fiscal",
-  },
-};
 
 function respostaElogio(): string {
   return "Ficamos muito felizes com sua mensagem! 😊 Obrigado por compartilhar sua experiência. Vamos repassar seu elogio para toda a equipe.";
@@ -184,7 +184,7 @@ async function responderHorario(estabelecimentoId: string): Promise<string> {
     return `${nome}: ${turnos.length ? turnos.join(", ") : "fechado"}`;
   });
   if (linhas.every((l) => l.endsWith("fechado"))) {
-    return "Ainda não temos o horário de funcionamento cadastrado. Já vou chamar alguém da equipe pra te passar certinho.";
+    return "Ainda não temos o horário de funcionamento cadastrado por aqui. Escreva *atendente* que alguém da equipe te passa certinho.";
   }
   return `Nosso horário de funcionamento:\n${linhas.join("\n")}`;
 }
@@ -194,13 +194,13 @@ async function responderHorarioAlmoco(estabelecimentoId: string): Promise<string
   const uniforme = horarioUniformeSegSab(horario);
   if (!uniforme) return responderHorario(estabelecimentoId);
   const fechamentoDomingo = uniforme.domingoFechado ? " Aos domingos, não abrimos." : "";
-  return `Nosso almoço é servido de segunda a sábado, das ${formatarHoraNatural(uniforme.almocoAbre)} às ${formatarHoraNatural(uniforme.almocoFecha)}. 🍽️\n\nPara conferir as opções disponíveis hoje, peça o cardápio do dia por aqui.${fechamentoDomingo}`;
+  return `Nosso almoço é servido de segunda a sábado, das ${formatarHoraNatural(uniforme.almocoAbre)} às ${formatarHoraNatural(uniforme.almocoFecha)}. 🍽️${fechamentoDomingo}\n\nPara ver o cardápio, escreva *cardápio*. Para pedir, escreva *pedido*.`;
 }
 
 async function responderEndereco(estabelecimento: { endereco: string | null }, estabelecimentoId: string): Promise<string> {
   const { data } = await sb.from("pagina_config").select("google_maps_url").eq("estabelecimento_id", estabelecimentoId).maybeSingle();
   if (!estabelecimento.endereco) {
-    return "Ainda não temos o endereço cadastrado por aqui. Já vou chamar alguém da equipe pra te passar certinho.";
+    return "Ainda não temos o endereço cadastrado por aqui. Escreva *atendente* que alguém da equipe te passa certinho.";
   }
   const mapa = data?.google_maps_url ? `\n\n📍 Veja a localização e trace sua rota pelo Google Maps: ${data.google_maps_url}` : "";
   return `Estamos na ${estabelecimento.endereco}.${mapa}`;
@@ -212,7 +212,8 @@ async function responderHappyHour(): Promise<string> {
   const dias = formatarDiasSemana(data.dias_semana || []);
   const periodo = data.horario_inicio && data.horario_fim ? `, das ${formatarHoraNatural(data.horario_inicio)} às ${formatarHoraNatural(data.horario_fim)}` : "";
   const descricao = data.descricao || "confira com a equipe os detalhes!";
-  return `Nosso Happy Hour acontece ${dias}${periodo}! 🍻\n\n${descricao}\n\nOs petiscos selecionados ficam com preços especiais durante o horário do Happy Hour.`;
+  // só o que está cadastrado: nada de promessa que não esteja no banco
+  return `Nosso Happy Hour acontece ${dias}${periodo}! 🍻\n\n${descricao}`;
 }
 
 // Cliente pergunta "e meu pedido?": responde com o último pedido do dia desse telefone.
@@ -235,110 +236,6 @@ async function responderStatusPedido(estabelecimentoId: string, telefone: string
     cancelado: "cancelado",
   };
   return `Seu pedido *#${String(data.numero).padStart(3, "0")}* (${brl(Number(data.total))}) está *${rotulo[data.status] || data.status}*.`;
-}
-
-// ---------- Reserva (sem mudanças em relação à Fase 1) ----------
-
-function hojeISOLocal(): string {
-  const partes = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date());
-  const y = partes.find((p) => p.type === "year")!.value;
-  const m = partes.find((p) => p.type === "month")!.value;
-  const d = partes.find((p) => p.type === "day")!.value;
-  return `${y}-${m}-${d}`;
-}
-
-function somarDiasISO(iso: string, dias: number): string {
-  const [y, m, d] = iso.split("-").map(Number);
-  const dt = new Date(Date.UTC(y, m - 1, d));
-  dt.setUTCDate(dt.getUTCDate() + dias);
-  return dt.toISOString().slice(0, 10);
-}
-
-const DIAS_SEMANA_TXT = ["domingo", "segunda", "terca", "quarta", "quinta", "sexta", "sabado"];
-
-function parseData(t: string): string | null {
-  const dataNumerica = t.match(/\b(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?\b/);
-  if (dataNumerica) {
-    const dia = Number(dataNumerica[1]);
-    const mes = Number(dataNumerica[2]);
-    let ano = dataNumerica[3] ? Number(dataNumerica[3]) : Number(hojeISOLocal().slice(0, 4));
-    if (ano < 100) ano += 2000;
-    if (dia >= 1 && dia <= 31 && mes >= 1 && mes <= 12) return `${ano}-${String(mes).padStart(2, "0")}-${String(dia).padStart(2, "0")}`;
-  }
-  const hoje = hojeISOLocal();
-  if (/\bhoje\b/.test(t)) return hoje;
-  if (/\bamanha\b/.test(t)) return somarDiasISO(hoje, 1);
-  const { diaSemana: diaSemanaHoje } = obterAgoraLocal();
-  for (let alvo = 0; alvo < 7; alvo++) {
-    if (new RegExp(`\\b${DIAS_SEMANA_TXT[alvo]}\\b`).test(t)) return somarDiasISO(hoje, (alvo - diaSemanaHoje + 7) % 7);
-  }
-  return null;
-}
-
-function parseHorarioReserva(t: string): string | null {
-  const m = t.match(/\b(\d{1,2})[:h](\d{2})?\b/);
-  if (!m) return null;
-  const h = Number(m[1]);
-  const min = m[2] ? Number(m[2]) : 0;
-  if (h > 23 || min > 59) return null;
-  return `${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
-}
-
-function parseQuantidade(t: string): number | null {
-  const m = t.match(/\b(\d{1,3})\s*pessoas?\b/) || t.match(/\bpara\s+(\d{1,3})\b/);
-  if (!m) return null;
-  const n = Number(m[1]);
-  return n > 0 && n <= 200 ? n : null;
-}
-
-function formatarDataBR(iso: string): string {
-  const [y, m, d] = iso.split("-");
-  return `${d}/${m}/${y}`;
-}
-
-type ContextoReserva = { tipo: "reserva"; data?: string | null; horario?: string | null; quantidade?: number | null };
-
-async function tratarFluxoReserva(
-  estabelecimentoId: string, telefone: string, nomeContato: string, textoOriginal: string, contextoAtual: any, eraNovoPedido: boolean,
-): Promise<{ resposta: string; novoContexto: any }> {
-  const t = normalizarTexto(textoOriginal);
-  const parcial: ContextoReserva = contextoAtual?.tipo === "reserva" ? contextoAtual : { tipo: "reserva" };
-  const data = parseData(t) || parcial.data || null;
-  const horario = parseHorarioReserva(t) || parcial.horario || null;
-  let quantidade = parseQuantidade(t) || parcial.quantidade || null;
-  if (!quantidade && data && horario) {
-    const soNumero = t.match(/^\d{1,3}$/);
-    if (soNumero) quantidade = Number(soNumero[0]);
-  }
-  const faltando: string[] = [];
-  if (!data) faltando.push("a data");
-  if (!horario) faltando.push("o horário");
-  if (!quantidade) faltando.push("a quantidade de pessoas");
-  if (faltando.length) {
-    const novoContexto: ContextoReserva = { tipo: "reserva", data, horario, quantidade };
-    if (eraNovoPedido) {
-      return {
-        resposta:
-          "Será um prazer receber você! Pra solicitar sua reserva, me diga:\n\n📅 Data\n🕒 Horário\n👥 Quantidade de pessoas\n\nVocê pode mandar tudo em uma mensagem só (ex.: \"amanhã às 20h, 4 pessoas\"). Após o envio, nossa equipe verificará a disponibilidade.",
-        novoContexto,
-      };
-    }
-    return { resposta: `Para continuar com a solicitação, ainda preciso: ${faltando.join(", ")}.`, novoContexto };
-  }
-  await sb.from("contato_publico").insert({
-    estabelecimento_id: estabelecimentoId,
-    nome: nomeContato || "Cliente WhatsApp",
-    telefone,
-    mensagem: `Reserva via WhatsApp (agente): ${quantidade} pessoa(s), às ${horario}.`,
-    data_desejada: data,
-    pessoas: quantidade,
-    horario_desejado: horario,
-    status: "novo",
-  });
-  return {
-    resposta: `Recebi sua solicitação para ${quantidade} pessoa(s), no dia ${formatarDataBR(data!)}, às ${horario}, em nome de ${nomeContato || "você"}. Agora nossa equipe verificará a disponibilidade e confirmará por aqui.`,
-    novoContexto: {},
-  };
 }
 
 function obterAgoraLocal(): { diaSemana: number; hhmm: string } {
@@ -385,16 +282,21 @@ async function buscarProdutoNoTexto(estabelecimentoId: string, textoOriginal: st
   return `Encontrei isso no nosso cardápio:\n${linhas.join("\n")}\n\nQuer pedir? É só escrever *pedido*.`;
 }
 
-async function respostaFallback(estabelecimentoId: string): Promise<string> {
+async function abertoAgora(estabelecimentoId: string): Promise<boolean> {
   const horario = await buscarHorarioFuncionamento(estabelecimentoId);
-  if (horarioConfigurado(horario) && !estaAbertoAgora(horario)) {
-    return "No momento, estamos fora do nosso horário de atendimento. Sua mensagem já ficou registrada e nossa equipe responderá assim que retornarmos. Obrigado pela compreensão!";
+  return !horarioConfigurado(horario) || estaAbertoAgora(horario);
+}
+
+// Fora do horário o menu continua: o cliente pode adiantar reserva e outros assuntos à noite/de madrugada.
+async function respostaFallback(estabelecimentoId: string): Promise<string> {
+  if (!(await abertoAgora(estabelecimentoId))) {
+    return `Estamos fora do horário de atendimento agora, mas por aqui você já pode adiantar reserva e outros assuntos. O que precisar de uma pessoa da equipe, respondemos assim que retomarmos.\n\n${MENU}`;
   }
-  return "Posso te ajudar com:\n1 - Cardápio\n2 - Reserva\n3 - Endereço\n4 - Horário\n5 - Happy hour\n6 - Falar com uma pessoa\n7 - Fazer um pedido\n\nÉ só responder com o número.";
+  return MENU;
 }
 
 const AVISO_LGPD =
-  "Oi! Seja bem-vindo(a) ao Serra Dourada Bar e Restaurante! 😊 Sou nosso assistente virtual e estou aqui para agilizar seu atendimento. Para reservas e pedidos, utilizamos seu nome e telefone somente para organizar e confirmar sua solicitação. Se preferir falar diretamente com nossa equipe, é só escrever \"atendente\".";
+  "Oi! Seja bem-vindo(a) ao Serra Dourada Bar e Restaurante! 😊 Sou o assistente virtual da casa e estou aqui para agilizar seu atendimento. Para reservas e pedidos, usamos seu nome e telefone só para organizar e confirmar sua solicitação. Para falar com uma pessoa da equipe, é só escrever \"atendente\".";
 
 async function gerarResposta(intencao: Intencao, estabelecimento: { id: string; endereco: string | null }, telefone: string): Promise<string> {
   switch (intencao) {
@@ -427,7 +329,9 @@ async function obterOuCriarConversa(estabelecimentoId: string, telefone: string)
 // Grava a mensagem recebida ANTES de processar. O índice único em wamid barra reentregas da Meta,
 // inclusive as que chegam enquanto a primeira ainda está sendo respondida.
 async function registrarEntrada(conversaId: string, recebida: Recebida): Promise<string | null> {
-  const conteudo = recebida.texto || `[${recebida.tipo}]`;
+  const conteudo = recebida.midia
+    ? `[${recebida.midia.tipo === "image" ? "foto" : "arquivo"}: ${recebida.midia.nome}]${recebida.texto ? " " + recebida.texto : ""}`
+    : recebida.texto || `[${recebida.tipo}]`;
   const r = await sb.from("whatsapp_mensagem").insert({ conversa_id: conversaId, direcao: "entrada", conteudo, intencao: null, wamid: recebida.wamid }).select("id").single();
   if (r.error) {
     if (r.error.code === "23505") return null; // já processada
@@ -461,27 +365,40 @@ async function tratarWebhook(req: Request): Promise<Response> {
     return new Response("assinatura inválida", { status: 401 });
   }
 
-  const recebida = extrairRecebida(JSON.parse(corpo));
-  if (!recebida) return new Response("ok", { status: 200 });
+  const recebidas = extrairRecebidas(JSON.parse(corpo));
+  if (!recebidas.length) return new Response("ok", { status: 200 }); // só avisos de entrega/leitura
 
   const estabelecimento = await getEstabelecimento();
+  // uma por vez, na ordem: a Meta pode juntar várias mensagens na mesma entrega
+  for (const recebida of recebidas) {
+    try {
+      await processarMensagem(estabelecimento, recebida);
+    } catch (e) {
+      console.error("Erro ao processar mensagem do WhatsApp:", e);
+    }
+  }
+  return new Response("ok", { status: 200 });
+}
+
+async function processarMensagem(estabelecimento: { id: string; endereco: string | null }, recebida: Recebida): Promise<void> {
   const conversa = await obterOuCriarConversa(estabelecimento.id, recebida.telefone);
 
   const entradaId = await registrarEntrada(conversa.id, recebida);
-  if (!entradaId) return new Response("ok", { status: 200 }); // reentrega da Meta
+  if (!entradaId) return; // reentrega da Meta
 
   const marcarIntencao = (intencao: Intencao) => sb.from("whatsapp_mensagem").update({ intencao }).eq("id", entradaId);
 
   // 2. Atendimento humano ativo: o robô não responde (a mensagem fica registrada para a equipe).
-  if (conversa.humanoAte && new Date(conversa.humanoAte).getTime() > Date.now()) {
-    return new Response("ok", { status: 200 });
-  }
+  if (conversa.humanoAte && new Date(conversa.humanoAte).getTime() > Date.now()) return;
 
   // Conversa em andamento (pedido, reserva, triagem) parada há mais de 2 h recomeça do zero.
   let contexto = conversa.contexto || {};
   if (contexto.tipo && (!contexto.atualizadoEm || Date.now() - Date.parse(contexto.atualizadoEm) > CONTEXTO_EXPIRA_MS)) contexto = {};
+  // um "oi" depois de um protocolo é conversa nova, não complemento do atendimento
+  if (contexto.tipo === "complemento" && /^(oi+|ola|opa|bom dia|boa tarde|boa noite|e ai)[!. ]*$/.test(normalizarTexto(recebida.texto))) contexto = {};
   const tipoFluxo: string | undefined = contexto?.tipo;
-  const intencao = recebida.respostaId ? "fallback" : detectarIntencao(recebida.texto, !tipoFluxo);
+  // atalho numérico do menu vale fora de fluxo e logo depois de um protocolo ("2" = reserva, não complemento)
+  const intencao = recebida.respostaId ? "fallback" : detectarIntencao(recebida.texto, !tipoFluxo || tipoFluxo === "complemento");
   let saidas: Saida[] = [];
   let novoContexto: any = contexto;
   let intencaoLog: Intencao = intencao;
@@ -496,8 +413,29 @@ async function tratarWebhook(req: Request): Promise<Response> {
     // 3. Transferência para pessoa: robô para de responder até a equipe devolver (ou até o prazo).
     const ate = new Date(Date.now() + HORAS_ATENDIMENTO_HUMANO * 3600000).toISOString();
     await sb.from("whatsapp_conversa").update({ atendimento_humano_ate: ate, aguardando_humano_desde: new Date().toISOString() }).eq("id", conversa.id);
-    saidas = [texto("Certo! Já chamei alguém da equipe para continuar o atendimento por aqui. Aguarde só um pouquinho. 🙏")];
+    saidas = [texto(await abertoAgora(estabelecimento.id)
+      ? "Certo! Já chamei alguém da equipe para continuar o atendimento por aqui. Aguarde só um pouquinho. 🙏"
+      : "Certo! Deixei avisado para a equipe. Estamos fora do horário agora, então a resposta chega por aqui assim que retomarmos o atendimento. 🙏")];
     novoContexto = {};
+  } else if (recebida.respostaId.startsWith("tri:") && recebida.respostaId.slice(4) in TRIAGEM) {
+    // tocou num assunto da lista "Outros assuntos"
+    const r = iniciarTriagem(recebida.respostaId.slice(4) as CategoriaTriagem);
+    saidas = r.saidas;
+    novoContexto = r.contexto;
+    intencaoLog = recebida.respostaId.slice(4) as CategoriaTriagem;
+  } else if (tipoFluxo === "complemento" && intencao === "fallback" && !recebida.respostaId && !recebida.midia
+    && /^(ok+|okay|obrigad[oa]s?|brigad[oa]|valeu|vlw|blz|beleza|certo|ta bom|tá bom|show|top|perfeito|👍|🙏)[!. ]*$/i.test(recebida.texto.trim())) {
+    saidas = [texto("Por nada! Qualquer coisa, é só chamar. 😊")];
+    novoContexto = {};
+  } else if (tipoFluxo === "complemento" && intencao === "fallback" && !recebida.respostaId && (recebida.texto.trim() || recebida.midia)) {
+    // logo depois de abrir um protocolo, o que o cliente escrever entra no mesmo atendimento
+    const extra = recebida.midia ? `[arquivo enviado: ${recebida.midia.nome}] ${recebida.texto}`.trim() : recebida.texto.trim();
+    if (extra) {
+      await sb.from("atendimento_adm_evento").insert({ atendimento_id: contexto.atendimentoId, tipo: "nota", texto: ("Cliente acrescentou: " + extra).slice(0, 1000), ator: "cliente" });
+      await sb.from("atendimento_adm").update({ atualizado_em: new Date().toISOString() }).eq("id", contexto.atendimentoId);
+    }
+    saidas = [texto(`📝 Acrescentei ao protocolo *${contexto.protocolo}*. A equipe vai ver junto com o resto.`)];
+    intencaoLog = "fallback";
   } else if (!tipoFluxo && recebida.respostaId.startsWith("conf:")) {
     // tocou de novo em "Confirmar" de um pedido já fechado: não cria outro, só informa
     saidas = [texto(await responderStatusPedido(estabelecimento.id, recebida.telefone))];
@@ -507,35 +445,35 @@ async function tratarWebhook(req: Request): Promise<Response> {
     saidas = r.saidas;
     novoContexto = r.contexto;
     intencaoLog = "pedido";
+  } else if (tipoFluxo === "triagem") {
+    // triagem em andamento: tudo que o cliente escreve é resposta (inclusive "o pedido veio frio")
+    const r = await continuarTriagem(sb, estabelecimento.id, contexto as ContextoTriagem, { ...entrada, midia: recebida.midia }, segredo);
+    saidas = r.saidas;
+    novoContexto = r.contexto;
+    intencaoLog = (contexto as ContextoTriagem).categoria;
+  } else if (tipoFluxo === "reserva" && ((contexto as ContextoReserva).etapa !== "dados" || recebida.respostaId || intencao === "reserva" || intencao === "fallback")) {
+    const r = await continuarReserva(sb, estabelecimento.id, contexto as ContextoReserva, entrada, segredo);
+    saidas = r.saidas;
+    novoContexto = r.contexto;
+    intencaoLog = "reserva";
   } else if (intencao === "pedido") {
     const r = await iniciarPedido(sb, estabelecimento.id, entrada, textoHorario);
     saidas = r.saidas;
     novoContexto = r.contexto;
-  } else if (tipoFluxo === "reserva" && (intencao === "reserva" || intencao === "fallback")) {
-    const r = await tratarFluxoReserva(estabelecimento.id, recebida.telefone, recebida.nomeContato, recebida.texto, contexto, false);
-    saidas = [texto(r.resposta)];
-    novoContexto = r.novoContexto;
-    intencaoLog = "reserva";
-  } else if (tipoFluxo === "captura" && intencao === "fallback") {
-    const categoria = contexto.categoria as CategoriaCaptura;
-    const info = CAPTURAS[categoria];
-    await sb.from("contato_publico").insert({
-      estabelecimento_id: estabelecimento.id,
-      nome: recebida.nomeContato || "Cliente WhatsApp",
-      telefone: recebida.telefone,
-      mensagem: `[${info.tituloLog}] ${recebida.texto}`,
-      status: "novo",
-    });
-    saidas = [texto("Recebido! Nossa equipe vai analisar e retornar em breve.")];
+  } else if (intencao === "minha_reserva") {
+    saidas = [texto(await responderMinhaReserva(sb, estabelecimento.id, recebida.telefone))];
     novoContexto = {};
-    intencaoLog = categoria;
   } else if (intencao === "reserva") {
-    const r = await tratarFluxoReserva(estabelecimento.id, recebida.telefone, recebida.nomeContato, recebida.texto, {}, true);
-    saidas = [texto(r.resposta)];
-    novoContexto = r.novoContexto;
-  } else if (intencao in CAPTURAS) {
-    saidas = [texto(CAPTURAS[intencao as CategoriaCaptura].abertura)];
-    novoContexto = { tipo: "captura", categoria: intencao };
+    const r = await iniciarReserva(sb, estabelecimento.id, entrada);
+    saidas = r.saidas;
+    novoContexto = r.contexto;
+  } else if (intencao === "outros") {
+    saidas = [LISTA_ASSUNTOS];
+    novoContexto = {};
+  } else if (intencao in TRIAGEM) {
+    const r = iniciarTriagem(intencao as CategoriaTriagem);
+    saidas = r.saidas;
+    novoContexto = r.contexto;
   } else if (recebida.tipo === "audio") {
     saidas = [texto("Por enquanto ainda não consigo ouvir áudios. 🙏 Pode me escrever o que precisa?")];
     novoContexto = {};
@@ -558,8 +496,6 @@ async function tratarWebhook(req: Request): Promise<Response> {
   await marcarIntencao(intencaoLog);
   await sb.from("whatsapp_conversa").update({ contexto: novoContexto }).eq("id", conversa.id);
   await responder(conversa.id, recebida.telefone, saidas);
-
-  return new Response("ok", { status: 200 });
 }
 
 async function tratarVerificacao(req: Request): Promise<Response> {

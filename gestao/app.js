@@ -6,11 +6,13 @@ import Cozinha from "./cozinha.js";
 
 const html = htm.bind(h);
 
-const VERSAO_CACHE = "33";
+const VERSAO_CACHE = "36";
 
 const MODULOS = [
-  { rota: "pedidos", rotulo: "Pedidos (WhatsApp)", pronto: true },
+  { rota: "pedidos", rotulo: "Pedidos (WhatsApp)", pronto: true, caixa: true },
   { rota: "config-pedidos", rotulo: "Configurar pedidos", pronto: true },
+  { rota: "reservas", rotulo: "Reservas", pronto: true, caixa: true },
+  { rota: "triagem", rotulo: "Triagem da gestão", pronto: true },
   { rota: "financeiro", rotulo: "Financeiro", pronto: true },
   { rota: "estoque", rotulo: "Estoque e CMV", pronto: true },
   { rota: "etiquetas", rotulo: "Etiquetas", pronto: true },
@@ -21,8 +23,11 @@ const MODULOS = [
   { rota: "documentos", rotulo: "Documentos e fiscal", pronto: true },
   { rota: "marketing", rotulo: "Marketing e CRM", pronto: true },
   { rota: "metas", rotulo: "Metas e orçamento", pronto: true },
-  { rota: "whatsapp", rotulo: "WhatsApp", pronto: true },
+  { rota: "whatsapp", rotulo: "WhatsApp", pronto: true, caixa: true },
 ];
+
+// O caixa vê só as telas marcadas com "caixa: true"; a gerência vê tudo.
+const modulosDoPapel = (papel) => (papel === "caixa" ? MODULOS.filter((m) => m.caixa) : MODULOS);
 
 function lerRota() {
   const hash = window.location.hash.replace(/^#\/?/, "");
@@ -33,7 +38,7 @@ function EmConstrucao({ rotulo }) {
   return html`<div class="em-construcao"><h2>${rotulo}</h2><p>Este módulo ainda não foi construído. Fale com o Claude para priorizá-lo.</p></div>`;
 }
 
-function Nav({ rotaAtual, nomeUsuario, onSair, contagemAlertas }) {
+function Nav({ rotaAtual, nomeUsuario, onSair, contagemAlertas, modulos }) {
   return html`
     <nav class="gestao-nav">
       <div class="gestao-nav-topo">
@@ -44,7 +49,7 @@ function Nav({ rotaAtual, nomeUsuario, onSair, contagemAlertas }) {
         </a>
       </div>
       <div class="gestao-nav-links">
-        ${MODULOS.map((m) => html`
+        ${modulos.map((m) => html`
           <a href="#/${m.rota}" class=${"gestao-nav-link" + (rotaAtual === m.rota ? " ativo" : "") + (!m.pronto ? " desabilitado" : "")}>
             ${m.rotulo}
           </a>
@@ -138,7 +143,7 @@ function App() {
     return html`<div class="tela-centro"><p>Verificando acesso…</p></div>`;
   }
 
-  if (!funcionario || !funcionario.ativo || (funcionario.papel !== "gerencia" && funcionario.papel !== "cozinha")) {
+  if (!funcionario || !funcionario.ativo || !["gerencia", "cozinha", "caixa"].includes(funcionario.papel)) {
     return html`
       <div class="tela-centro">
         <div class="card">
@@ -154,11 +159,17 @@ function App() {
     return h(Cozinha, { funcionario, onSair: sair });
   }
 
-  const def = MODULOS.find((m) => m.rota === rota) || MODULOS[0];
+  const permitidos = modulosDoPapel(funcionario.papel);
+  const def = permitidos.find((m) => m.rota === rota);
+  if (!def) {
+    // rota fora do papel (ex.: caixa abrindo o Financeiro): leva para a primeira tela permitida
+    window.location.hash = "#/" + permitidos[0].rota;
+    return html`<div class="tela-centro"><p>Carregando…</p></div>`;
+  }
 
   return html`
     <div class="gestao-shell">
-      <${Nav} rotaAtual=${rota} nomeUsuario=${funcionario.nome} onSair=${sair} contagemAlertas=${contagemAlertas} />
+      <${Nav} rotaAtual=${rota} nomeUsuario=${funcionario.nome} onSair=${sair} contagemAlertas=${contagemAlertas} modulos=${permitidos} />
       <main class="gestao-main">
         ${def.pronto && modulo ? h(modulo, {}) : html`<${EmConstrucao} rotulo=${def.rotulo} />`}
       </main>

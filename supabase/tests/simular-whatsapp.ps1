@@ -3,6 +3,7 @@
 # Uso:
 #   .\simular-whatsapp.ps1 -Telefone 5562900000001 -Mensagens 'oi', 'quero 2 marmitex e uma coca'
 #   Para tocar um botão/linha: use "id:<id do botão>|<texto do botão>", ex.: 'id:car:fim|Finalizar pedido'
+#   Para enviar um arquivo: use "doc:<nome do arquivo>|<legenda opcional>", ex.: 'doc:curriculo.pdf'
 param(
     [string]$Url = 'https://vqnxkknzblcqxnwzuzxf.supabase.co/functions/v1/whatsapp-webhook',
     # App Secret do AMBIENTE DE TESTES (nunca o real). Fica fora do repositório: defina $env:SD_SEGREDO_TESTE.
@@ -29,6 +30,12 @@ foreach ($m in $Mensagens) {
         $tipoResposta = if ($partes[0] -match '^(g|i|mais|rem):') { 'list_reply' } else { 'button_reply' }
         $msg = @{ from = $Telefone; id = $wamid; timestamp = [string][DateTimeOffset]::UtcNow.ToUnixTimeSeconds(); type = 'interactive';
                   interactive = @{ type = $tipoResposta; $tipoResposta = @{ id = $partes[0]; title = $partes[1] } } }
+    } elseif ($m.StartsWith('doc:')) {
+        # arquivo enviado pelo cliente: "doc:curriculo.pdf|legenda opcional" (id de mídia falso; não há download no teste)
+        $partes = $m.Substring(4).Split('|', 2)
+        $doc = @{ id = 'MIDIA-TESTE-' + [guid]::NewGuid().ToString('N').Substring(0, 8); filename = $partes[0]; mime_type = 'application/pdf' }
+        if ($partes.Length -gt 1) { $doc['caption'] = $partes[1] }
+        $msg = @{ from = $Telefone; id = $wamid; timestamp = [string][DateTimeOffset]::UtcNow.ToUnixTimeSeconds(); type = 'document'; document = $doc }
     } else {
         $msg = @{ from = $Telefone; id = $wamid; timestamp = [string][DateTimeOffset]::UtcNow.ToUnixTimeSeconds(); type = 'text'; text = @{ body = $m } }
     }

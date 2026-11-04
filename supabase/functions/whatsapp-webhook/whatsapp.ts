@@ -15,9 +15,20 @@ export type Recebida = {
   tipo: string;
   texto: string;        // texto digitado, ou o título do botão/linha tocado
   respostaId: string;   // id do botão/linha tocado ("" quando é texto digitado)
+  midia: Midia | null;  // documento ou foto enviada (o arquivo em si é baixado depois, se houver token)
 };
 
+export type Midia = { id: string; tipo: string; mime: string; nome: string };
+
 const corta = (s: string, n: number) => (s.length <= n ? s : s.slice(0, n - 1) + "…");
+
+// Brasil: a Meta entrega alguns celulares SEM o nono dígito (55 62 8xxx-xxxx, 12 dígitos).
+// Para responder, usamos o formato completo com o 9, senão a Meta pode recusar o destinatário.
+export function numeroParaEnvio(t: string): string {
+  const d = (t || "").replace(/\D/g, "");
+  if (d.length === 12 && d.startsWith("55") && /[6-9]/.test(d[4])) return d.slice(0, 4) + "9" + d.slice(4);
+  return d;
+}
 
 // ---------- assinatura (X-Hub-Signature-256) ----------
 
@@ -38,10 +49,25 @@ export async function assinaturaValida(corpo: string, cabecalho: string | null, 
 
 // ---------- leitura ----------
 
-export function extrairRecebida(payload: any): Recebida | null {
-  const valor = payload?.entry?.[0]?.changes?.[0]?.value;
-  const m = valor?.messages?.[0];
-  if (!m) return null; // aviso de entrega/leitura, sem mensagem nova
+// A Meta pode juntar várias mensagens numa entrega só: devolve todas, na ordem.
+export function extrairRecebidas(payload: any): Recebida[] {
+  const lista: Recebida[] = [];
+  for (const entry of payload?.entry || []) {
+    for (const change of entry?.changes || []) {
+      const valor = change?.value;
+      for (const m of valor?.messages || []) {
+        const r = lerMensagem(valor, m);
+        if (r) lista.push(r);
+      }
+    }
+  }
+  return lista; // vazia = só avisos de entrega/leitura
+}
+
+function lerMensagem(valor: any, m: any): Recebida | null {
+  if (!m?.id || !m?.from) return null;
+  // reação (👍 numa mensagem) não é pedido de nada: não responde com menu
+  if (m.type === "reaction" || m.type === "unsupported") return null;
   let texto = m.text?.body || "";
   let respostaId = "";
   if (m.type === "interactive") {
@@ -52,13 +78,20 @@ export function extrairRecebida(payload: any): Recebida | null {
     texto = m.button?.text || "";
     respostaId = m.button?.payload || "";
   }
+  let midia: Midia | null = null;
+  if (m.type === "document" || m.type === "image") {
+    const d = m[m.type] || {};
+    texto = d.caption || "";
+    midia = { id: d.id, tipo: m.type, mime: d.mime_type || "", nome: (d.filename || `${m.type}.${(d.mime_type || "/bin").split("/")[1]}`).slice(0, 120) };
+  }
   return {
     wamid: m.id,
     telefone: m.from,
-    nomeContato: valor?.contacts?.[0]?.profile?.name || "",
+    nomeContato: (valor?.contacts || []).find((c: any) => c?.wa_id === m.from)?.profile?.name || valor?.contacts?.[0]?.profile?.name || "",
     tipo: m.type,
     texto,
     respostaId,
+    midia,
   };
 }
 
@@ -73,7 +106,7 @@ export function textoDaSaida(s: Saida): string {
 }
 
 function corpoMeta(para: string, s: Saida): Record<string, unknown> {
-  const base = { messaging_product: "whatsapp", to: para };
+  const base = { messaging_product: "whatsapp", to: numeroParaEnvio(para) };
   if (s.tipo === "texto") return { ...base, type: "text", text: { body: corta(s.texto, 4096) } };
   if (s.tipo === "botoes") {
     return {
@@ -122,4 +155,35 @@ export async function enviar(token: string, phoneId: string, para: string, s: Sa
   } catch (e) {
     return { status: "falhou", erro: String(e).slice(0, 300) };
   }
+}
+
+// Mensagem modelo (template) aprovada pela Meta. É o único jeito de iniciar conversa com um número
+// que não escreveu nas últimas 24 h (ex.: o WhatsApp da gestão).
+export async function enviarModelo(token: string, phoneId: string, para: string, nome: string, idioma: string, parametros: string[]): Promise<ResultadoEnvio> {
+  if (!token || !phoneId || !para || !nome) return { status: "nao_configurado" };
+  try {
+    const r = await fetch(`https://graph.facebook.com/v20.0/${phoneId}/messages`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        messaging_product: "whatsapp", to: numeroParaEnvio(para), type: "template",
+        template: { name: nome, language: { code: idioma || "pt_BR" }, components: [{ type: "body", parameters: parametros.map((t) => ({ type: "text", text: corta(t, 60) })) }] },
+      }),
+    });
+    const corpo = await r.text();
+    if (!r.ok) return { status: "falhou", erro: `${r.status} ${corpo.slice(0, 300)}` };
+    return { status: "enviado", wamid: JSON.parse(corpo || "{}")?.messages?.[0]?.id };
+  } catch (e) {
+    return { status: "falhou", erro: String(e).slice(0, 300) };
+  }
+}
+
+// Baixa um arquivo enviado pelo cliente (o link da Meta expira em minutos e exige o token).
+export async function baixarMidia(token: string, mediaId: string): Promise<{ bytes: Uint8Array; mime: string }> {
+  const info = await fetch(`https://graph.facebook.com/v20.0/${mediaId}`, { headers: { Authorization: `Bearer ${token}` } });
+  if (!info.ok) throw new Error(`mídia ${info.status}`);
+  const { url, mime_type } = await info.json();
+  const arq = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+  if (!arq.ok) throw new Error(`download ${arq.status}`);
+  return { bytes: new Uint8Array(await arq.arrayBuffer()), mime: mime_type || "application/octet-stream" };
 }
