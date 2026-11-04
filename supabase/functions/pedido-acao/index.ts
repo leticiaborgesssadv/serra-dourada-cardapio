@@ -26,6 +26,13 @@ async function segredo(nome: string): Promise<string> {
   return typeof data === "string" ? data : "";
 }
 
+// Brasil: a Meta entrega alguns celulares sem o nono dígito; para enviar, usa o formato com o 9.
+function numeroParaEnvio(t: string): string {
+  const d = (t || "").replace(/\D/g, "");
+  if (d.length === 12 && d.startsWith("55") && /[6-9]/.test(d[4])) return d.slice(0, 4) + "9" + d.slice(4);
+  return d;
+}
+
 // Avisa o cliente pela conversa do próprio pedido (dentro da janela de 24 h aberta pelo cliente).
 async function avisarCliente(pedidoId: string, texto: (p: any) => string, userId: string) {
   const { data: p } = await admin.from("pedido").select("numero, total, cliente_telefone, conversa_id, modalidade, motivo_cancelamento").eq("id", pedidoId).single();
@@ -40,7 +47,7 @@ async function avisarCliente(pedidoId: string, texto: (p: any) => string, userId
     const r = await fetch(`https://graph.facebook.com/v20.0/${phoneId}/messages`, {
       method: "POST",
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ messaging_product: "whatsapp", to: p.cliente_telefone, type: "text", text: { body: corpo } }),
+      body: JSON.stringify({ messaging_product: "whatsapp", to: numeroParaEnvio(p.cliente_telefone), type: "text", text: { body: corpo } }),
     });
     const resp = await r.text();
     if (r.ok) {

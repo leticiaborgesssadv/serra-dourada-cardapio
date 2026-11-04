@@ -192,7 +192,8 @@ export async function continuarTriagem(
     def.fechamento,
     ...(urgente ? ["Sua mensagem foi marcada como *prioridade* para a gestão."] : []),
     ...(ctx.anexos.length ? [`📎 ${ctx.anexos.length} arquivo(s) anexado(s).`] : []),
-    "\nSe quiser complementar, é só citar o protocolo.",
+    "\nSe quiser acrescentar algo (mais detalhes, fotos, arquivos), é só mandar aqui que eu junto ao protocolo.",
   ];
-  return { saidas: [texto(linhas.join("\n"))], contexto: {} };
+  // as próximas mensagens (até 2 h) entram no mesmo atendimento
+  return { saidas: [texto(linhas.join("\n"))], contexto: { tipo: "complemento", atendimentoId: data.id, protocolo: data.protocolo } };
 }

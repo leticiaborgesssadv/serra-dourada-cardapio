@@ -29,6 +29,13 @@ const TITULO: Record<string, string> = {
   artista: "Artista / música", parceria: "Parceria / divulgação", nota_fiscal: "Nota fiscal", reserva_especial: "Reserva especial", outro: "Outro assunto",
 };
 
+// Brasil: a Meta entrega alguns celulares sem o nono dígito; para enviar, usa o formato com o 9.
+function numeroParaEnvio(t: string): string {
+  const d = (t || "").replace(/\D/g, "");
+  if (d.length === 12 && d.startsWith("55") && /[6-9]/.test(d[4])) return d.slice(0, 4) + "9" + d.slice(4);
+  return d;
+}
+
 const DIAS = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"];
 function quando(r: any): string {
   const [y, m, d] = String(r.data).split("-").map(Number);
@@ -48,7 +55,7 @@ async function avisarCliente(conversaId: string | null, telefone: string | null,
     const r = await fetch(`https://graph.facebook.com/v20.0/${phoneId}/messages`, {
       method: "POST",
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ messaging_product: "whatsapp", to: telefone, type: "text", text: { body: corpo } }),
+      body: JSON.stringify({ messaging_product: "whatsapp", to: numeroParaEnvio(telefone), type: "text", text: { body: corpo } }),
     });
     const resp = await r.text();
     if (r.ok) { status = "enviado"; wamid = JSON.parse(resp || "{}")?.messages?.[0]?.id || null; }
@@ -110,7 +117,7 @@ Deno.serve(async (req: Request) => {
           method: "POST",
           headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
           body: JSON.stringify({
-            messaging_product: "whatsapp", to: cfg.telefone_gestao, type: "template",
+            messaging_product: "whatsapp", to: numeroParaEnvio(cfg.telefone_gestao), type: "template",
             template: { name: cfg.modelo_aviso, language: { code: cfg.modelo_idioma || "pt_BR" }, components: [{ type: "body", parameters: [a.protocolo, TITULO[a.categoria] || a.categoria, a.prioridade.toUpperCase()].map((t) => ({ type: "text", text: t })) }] },
           }),
         });

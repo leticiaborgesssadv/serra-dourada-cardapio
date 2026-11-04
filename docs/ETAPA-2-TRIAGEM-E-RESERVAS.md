@@ -40,7 +40,22 @@ Situação: tudo **testado no ambiente de testes** (`serra-smart-teste`). **Nada
 - **Permissões:** quem não está logado não lê nem cria nada direto; quem não é da equipe não decide reservas; a cozinha não vê triagem nem reservas.
 - **Etapa 1:** o pedido "2 coca 600" passou a entrar direto, sem perguntar qual Coca. Antes, números de 3 dígitos eram ignorados.
 
-**Ainda não testado:** envio real pelo WhatsApp (avisos ao cliente e à gestão) e download real de arquivos da Meta. Os dois dependem do cadastro na Meta. Sem token, o arquivo fica registrado como "aguardando download".
+**Testado com o WhatsApp de verdade (número de teste da Meta):** mensagem real chegou e o robô respondeu. Celulares que a Meta entrega sem o nono dígito agora recebem a resposta.
+
+**Ainda não testado:** aviso à gestão por mensagem modelo (falta a Meta aprovar o modelo) e download real de arquivos enviados pelo cliente.
+
+## Revisão geral (03/11)
+
+O que mudou depois da revisão completa:
+
+- **Menu com 8 opções.** A nova opção 8, "Outros assuntos", abre uma lista com reclamação, gerência, currículo, fornecedor, música ao vivo, parceria e nota fiscal. O cliente não precisa adivinhar a palavra certa.
+- **Fora do horário** o robô avisa que a casa está fechada, mas continua mostrando o menu (dá para adiantar reserva e outros assuntos). O "falar com uma pessoa" também avisa que a resposta chega quando reabrir.
+- **Depois do protocolo:** por 2 h, o que o cliente mandar (texto, foto, arquivo) entra no mesmo atendimento. "Obrigado" e "ok" recebem um "Por nada!" e não viram anotação. Um "oi" começa conversa nova.
+- **Reação com emoji** (👍 numa mensagem) não gera mais resposta com o menu.
+- **Várias mensagens juntas:** a Meta às vezes entrega 2 ou 3 de uma vez; agora todas são respondidas, na ordem.
+- **Link do cardápio** trocado pelo do site (o antigo dava erro).
+- **Textos:** removida uma frase de happy hour que não vinha do cadastro; aviso de privacidade diz que é o assistente virtual; "sem problema" não abre mais reclamação; "fechar o pedido" não responde mais com o horário.
+- **Caixa** passa a entrar no painel e vê só Pedidos, Reservas e WhatsApp (migração `20261104130000_etapa2_ajustes_revisao.sql`).
 
 ## O que falta configurar antes de ligar no sistema real
 
@@ -52,8 +67,8 @@ Situação: tudo **testado no ambiente de testes** (`serra-smart-teste`). **Nada
 
 ## Como colocar no sistema real (quando aprovado)
 
-1. Aplicar a migração `20261104120000_etapa2_triagem_reservas.sql`. Ela cria o bucket privado `triagem` e o gatilho no `contato_publico`.
-2. Publicar as funções `whatsapp-webhook` (atualizada) e `gestao-acao` (nova).
+1. Aplicar as migrações `20261104120000_etapa2_triagem_reservas.sql` (cria o bucket privado `triagem` e o gatilho no `contato_publico`) e `20261104130000_etapa2_ajustes_revisao.sql` (acesso do caixa).
+2. Publicar as funções `whatsapp-webhook`, `pedido-acao` e `whatsapp-enviar` (atualizadas) e `gestao-acao` (nova). Antes, cadastrar no sistema real o App Secret da Meta: sem ele o robô novo recusa todas as mensagens.
 3. Publicar o painel (`gestao/`).
 4. Fazer uma reserva e uma triagem de teste pelo WhatsApp real e conferir no painel.
 

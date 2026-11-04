@@ -22,6 +22,14 @@ export type Midia = { id: string; tipo: string; mime: string; nome: string };
 
 const corta = (s: string, n: number) => (s.length <= n ? s : s.slice(0, n - 1) + "…");
 
+// Brasil: a Meta entrega alguns celulares SEM o nono dígito (55 62 8xxx-xxxx, 12 dígitos).
+// Para responder, usamos o formato completo com o 9, senão a Meta pode recusar o destinatário.
+export function numeroParaEnvio(t: string): string {
+  const d = (t || "").replace(/\D/g, "");
+  if (d.length === 12 && d.startsWith("55") && /[6-9]/.test(d[4])) return d.slice(0, 4) + "9" + d.slice(4);
+  return d;
+}
+
 // ---------- assinatura (X-Hub-Signature-256) ----------
 
 function iguais(a: string, b: string): boolean {
@@ -41,10 +49,25 @@ export async function assinaturaValida(corpo: string, cabecalho: string | null, 
 
 // ---------- leitura ----------
 
-export function extrairRecebida(payload: any): Recebida | null {
-  const valor = payload?.entry?.[0]?.changes?.[0]?.value;
-  const m = valor?.messages?.[0];
-  if (!m) return null; // aviso de entrega/leitura, sem mensagem nova
+// A Meta pode juntar várias mensagens numa entrega só: devolve todas, na ordem.
+export function extrairRecebidas(payload: any): Recebida[] {
+  const lista: Recebida[] = [];
+  for (const entry of payload?.entry || []) {
+    for (const change of entry?.changes || []) {
+      const valor = change?.value;
+      for (const m of valor?.messages || []) {
+        const r = lerMensagem(valor, m);
+        if (r) lista.push(r);
+      }
+    }
+  }
+  return lista; // vazia = só avisos de entrega/leitura
+}
+
+function lerMensagem(valor: any, m: any): Recebida | null {
+  if (!m?.id || !m?.from) return null;
+  // reação (👍 numa mensagem) não é pedido de nada: não responde com menu
+  if (m.type === "reaction" || m.type === "unsupported") return null;
   let texto = m.text?.body || "";
   let respostaId = "";
   if (m.type === "interactive") {
@@ -64,7 +87,7 @@ export function extrairRecebida(payload: any): Recebida | null {
   return {
     wamid: m.id,
     telefone: m.from,
-    nomeContato: valor?.contacts?.[0]?.profile?.name || "",
+    nomeContato: (valor?.contacts || []).find((c: any) => c?.wa_id === m.from)?.profile?.name || valor?.contacts?.[0]?.profile?.name || "",
     tipo: m.type,
     texto,
     respostaId,
@@ -83,7 +106,7 @@ export function textoDaSaida(s: Saida): string {
 }
 
 function corpoMeta(para: string, s: Saida): Record<string, unknown> {
-  const base = { messaging_product: "whatsapp", to: para };
+  const base = { messaging_product: "whatsapp", to: numeroParaEnvio(para) };
   if (s.tipo === "texto") return { ...base, type: "text", text: { body: corta(s.texto, 4096) } };
   if (s.tipo === "botoes") {
     return {
@@ -143,7 +166,7 @@ export async function enviarModelo(token: string, phoneId: string, para: string,
       method: "POST",
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        messaging_product: "whatsapp", to: para, type: "template",
+        messaging_product: "whatsapp", to: numeroParaEnvio(para), type: "template",
         template: { name: nome, language: { code: idioma || "pt_BR" }, components: [{ type: "body", parameters: parametros.map((t) => ({ type: "text", text: corta(t, 60) })) }] },
       }),
     });
