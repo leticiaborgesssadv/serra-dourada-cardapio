@@ -7,6 +7,7 @@ import {
   registrarRastreabilidade, estiloImpressaoEtiqueta, CSS_ETIQUETA,
 } from "./lib/etiquetas.js";
 import WhatsApp from "./modules/whatsapp.js";
+import Pedidos from "./modules/pedidos.js";
 
 const html = htm.bind(h);
 
@@ -135,7 +136,7 @@ function TelaVencendo({ itens, carregando }) {
 }
 
 export default function Cozinha({ funcionario, onSair }) {
-  const [aba, setAba] = useState("imprimir");
+  const [aba, setAba] = useState("pedidos");
   const [carregando, setCarregando] = useState(true);
   const [insumos, setInsumos] = useState([]);
   const [regras, setRegras] = useState([]);
@@ -178,6 +179,7 @@ export default function Cozinha({ funcionario, onSair }) {
       </div>
 
       <div class="cozinha-tabs">
+        <button class=${"cozinha-tab" + (aba === "pedidos" ? " ativo" : "")} onClick=${() => setAba("pedidos")}>Pedidos</button>
         <button class=${"cozinha-tab" + (aba === "imprimir" ? " ativo" : "")} onClick=${() => setAba("imprimir")}>Imprimir etiqueta</button>
         <button class=${"cozinha-tab" + (aba === "vencendo" ? " ativo" : "")} onClick=${() => setAba("vencendo")}>
           Vencendo ${contagemVencendo > 0 ? html`<span class="cozinha-badge">${contagemVencendo}</span>` : ""}
@@ -186,7 +188,9 @@ export default function Cozinha({ funcionario, onSair }) {
       </div>
 
       <div class="cozinha-conteudo">
-        ${aba === "whatsapp"
+        ${aba === "pedidos"
+          ? html`<${Pedidos} />`
+          : aba === "whatsapp"
           ? html`<${WhatsApp} />`
           : carregando
             ? html`<p class="vazio">Carregando…</p>`

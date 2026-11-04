@@ -1,6 +1,18 @@
-export const SUPABASE_URL = "https://bhxnhiggogosootbtwpb.supabase.co";
-export const ANON_KEY = "sb_publishable_Zsg8lPJjUHK5-okGOuYc9g_VbKilzQG";
-export const sb = window.supabase.createClient(SUPABASE_URL, ANON_KEY);
+// Ambiente: o real é o padrão. Para testar sem tocar no restaurante, abra o painel com ?ambiente=teste
+// (vale só para esta aba; aparece uma faixa vermelha). ?ambiente=producao volta ao real.
+// Chaves "publishable" são públicas por natureza: quem protege os dados são as regras de acesso (RLS).
+const AMBIENTES = {
+  producao: { url: "https://bhxnhiggogosootbtwpb.supabase.co", chave: "sb_publishable_Zsg8lPJjUHK5-okGOuYc9g_VbKilzQG" },
+  teste: { url: "https://vqnxkknzblcqxnwzuzxf.supabase.co", chave: "sb_publishable_TLapvjlnxp0D28EqI7NNaQ_3H_dN2Nw" },
+};
+const pedidoAmbiente = new URLSearchParams(window.location.search).get("ambiente");
+if (pedidoAmbiente === "teste" || pedidoAmbiente === "producao") sessionStorage.setItem("sd_ambiente", pedidoAmbiente);
+export const AMBIENTE = sessionStorage.getItem("sd_ambiente") === "teste" ? "teste" : "producao";
+
+export const SUPABASE_URL = AMBIENTES[AMBIENTE].url;
+export const ANON_KEY = AMBIENTES[AMBIENTE].chave;
+// o login do ambiente de teste fica guardado separado, para não misturar com o real
+export const sb = window.supabase.createClient(SUPABASE_URL, ANON_KEY, AMBIENTE === "teste" ? { auth: { storageKey: "sd-auth-teste" } } : {});
 
 let estabelecimentoIdCache = null;
 
